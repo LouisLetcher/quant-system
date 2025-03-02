@@ -1,0 +1,13 @@
+app:
+  name: "Quant Trading System"
+  version: "1.0.0"
+  debug: true
+
+database:
+  url: "postgresql://user:password@localhost/quant_system"
+  pool_size: 10
+  timeout: 30
+
+logging:
+  level: "DEBUG"
+  file: "logs/app.log"

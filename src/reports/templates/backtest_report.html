@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backtest Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Backtest Report for {{ data.strategy }}</h1>
+    <p>Asset: {{ data.asset }}</p>
+    <p>Profit & Loss: {{ data.pnl }}</p>
+    <p>Sharpe Ratio: {{ data.sharpe_ratio }}</p>
+    <p>Max Drawdown: {{ data.max_drawdown }}</p>
+
+    <h2>Performance Chart</h2>
+    <img src="{{ data.performance_chart }}" width="80%" />
+
+    <h2>Trade Log</h2>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Trade Type</th>
+            <th>Price</th>
+            <th>Quantity</th>
+        </tr>
+        {% for trade in data.trades %}
+        <tr>
+            <td>{{ trade.date }}</td>
+            <td>{{ trade.type }}</td>
+            <td>${{ trade.price }}</td>
+            <td>{{ trade.quantity }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
