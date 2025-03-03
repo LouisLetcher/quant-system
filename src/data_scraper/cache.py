@@ -19,14 +19,13 @@ class Cache:
         file_path = os.path.join(Cache.CACHE_DIR, f"{ticker}.csv")
         if os.path.exists(file_path):
             try:
-                # ✅ Define column names explicitly
-                columns = ["date", "open", "high", "low", "close", "volume"]
-                df = pd.read_csv(file_path, header=0, parse_dates=["date"])
-
-                # ✅ Ensure correct datetime format
-                df.set_index("date", inplace=True)
+                # Explicitly specify header=0 to ensure the first row is treated as header
+                df = pd.read_csv(file_path, index_col=0, header=0, parse_dates=True)
+                
+                # Ensure the index is properly named and sorted
+                df.index.name = 'date'
                 df.sort_index(inplace=True)
-
+                
                 return df
             except Exception as e:
                 print(f"⚠️ Error loading cache: {e}. Deleting corrupted cache file.")
