@@ -1,0 +1,10 @@
+[
+    {
+        "ticker": "AAPL",
+        "period": "max",
+        "commission": 0.002,
+        "initial_capital": 1000,
+        "take_profit": 0.03,
+        "stop_loss": 0.01
+    }
+]

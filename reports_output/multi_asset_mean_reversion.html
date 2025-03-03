@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multi-Asset Backtest Report - mean_reversion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #444;
+            margin-top: 30px;
+        }
+        .summary {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .positive {
+            color: green;
+        }
+        .negative {
+            color: red;
+        }
+        .asset-section {
+            margin-bottom: 40px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Multi-Asset Backtest Report</h1>
+    
+    <div class="summary">
+        <h2>Strategy: mean_reversion</h2>
+        <p>Consolidated report across multiple assets</p>
+        
+        <table>
+            <tr>
+                <th>Asset</th>
+                <th>Initial Capital</th>
+                <th>Final Value</th>
+                <th>Return (%)</th>
+                <th>Sharpe Ratio</th>
+            </tr>
+            
+            <tr>
+                <td>AAPL</td>
+                <td>$1000</td>
+                <td>$0</td>
+                <td class="negative">
+                    0.0%
+                </td>
+                <td>0.0</td>
+            </tr>
+            
+        </table>
+    </div>
+    
+    
+    <div class="asset-section">
+        <h2>AAPL Performance</h2>
+        
+        <h3>Trade Statistics</h3>
+        <table>
+            <tr>
+                <th>Metric</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Number of Trades</td>
+                <td>0</td>
+            </tr>
+            <tr>
+                <td>Win Rate</td>
+                <td>0%</td>
+            </tr>
+            <tr>
+                <td>Max Drawdown</td>
+                <td>100.00%%</td>
+            </tr>
+            <tr>
+                <td>Commission Paid</td>
+                <td>$0</td>
+            </tr>
+        </table>
+        
+        <h3>Parameters</h3>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Commission</td>
+                <td>0.002</td>
+            </tr>
+            <tr>
+                <td>Initial Capital</td>
+                <td>$1000</td>
+            </tr>
+            
+            <tr>
+                <td>Take Profit</td>
+                <td>0.03%</td>
+            </tr>
+            
+            
+            <tr>
+                <td>Stop Loss</td>
+                <td>0.01%</td>
+            </tr>
+            
+        </table>
+    </div>
+    
+</body>
+</html>
