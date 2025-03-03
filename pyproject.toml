@@ -5,7 +5,7 @@ description = "A Python-based Quant Trading System with FastAPI, Backtrader, and
 authors = ["LouisLetcher <heck.manu@icloud.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "src"}]
+packages = [{ include = "src", from = "." }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -14,7 +14,6 @@ uvicorn = "^0.34"
 pydantic = "^2.10"
 yfinance = "^0.2"
 yfinance-cache = "^0.7"
-backtrader = "^1.9"
 pandas = "^2.2"
 numpy = "^2.2"
 matplotlib = "^3.10"
@@ -23,6 +22,7 @@ sqlalchemy = "^2.0"
 asyncpg = "^0.30"
 alembic = "^1.14"
 bayesian-optimization = "^2.0"
+backtesting = "^0.6.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3"

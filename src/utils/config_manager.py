@@ -42,6 +42,7 @@ class ConfigManager:
             'logging': {
                 'level': 'INFO',
                 'log_file': os.path.join(os.path.expanduser('~'), '.quant-py', 'logs', 'quant-py.log'),
+                'debug_backtest': False  # Add debug flag for backtest operations
             }
         }
         
