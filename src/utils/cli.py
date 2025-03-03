@@ -1,8 +1,8 @@
 import argparse
-from backtesting_engine.strategy_runner import StrategyRunner
-from optimizer.optimization_runner import OptimizationRunner
-from reports.report_generator import ReportGenerator
-from reports.report_formatter import ReportFormatter
+from src.backtesting_engine.strategy_runner import StrategyRunner
+from src.optimizer.optimization_runner import OptimizationRunner
+from src.reports.report_generator import ReportGenerator
+from src.reports.report_formatter import ReportFormatter
 
 def run_backtest(strategy, ticker, start, end):
     """Runs a backtest and prints results."""

@@ -4,7 +4,9 @@ class DataCleaner:
     @staticmethod
     def remove_missing_values(data: pd.DataFrame):
         """Removes missing values from the dataset."""
-        return data.dropna()
+        cleaned_data = data.dropna()
+        print(f"🧹 Cleaned data: {len(cleaned_data)} rows remaining after removing missing values.")
+        return cleaned_data
 
     @staticmethod
     def normalize_prices(data: pd.DataFrame):
