@@ -1,6 +1,6 @@
 from src.backtesting_engine.engine import BacktestEngine
 from src.backtesting_engine.data_loader import DataLoader
-from src.backtesting_engine.result_analyzer import ResultAnalyzer
+from src.backtesting_engine.result_analyzer import BacktestResultAnalyzer
 from src.backtesting_engine.strategies.strategy_factory import StrategyFactory
 
 class StrategyRunner:
@@ -51,11 +51,11 @@ class StrategyRunner:
         
         # Add commission if it's a supported parameter
         try:
-            engine = BacktestEngine(strategy_class, data, ticker=ticker, commission=commission)
+            engine = BacktestEngine(strategy_class, data, ticker=ticker, commission=commission, cash=initial_capital)
             engine_params['commission'] = commission
         except TypeError:
             # If commission is not supported, create without it
-            engine = BacktestEngine(strategy_class, data, ticker=ticker)
+            engine = BacktestEngine(strategy_class, data, ticker=ticker, cash=initial_capital)
         
         # Store additional parameters for later use if needed
         engine.params = {
@@ -74,8 +74,13 @@ class StrategyRunner:
         if results is None:
             raise RuntimeError("❌ No results returned from Backtest Engine.")
 
+        # Add debugging to help troubleshoot
+        print(f"Debug - Raw backtest results type: {type(results)}")
+        print(f"Debug - Available metrics: {[k for k in results.keys() if not k.startswith('_')]}")
+        print(f"Debug - Trade count from raw results: {results.get('# Trades', 'Not found')}")
+
         print(f"📊 Strategy finished. Analyzing results...")
-        analyzed_results = ResultAnalyzer.analyze(results, ticker=ticker)
+        analyzed_results = BacktestResultAnalyzer.analyze(results, ticker=ticker, initial_capital=initial_capital)
         
         # Add the additional parameters to the results
         analyzed_results.update({

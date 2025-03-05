@@ -14,21 +14,31 @@ class Cache:
         data.to_csv(file_path, index=True)  
 
     @staticmethod
-    def load_from_cache(ticker: str):
-        """Loads stock data from the local CSV cache if available."""
-        file_path = os.path.join(Cache.CACHE_DIR, f"{ticker}.csv")
+    def load_from_cache(ticker: str) -> pd.DataFrame:
+        """Load data from cache if it exists"""
+        file_path = Cache._get_cache_file_path(ticker)
         if os.path.exists(file_path):
             try:
-                # Explicitly specify header=0 to ensure the first row is treated as header
+                # Read the cached data
                 df = pd.read_csv(file_path, index_col=0, header=0, parse_dates=True)
                 
-                # Ensure the index is properly named and sorted
-                df.index.name = 'date'
-                df.sort_index(inplace=True)
+                # Ensure proper data types after loading from cache
+                for col in ['Open', 'High', 'Low', 'Close', 'Volume']:
+                    if col in df.columns:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+                # Clean up any non-date indices or problematic data
+                df = df[pd.to_datetime(df.index, errors='coerce').notna()]
+                df = df.dropna()
                 
                 return df
             except Exception as e:
-                print(f"⚠️ Error loading cache: {e}. Deleting corrupted cache file.")
-                os.remove(file_path)  # Delete corrupted file
+                print(f"⚠️ Cache loading error: {e}")
                 return None
         return None
+
+    @staticmethod
+    def _get_cache_file_path(ticker: str) -> str:
+        """Returns the full file path for a ticker's cache file."""
+        os.makedirs(Cache.CACHE_DIR, exist_ok=True)
+        return os.path.join(Cache.CACHE_DIR, f"{ticker}.csv")

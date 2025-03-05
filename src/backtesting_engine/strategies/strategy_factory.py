@@ -1,13 +1,16 @@
 from src.backtesting_engine.strategies.base_strategy import BaseStrategy
 from src.backtesting_engine.strategies.mean_reversion import MeanReversionStrategy
 from src.backtesting_engine.strategies.momentum import MomentumStrategy
+from src.backtesting_engine.strategies.index_trend import IndexTrendStrategy
+
 
 class StrategyFactory:
     """Factory class for creating strategy instances."""
     
     _strategies = {
         "mean_reversion": MeanReversionStrategy,
-        # Add other strategies here
+        "momentum": MomentumStrategy,
+        "index_trend": IndexTrendStrategy,
     }
     
     @classmethod
