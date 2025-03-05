@@ -52,5 +52,7 @@ class BacktestEngine:
         if results is None:
             raise RuntimeError("❌ Backtesting.py did not return any results.")
             
+        # Add debug info about trades
+        print(f"Debug - Raw trade count from backtest: {results.get('# Trades', 'Not found in results')}")
         print(f"📊 Backtest complete with {len(self.data)} data points")
         return results

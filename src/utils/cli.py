@@ -56,11 +56,40 @@ def run_multi_asset_backtest(strategy, assets_config):
     # Generate consolidated report
     print("\n===== Multi-Asset Backtest Summary =====")
     for ticker, results in all_results.items():
-        profit = results.get('final_value', 0) - results.get('initial_capital', 0)
-        profit_pct = (profit / results.get('initial_capital', 1)) * 100
-        print(f"{ticker}: ${profit:.2f} ({profit_pct:.2f}%)")
+        # Extract consistent metrics from the result dictionary
+        initial_capital = results.get('initial_capital', 10000)
+        
+        # Calculate profit/loss consistently
+        if 'final_value' in results:
+            final_value = results['final_value']
+        else:
+            # Try to extract from PNL string if available
+            pnl_str = results.get('pnl', '$0.00')
+            try:
+                if isinstance(pnl_str, str) and pnl_str.startswith('$'):
+                    # Extract numeric value from string like "$1,234.56"
+                    pnl_value = float(pnl_str.replace('$', '').replace(',', ''))
+                    final_value = initial_capital + pnl_value
+                else:
+                    final_value = initial_capital  # Default if can't parse
+            except ValueError:
+                final_value = initial_capital  # Default if parsing fails
+        
+        # Calculate profit and percentage return
+        profit = final_value - initial_capital
+        profit_pct = (profit / initial_capital) * 100 if initial_capital > 0 else 0
+        
+        # Get trade count
+        trades = results.get('trades', 0)
+        
+        # Print summary line
+        print(f"{ticker}: ${profit:,.2f} ({profit_pct:.2f}%) - {trades} trades")
+    
+    # Generate consolidated report
+    generate_multi_asset_report(strategy, all_results)
     
     return all_results
+
 def run_optimization(strategy, ticker, period="max"):
     """Runs optimization for a strategy and prints best parameters."""
     print(f"Optimizing strategy {strategy} on {ticker} with period={period}...")
@@ -103,33 +132,39 @@ def generate_multi_asset_report(strategy, assets_results):
         # Format the results data to match what the template expects
         formatted_results = ReportFormatter.format_backtest_results(results)
         
-        # Calculate return percentage if it doesn't exist
-        if 'return_pct' not in formatted_results:
-            initial_capital = results.get('initial_capital', 10000)
-            final_value = results.get('final_value', 0)
-            # If final_value doesn't exist, try to extract it from pnl string
-            if 'final_value' not in results and 'pnl' in results:
-                pnl_str = results['pnl']
-                # Extract numeric value from string like "$79,213,052,083.54"
-                try:
+        # Ensure we have all required fields
+        initial_capital = results.get('initial_capital', 10000)
+        
+        # Calculate final value consistently
+        if 'final_value' in results:
+            final_value = results['final_value']
+        else:
+            # Try to extract from PNL string
+            pnl_str = results.get('pnl', '$0.00')
+            try:
+                if isinstance(pnl_str, str) and pnl_str.startswith('$'):
+                    # Extract numeric value from string like "$1,234.56"
                     pnl_value = float(pnl_str.replace('$', '').replace(',', ''))
                     final_value = initial_capital + pnl_value
-                except (ValueError, AttributeError):
-                    final_value = 0
-            
-            return_pct = ((final_value - initial_capital) / initial_capital) * 100 if initial_capital > 0 else 0
-            formatted_results['return_pct'] = round(return_pct, 2)
+                else:
+                    final_value = initial_capital
+            except ValueError:
+                final_value = initial_capital
         
-        # Ensure we have all required fields for the template
+        # Calculate return percentage
+        profit = final_value - initial_capital
+        return_pct = (profit / initial_capital) * 100 if initial_capital > 0 else 0
+        
+        # Ensure all required fields are present and correctly formatted
         formatted_results.update({
-            'initial_capital': results.get('initial_capital', 10000),
-            'final_value': results.get('final_value', 0),
+            'initial_capital': initial_capital,
+            'final_value': final_value,
+            'return_pct': f"{return_pct:.2f}%",
             'sharpe_ratio': results.get('sharpe_ratio', 0),
+            'max_drawdown': results.get('max_drawdown', '0%'),
             'commission': results.get('commission', 0.001),
-            'num_trades': results.get('num_trades', 0),
-            'win_rate': results.get('win_rate', 0),
-            'max_drawdown': results.get('max_drawdown', '0%').replace('-', ''),
-            'commission_paid': results.get('commission_paid', 0)
+            'trades': results.get('trades', 0),
+            'pnl': f"${profit:,.2f}"  # Ensure consistent PNL format
         })
         
         # Add take_profit and stop_loss if they exist
@@ -198,9 +233,6 @@ def main():
                 assets_config = json.load(f)
             
             results = run_multi_asset_backtest(args.strategy, assets_config)
-            
-            # Generate consolidated report
-            generate_multi_asset_report(args.strategy, results)
             
         except FileNotFoundError:
             print(f"Error: Config file '{args.config}' not found.")

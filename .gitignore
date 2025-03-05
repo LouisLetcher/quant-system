@@ -23,7 +23,7 @@ cache/
 backtests/results/
 
 # Exclude reports output
-!reports_output/
+reports_output/
 reports_output//**
 
 # Ignore QuantConnect Lean files
