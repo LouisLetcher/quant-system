@@ -108,6 +108,17 @@ Ensure code quality by running:
 ```bash
 poetry run black src/
 poetry run isort src/
+poetry run ruff check src/
+```
+
+To automatically fix issues where possible:
+```bash
+poetry run ruff check --fix src/
+```
+
+You can also run all linting tools at once with:
+```bash
+poetry run black src/ && poetry run isort src/ && poetry run ruff check src/
 ```
 
 ## 🚀 Deploy with Docker
