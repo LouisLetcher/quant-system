@@ -46,6 +46,13 @@ def run_backtest(strategy, ticker, period="max", commission=0.001, initial_capit
         )
         formatted_results = ReportFormatter.format_backtest_results(results)
         print("Portfolio Backtest Results:", formatted_results)
+        
+        # Generate portfolio HTML report
+        report_generator = ReportGenerator()
+        output_path = f"reports_output/portfolio_{ticker}_{strategy}.html"
+        report_generator.generate_portfolio_report(results, output_path)
+        print(f"📄 Portfolio HTML report generated at: {output_path}")
+        
         return results
     else:
         # Standard single-asset backtest
