@@ -72,8 +72,18 @@ class ReportGenerator:
         Returns:
             Dictionary of variables ready for template rendering
         """
+        # For portfolio reports
+        if template_name == "portfolio_report.html":
+            return {
+                "data": data,
+                "strategy": data.get("strategy", "Unknown Strategy"),
+                "is_portfolio": data.get("is_portfolio", False),
+                "assets": data.get("assets", []),
+                "asset_details": data.get("asset_details", {})
+            }
+        
         # For multi-asset reports, we need to unpack the structure
-        if template_name == "multi_asset_report.html":
+        elif template_name == "multi_asset_report.html":
             # Direct access to strategy and assets in template
             return {
                 "strategy": data.get("strategy", "Unknown Strategy"),
@@ -93,8 +103,7 @@ class ReportGenerator:
             if 'trades_list' not in data and 'trades' in data:
                 data['trades_list'] = []
         
-        return result
-    
+        return result    
     def _generate_error_report(self, data: Dict[str, Any], error: Exception, output_path: str) -> None:
         """
         Generates a simple HTML error report when template rendering fails.
@@ -134,3 +143,41 @@ class ReportGenerator:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, "w") as f:
             f.write(error_html)
+    
+    def generate_portfolio_report(self, backtest_results: Dict[str, Any], output_path: str) -> str:
+        """
+        Generates a portfolio HTML report from backtest results.
+        
+        Args:
+            backtest_results: Dictionary containing portfolio backtest results
+            output_path: Path where the report will be saved
+            
+        Returns:
+            Path to the generated report file
+        """
+        # Verify this is a portfolio result
+        if not backtest_results.get('is_portfolio', False):
+            print("⚠️ Warning: Using portfolio report for non-portfolio results may produce unexpected output")
+        
+        # Generate the portfolio report
+        return self.generate_report(backtest_results, "portfolio_report.html", output_path)
+
+    def organize_results_by_strategy(self, results_list: list) -> Dict[str, list]:
+        """
+        Organizes a list of backtest results by strategy name.
+        
+        Args:
+            results_list: List of backtest result dictionaries
+            
+        Returns:
+            Dictionary with strategy names as keys and lists of results as values
+        """
+        strategies = {}
+        
+        for result in results_list:
+            strategy_name = result.get('strategy', 'Unknown Strategy')
+            if strategy_name not in strategies:
+                strategies[strategy_name] = []
+            strategies[strategy_name].append(result)
+        
+        return strategies
