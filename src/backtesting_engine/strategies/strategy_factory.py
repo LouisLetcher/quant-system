@@ -20,3 +20,8 @@ class StrategyFactory:
         if strategy_class is None:
             print(f"❌ Strategy '{strategy_name}' not found.")
         return strategy_class
+        
+    @classmethod
+    def get_available_strategies(cls):
+        """Get a list of all available strategy names."""
+        return list(cls._strategies.keys())

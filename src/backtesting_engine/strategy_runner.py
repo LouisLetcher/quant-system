@@ -1,3 +1,5 @@
+import json
+import os
 from src.backtesting_engine.engine import BacktestEngine
 from src.backtesting_engine.data_loader import DataLoader
 from src.backtesting_engine.result_analyzer import BacktestResultAnalyzer
@@ -25,6 +27,27 @@ class StrategyRunner:
         if period and (start or end):
             print("⚠️ Both period and start/end dates provided. Using period for data fetching.")
         
+        # 🔍 Ensure strategy exists
+        strategy_class = StrategyFactory.get_strategy(strategy_name)
+        if strategy_class is None:
+            raise ValueError(f"❌ Strategy '{strategy_name}' not found.")
+        
+        # Check if ticker is a portfolio from assets_config.json
+        config_path = os.path.join('config', 'assets_config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                assets_config = json.load(f)
+                
+            if ticker in assets_config.get('portfolios', {}):
+                return StrategyRunner.execute_portfolio(
+                    strategy_name=strategy_name,
+                    portfolio_name=ticker,
+                    portfolio_config=assets_config['portfolios'][ticker],
+                    start=start,
+                    end=end
+                )
+        
+        # Single asset execution
         # Print what we're loading
         if period:
             print(f"📥 Loading data for {ticker} with period={period}...")
@@ -35,13 +58,7 @@ class StrategyRunner:
         data = DataLoader.load_data(ticker, period=period, start=start, end=end)
         print(f"✅ Successfully loaded {len(data)} rows for {ticker}.")
 
-        # 🔍 Ensure strategy exists
-        strategy_class = StrategyFactory.get_strategy(strategy_name)
-        if strategy_class is None:
-            raise ValueError(f"❌ Strategy '{strategy_name}' not found.")
-
         # 🚀 Initialize Backtrader engine with supported parameters
-        # Check which parameters are supported by BacktestEngine
         print(f"🚀 Running Backtrader Engine for {ticker}...")
         
         # Only pass parameters that BacktestEngine accepts
@@ -97,5 +114,87 @@ class StrategyRunner:
             raise TypeError(f"❌ Expected results in dict format, got {type(analyzed_results)}.")
 
         print(f"✅ Backtest Complete! Results: {analyzed_results}")
+        
+        return analyzed_results
+    
+    @staticmethod
+    def execute_portfolio(strategy_name, portfolio_name, portfolio_config, start=None, end=None):
+        """
+        Execute a strategy on a portfolio of assets defined in assets_config.json
+        
+        Args:
+            strategy_name: Name of the strategy to run
+            portfolio_name: Name of the portfolio from assets_config.json
+            portfolio_config: Portfolio configuration from assets_config.json
+            start: Start date for backtest
+            end: End date for backtest
+        """
+        # Get strategy class
+        strategy_class = StrategyFactory.get_strategy(strategy_name)
+        if strategy_class is None:
+            raise ValueError(f"❌ Strategy '{strategy_name}' not found.")
+        
+        print(f"📂 Running portfolio backtest for '{portfolio_name}' with {len(portfolio_config['assets'])} assets...")
+        
+        # Extract initial capital from portfolio config
+        initial_capital = portfolio_config.get('initial_capital', 10000)
+        
+        # Load data for each asset in the portfolio
+        portfolio_data = {}
+        commission_rates = {}
+        
+        for asset in portfolio_config['assets']:
+            ticker = asset['ticker']
+            period = asset.get('period', 'max')
+            commission = asset.get('commission', 0.001)
+            
+            print(f"📥 Loading data for {ticker} with period={period}...")
+            
+            # Use period if provided, otherwise use start/end dates
+            if period and not (start or end):
+                data = DataLoader.load_data(ticker, period=period)
+            else:
+                data = DataLoader.load_data(ticker, start=start, end=end)
+                
+            print(f"✅ Successfully loaded {len(data)} rows for {ticker}.")
+            
+            portfolio_data[ticker] = data
+            commission_rates[ticker] = commission
+        
+        # Initialize portfolio backtest engine
+        print(f"🚀 Initializing portfolio backtest for {portfolio_name}...")
+        
+        engine = BacktestEngine(
+            strategy_class,
+            portfolio_data,
+            cash=initial_capital,
+            commission=commission_rates,
+            ticker=portfolio_name,
+            is_portfolio=True
+        )
+        
+        # Run the portfolio backtest
+        results = engine.run()
+        
+        # 🔍 Ensure results exist before proceeding
+        if results is None:
+            raise RuntimeError("❌ No results returned from Portfolio Backtest Engine.")
+        
+        print(f"📊 Portfolio strategy finished. Analyzing results...")
+        analyzed_results = BacktestResultAnalyzer.analyze(
+            results, 
+            ticker=portfolio_name, 
+            initial_capital=initial_capital
+        )
+        
+        # Add portfolio metadata
+        analyzed_results.update({
+            'portfolio_name': portfolio_name,
+            'portfolio_description': portfolio_config.get('description', ''),
+            'asset_count': len(portfolio_config['assets']),
+            'initial_capital': initial_capital
+        })
+        
+        print(f"✅ Portfolio Backtest Complete! Overall Return: {analyzed_results['return_pct']}")
         
         return analyzed_results

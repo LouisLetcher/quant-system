@@ -1,10 +1,46 @@
-[
-    {
-        "ticker": "AAPL",
-        "period": "max",
-        "commission": 0.002,
-        "initial_capital": 1000,
-        "take_profit": 0.03,
-        "stop_loss": 0.01
+{
+    "portfolios": {
+        "stocks": {
+            "description": "Portfolio of popular stocks",
+            "initial_capital": 10000,
+            "assets": [
+                {
+                "ticker": "AAPL",
+                "period": "max",
+                "commission": 0.002
+                },
+                {
+                "ticker": "MSFT",
+                "period": "max",
+                "commission": 0.002
+                },
+                {
+                "ticker": "AMZN",
+                "period": "max",
+                "commission": 0.002
+                }
+            ]
+        },
+        "indices": {
+            "description": "Major market indices",
+            "initial_capital": 10000,
+            "assets": [
+                {
+                "ticker": "SPY",
+                "period": "max",
+                "commission": 0.001
+                },
+                {
+                "ticker": "QQQ",
+                "period": "max",
+                "commission": 0.001
+                },
+                {
+                "ticker": "DIA",
+                "period": "max",
+                "commission": 0.001
+                }
+            ]
+        }
     }
-]
+}

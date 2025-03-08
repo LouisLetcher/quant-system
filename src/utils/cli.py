@@ -1,105 +1,120 @@
 import argparse
 import json
+import os
 from src.backtesting_engine.strategy_runner import StrategyRunner
 from src.optimizer.optimization_runner import OptimizationRunner
 from src.reports.report_generator import ReportGenerator
 from src.reports.report_formatter import ReportFormatter
+from src.backtesting_engine.strategies.strategy_factory import StrategyFactory
+
+def load_assets_config():
+    """Load the assets configuration from config/assets_config.json"""
+    config_path = os.path.join('config', 'assets_config.json')
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    return {"portfolios": {}}
+
+def is_portfolio(ticker):
+    """Check if the given ticker is a portfolio name in assets_config.json"""
+    assets_config = load_assets_config()
+    return ticker in assets_config.get('portfolios', {})
+
+def get_portfolio_config(portfolio_name):
+    """Get configuration for a specific portfolio"""
+    assets_config = load_assets_config()
+    return assets_config.get('portfolios', {}).get(portfolio_name, None)
 
 def run_backtest(strategy, ticker, period="max", commission=0.001, initial_capital=10000, take_profit=None, stop_loss=None):
     """Runs a backtest and prints results."""
-    print(f"Running backtest for {strategy} on {ticker} with period={period}...")
-    print(f"Parameters: Commission={commission}, Initial Capital=${initial_capital}")
-    if take_profit:
-        print(f"Take Profit: {take_profit}")
-    if stop_loss:
-        print(f"Stop Loss: {stop_loss}")
+    # Check if ticker is a portfolio
+    if is_portfolio(ticker):
+        portfolio_config = get_portfolio_config(ticker)
+        print(f"Running portfolio backtest for {strategy} on portfolio '{ticker}'")
+        print(f"Portfolio description: {portfolio_config.get('description', 'No description')}")
+        print(f"Initial Capital: ${portfolio_config.get('initial_capital', initial_capital)}")
         
-    results = StrategyRunner.execute(
-        strategy, 
-        ticker, 
-        period=period,
-        commission=commission, 
-        initial_capital=initial_capital, 
-        take_profit=take_profit, 
-        stop_loss=stop_loss
-    )
-    formatted_results = ReportFormatter.format_backtest_results(results)
-    print("Backtest Results:", formatted_results)
-    return results
-
-def run_multi_asset_backtest(strategy, assets_config):
-    """Runs a backtest for multiple assets with individual parameters."""
-    print(f"Running multi-asset backtest for strategy: {strategy}")
-    
-    all_results = {}
-    
-    for asset_config in assets_config:
-        ticker = asset_config.get("ticker")
-        period = asset_config.get("period", "max")  # Default to max if not specified
-        commission = asset_config.get("commission", 0.001)
-        initial_capital = asset_config.get("initial_capital", 10000)
-        take_profit = asset_config.get("take_profit")
-        stop_loss = asset_config.get("stop_loss")
-        
-        print(f"\n===== Backtesting {ticker} =====")
-        results = run_backtest(
+        # Run portfolio backtest
+        results = StrategyRunner.execute(
+            strategy, 
+            ticker,  # Pass the portfolio name
+            period=period,
+            commission=commission,
+            initial_capital=portfolio_config.get('initial_capital', initial_capital),
+            take_profit=take_profit,
+            stop_loss=stop_loss
+        )
+        formatted_results = ReportFormatter.format_backtest_results(results)
+        print("Portfolio Backtest Results:", formatted_results)
+        return results
+    else:
+        # Standard single-asset backtest
+        print(f"Running backtest for {strategy} on {ticker} with period={period}...")
+        print(f"Parameters: Commission={commission}, Initial Capital=${initial_capital}")
+        if take_profit:
+            print(f"Take Profit: {take_profit}")
+        if stop_loss:
+            print(f"Stop Loss: {stop_loss}")
+            
+        results = StrategyRunner.execute(
             strategy, 
             ticker, 
-            period=period, 
+            period=period,
             commission=commission, 
             initial_capital=initial_capital, 
             take_profit=take_profit, 
             stop_loss=stop_loss
         )
-        all_results[ticker] = results
-    
-    # Generate consolidated report
-    print("\n===== Multi-Asset Backtest Summary =====")
-    for ticker, results in all_results.items():
-        # Extract consistent metrics from the result dictionary
-        initial_capital = results.get('initial_capital', 10000)
-        
-        # Calculate profit/loss consistently
-        if 'final_value' in results:
-            final_value = results['final_value']
-        else:
-            # Try to extract from PNL string if available
-            pnl_str = results.get('pnl', '$0.00')
-            try:
-                if isinstance(pnl_str, str) and pnl_str.startswith('$'):
-                    # Extract numeric value from string like "$1,234.56"
-                    pnl_value = float(pnl_str.replace('$', '').replace(',', ''))
-                    final_value = initial_capital + pnl_value
-                else:
-                    final_value = initial_capital  # Default if can't parse
-            except ValueError:
-                final_value = initial_capital  # Default if parsing fails
-        
-        # Calculate profit and percentage return
-        profit = final_value - initial_capital
-        profit_pct = (profit / initial_capital) * 100 if initial_capital > 0 else 0
-        
-        # Get trade count
-        trades = results.get('trades', 0)
-        
-        # Print summary line
-        print(f"{ticker}: ${profit:,.2f} ({profit_pct:.2f}%) - {trades} trades")
-    
-    # Generate consolidated report
-    generate_multi_asset_report(strategy, all_results)
-    
-    return all_results
+        formatted_results = ReportFormatter.format_backtest_results(results)
+        print("Backtest Results:", formatted_results)
+        return results
 
-def run_optimization(strategy, ticker, period="max"):
-    """Runs optimization for a strategy and prints best parameters."""
-    print(f"Optimizing strategy {strategy} on {ticker} with period={period}...")
-    runner = OptimizationRunner(strategy, ticker, period=period)
-    results = runner.run()
-    formatted_results = ReportFormatter.format_optimization_results(results)
-    print("Optimization Results:", formatted_results)
+def list_portfolios():
+    """List all available portfolios from assets_config.json"""
+    assets_config = load_assets_config()
+    portfolios = assets_config.get('portfolios', {})
+    
+    if not portfolios:
+        print("No portfolios found in config/assets_config.json")
+        return
+    
+    print("\n📂 Available Portfolios:")
+    print("-" * 80)
+    for name, config in portfolios.items():
+        assets = ", ".join([asset['ticker'] for asset in config.get('assets', [])])
+        print(f"📊 {name}: {config.get('description', 'No description')}")
+        print(f"   🔸 Assets: {assets}")
+        print(f"   🔸 Initial Capital: ${config.get('initial_capital', 10000)}")
+        print("-" * 80)
 
 def generate_report(report_type, strategy, ticker, period="max"):
     """Generates an HTML report for backtest or optimization."""
+    # Check if this is a portfolio
+    if is_portfolio(ticker):
+        portfolio_config = get_portfolio_config(ticker)
+        print(f"Generating portfolio {report_type} report for {strategy} on portfolio '{ticker}'...")
+        
+        if report_type == "backtest":
+            results = StrategyRunner.execute(
+                strategy, 
+                ticker,  # Pass portfolio name
+                period=period,
+                initial_capital=portfolio_config.get('initial_capital', 10000)
+            )
+            formatted_data = ReportFormatter.format_backtest_results(results)
+            output_path = f"reports_output/portfolio_backtest_{strategy}_{ticker}.html"
+            
+            generator = ReportGenerator()
+            # Use a portfolio-specific template if available
+            generator.generate_report(formatted_data, "portfolio_backtest_report.html", output_path)
+        else:
+            print("⚠️ Portfolio optimization reports are not supported yet.")
+            return
+            
+        print(f"{report_type.capitalize()} Report saved to {output_path}")
+        return
+    
+    # Standard single-asset report generation
     print(f"Generating {report_type} report for {strategy} on {ticker}...")
     generator = ReportGenerator()
     
@@ -117,67 +132,17 @@ def generate_report(report_type, strategy, ticker, period="max"):
         generator.generate_report({"strategy": strategy, "results": formatted_data}, "optimizer_report.html", output_path)
 
     print(f"{report_type.capitalize()} Report saved to {output_path}")
-
-def generate_multi_asset_report(strategy, assets_results):
-    """Generates a consolidated HTML report for multiple assets."""
-    print(f"Generating multi-asset report for strategy: {strategy}")
-    generator = ReportGenerator()
     
-    formatted_data = {
-        "strategy": strategy,
-        "assets": {}
-    }
+def list_strategies():
+    """List all available trading strategies"""
+    factory = StrategyFactory()
+    strategies = factory.get_available_strategies()  # Implement this method in StrategyFactory
     
-    for ticker, results in assets_results.items():
-        # Format the results data to match what the template expects
-        formatted_results = ReportFormatter.format_backtest_results(results)
-        
-        # Ensure we have all required fields
-        initial_capital = results.get('initial_capital', 10000)
-        
-        # Calculate final value consistently
-        if 'final_value' in results:
-            final_value = results['final_value']
-        else:
-            # Try to extract from PNL string
-            pnl_str = results.get('pnl', '$0.00')
-            try:
-                if isinstance(pnl_str, str) and pnl_str.startswith('$'):
-                    # Extract numeric value from string like "$1,234.56"
-                    pnl_value = float(pnl_str.replace('$', '').replace(',', ''))
-                    final_value = initial_capital + pnl_value
-                else:
-                    final_value = initial_capital
-            except ValueError:
-                final_value = initial_capital
-        
-        # Calculate return percentage
-        profit = final_value - initial_capital
-        return_pct = (profit / initial_capital) * 100 if initial_capital > 0 else 0
-        
-        # Ensure all required fields are present and correctly formatted
-        formatted_results.update({
-            'initial_capital': initial_capital,
-            'final_value': final_value,
-            'return_pct': f"{return_pct:.2f}%",
-            'sharpe_ratio': results.get('sharpe_ratio', 0),
-            'max_drawdown': results.get('max_drawdown', '0%'),
-            'commission': results.get('commission', 0.001),
-            'trades': results.get('trades', 0),
-            'pnl': f"${profit:,.2f}"  # Ensure consistent PNL format
-        })
-        
-        # Add take_profit and stop_loss if they exist
-        if 'take_profit' in results:
-            formatted_results['take_profit'] = results['take_profit']
-        if 'stop_loss' in results:
-            formatted_results['stop_loss'] = results['stop_loss']
-        
-        formatted_data["assets"][ticker] = formatted_results
-    
-    output_path = f"reports_output/multi_asset_{strategy}.html"
-    generator.generate_report(formatted_data, "multi_asset_report.html", output_path)
-    print(f"Multi-Asset Report saved to {output_path}")
+    print("\n📈 Available Trading Strategies:")
+    print("-" * 80)
+    for strategy_name in strategies:
+        print(f"🔹 {strategy_name}")
+    print("-" * 80)
 
 def main():
     parser = argparse.ArgumentParser(description="Quant System CLI")
@@ -186,7 +151,7 @@ def main():
     # Backtest Command for a single asset
     backtest_parser = subparsers.add_parser("backtest", help="Run a backtest")
     backtest_parser.add_argument("--strategy", type=str, required=True, help="Trading strategy name")
-    backtest_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol")
+    backtest_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol or portfolio name")
     backtest_parser.add_argument("--period", type=str, default="max", 
                                 help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
     backtest_parser.add_argument("--commission", type=float, default=0.001, help="Commission rate")
@@ -194,10 +159,17 @@ def main():
     backtest_parser.add_argument("--take-profit", type=float, help="Take profit percentage")
     backtest_parser.add_argument("--stop-loss", type=float, help="Stop loss percentage")
 
-    # Multi-Asset Backtest Command
-    multi_backtest_parser = subparsers.add_parser("multi-backtest", help="Run a backtest on multiple assets")
-    multi_backtest_parser.add_argument("--strategy", type=str, required=True, help="Trading strategy name")
-    multi_backtest_parser.add_argument("--config", type=str, required=True, help="Path to JSON config file for assets")
+    # List Portfolios Command
+    list_portfolios_parser = subparsers.add_parser("list-portfolios", help="List available portfolios")
+    
+    list_strategies_parser = subparsers.add_parser("list-strategies", help="List available trading strategies")
+
+    # Portfolio Backtest Command
+    portfolio_parser = subparsers.add_parser("portfolio", help="Run a backtest on a portfolio")
+    portfolio_parser.add_argument("--strategy", type=str, required=True, help="Trading strategy name")
+    portfolio_parser.add_argument("--name", type=str, required=True, help="Portfolio name from assets_config.json")
+    portfolio_parser.add_argument("--period", type=str, default="max", 
+                                help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
 
     # Optimization Command
     optimize_parser = subparsers.add_parser("optimize", help="Run strategy optimization")
@@ -210,7 +182,7 @@ def main():
     report_parser = subparsers.add_parser("report", help="Generate reports")
     report_parser.add_argument("--type", type=str, required=True, choices=["backtest", "optimization"], help="Report type")
     report_parser.add_argument("--strategy", type=str, required=True, help="Trading strategy name")
-    report_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol")
+    report_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol or portfolio name")
     report_parser.add_argument("--period", type=str, default="max", 
                               help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
 
@@ -226,21 +198,30 @@ def main():
             take_profit=args.take_profit,
             stop_loss=args.stop_loss
         )
+    
+    elif args.command == "list-portfolios":
+        list_portfolios()
 
-    elif args.command == "multi-backtest":
-        try:
-            with open(args.config, 'r') as f:
-                assets_config = json.load(f)
+    elif args.command == "portfolio":
+        if not is_portfolio(args.name):
+            print(f"❌ Portfolio '{args.name}' not found in assets_config.json")
+            print("Use the list-portfolios command to see available portfolios")
+            return
             
-            results = run_multi_asset_backtest(args.strategy, assets_config)
-            
-        except FileNotFoundError:
-            print(f"Error: Config file '{args.config}' not found.")
-        except json.JSONDecodeError:
-            print(f"Error: Config file '{args.config}' is not valid JSON.")
+        run_backtest(
+            args.strategy,
+            args.name,
+            period=args.period
+        )
+    
+    elif args.command == "list-strategies":
+        list_strategies()    
 
     elif args.command == "optimize":
-        run_optimization(args.strategy, args.ticker, period=args.period)
+        runner = OptimizationRunner(args.strategy, args.ticker, period=args.period)
+        results = runner.run()
+        formatted_results = ReportFormatter.format_optimization_results(results)
+        print("Optimization Results:", formatted_results)
 
     elif args.command == "report":
         generate_report(args.type, args.strategy, args.ticker, period=args.period)

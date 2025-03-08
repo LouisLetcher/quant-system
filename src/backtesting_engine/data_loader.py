@@ -1,77 +1,52 @@
-import pandas as pd
 import yfinance as yf
-from src.data_scraper.cache import Cache
+import pandas as pd
+from datetime import datetime
 
 class DataLoader:
-    """Loads and preprocesses data for backtesting."""
+    """Loads historical price data for backtesting."""
     
     @staticmethod
     def load_data(ticker, period=None, start=None, end=None):
         """
-        Load ticker data, preferring period if provided, falling back to start/end dates.
+        Load historical OHLCV data from Yahoo Finance.
         
         Args:
-            ticker: Stock ticker symbol
-            period: Time period (e.g., "max", "1y", "6mo") - takes precedence if provided
-            start: Start date (YYYY-MM-DD format) - used only if period is None
-            end: End date (YYYY-MM-DD format) - used only if period is None
+            ticker: Asset ticker symbol
+            period: Time period (e.g., "max", "1y", "6mo", etc.)
+            start: Start date (string in format "YYYY-MM-DD")
+            end: End date (string in format "YYYY-MM-DD")
             
         Returns:
-            pandas.DataFrame: Processed data ready for backtesting
+            DataFrame with OHLCV data
         """
-        # First try to load from cache
-        data = Cache.load_from_cache(ticker)
+        # Validate parameters
+        if not ticker:
+            raise ValueError("❌ Ticker symbol is required")
         
-        if data is not None:
-            print(f"📂 Using cached data for {ticker}")
-        else:
-            print(f"🔄 Fetching new data for {ticker}")
+        if not period and not (start and end):
+            print("⚠️ Neither period nor start/end dates provided. Using default period='max'")
+            period = 'max'
             
-            # Use period if provided, otherwise use start/end dates
+        # Convert string dates to datetime if provided
+        if start and isinstance(start, str):
+            start = datetime.strptime(start, "%Y-%m-%d")
+        if end and isinstance(end, str):
+            end = datetime.strptime(end, "%Y-%m-%d")
+            
+        try:
             if period:
-                data = yf.download(ticker, period=period)
+                print(f"📈 Fetching {ticker} data with period={period}...")
+                data = yf.download(ticker, period=period, progress=False, auto_adjust=False)
             else:
-                data = yf.download(ticker, start=start, end=end)
-            
-            # Save to cache for future use
-            if not data.empty:
-                Cache.save_to_cache(ticker, data)
-        
-        if data.empty:
-            raise ValueError(f"❌ No data found for ticker {ticker}")
-        
-        print(f"✅ Data Loaded: {data.shape[0]} rows, {data.columns.tolist()}")
-
-        # 🔍 **Fix multi-index issue** if it occurs
-        if isinstance(data.columns, pd.MultiIndex):
-            data = data.droplevel(1, axis=1)  # Drop extra index level
-
-        # Ensure correct column names
-        column_mapping = {
-            "Open": "open",
-            "High": "high",
-            "Low": "low",
-            "Close": "close",
-            "Volume": "volume",
-        }
-        data.rename(columns=column_mapping, inplace=True)
-
-        # Ensure the correct order for Backtrader
-        data = data[["open", "high", "low", "close", "volume"]]
-        if not pd.api.types.is_datetime64_any_dtype(data.index):
-            try:
-                # Check if there's a "Date" string in the index
-                if "Date" in data.index:
-                    data = data.loc[data.index != "Date"]  # Remove rows with "Date" in index
+                print(f"📈 Fetching {ticker} data from {start} to {end}...")
+                data = yf.download(ticker, start=start, end=end, progress=False, auto_adjust=False)
                 
-                # Only convert if it's not already a datetime index
-                if not pd.api.types.is_datetime64_any_dtype(data.index):
-                    data.index = pd.to_datetime(data.index)
-            except Exception as e:
-                print(f"⚠️ Warning: Error converting index to datetime: {e}")
-                # Try to fix by dropping any non-date values
-                data = data[~data.index.astype(str).str.contains("[a-zA-Z]")]
-                data.index = pd.to_datetime(data.index)
-        data.sort_index(inplace=True)
-        
-        return data
+            if data.empty:
+                raise ValueError(f"❌ No data returned for {ticker} with the specified parameters")
+                
+            # Ensure data has name attribute set to ticker
+            data.name = ticker
+            
+            return data
+        except Exception as e:
+            raise RuntimeError(f"❌ Failed to download data for {ticker}: {str(e)}")
