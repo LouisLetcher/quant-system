@@ -114,8 +114,27 @@ http://localhost:8000/docs
 
 ## 🧪 Running Tests
 
+### Backtest a single asset with a single strategy
+
 ```bash
-poetry run pytest
+poetry run python -m src.utils.cli backtest --strategy MovingAverageCrossover --ticker AAPL --period max
+```
+
+### Backtest a single asset with all strategies
+
+```bash
+poetry run python -m src.utils.cli all-strategies --ticker TSLA --period max --metric sharpe
+```
+
+### Backtest a portfolio with all strategies
+```bash
+poetry run python -m src.utils.cli portfolio --name stocks --period max --metric sharpe
+```
+
+### Additionally, you can use these utility commands
+```bash
+poetry run python -m src.utils.cli list-portfolios
+poetry run python -m src.utils.cli list-strategies
 ```
 
 ## 🎯 Linting & Formatting

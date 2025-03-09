@@ -198,3 +198,41 @@ class StrategyRunner:
         print(f"✅ Portfolio Backtest Complete! Overall Return: {analyzed_results['return_pct']}")
         
         return analyzed_results
+
+    @staticmethod
+    def optimize(strategy_name, ticker, param_space, metric='sharpe', period="max", 
+                iterations=50, initial_capital=10000, commission=0.001):
+        """
+        Optimizes strategy parameters using Bayesian optimization.
+        
+        Args:
+            strategy_name: Name of the strategy to optimize
+            ticker: Stock ticker symbol
+            param_space: Dictionary of parameter ranges
+            metric: Metric to optimize ('sharpe', 'return', etc.)
+            period: Data period
+            iterations: Number of optimization iterations
+            initial_capital: Initial capital amount
+            commission: Commission rate
+        """
+        from src.optimizer.optimization_runner import OptimizationRunner
+        
+        print(f"🔍 Optimizing {strategy_name} for {ticker} using {metric} metric...")
+        
+        # Load data
+        data = DataLoader.load_data(ticker, period=period)
+        
+        # Get strategy class
+        strategy_class = StrategyFactory.get_strategy(strategy_name)
+        if strategy_class is None:
+            raise ValueError(f"❌ Strategy '{strategy_name}' not found.")
+        
+        # Run optimization
+        optimizer = OptimizationRunner(strategy_class, data, param_space)
+        results = optimizer.run(metric=metric, iterations=iterations, 
+                                initial_capital=initial_capital, commission=commission)
+        
+        print(f"✅ Optimization complete. Best parameters: {results['best_params']}")
+        print(f"   Best {metric} score: {results['best_score']:.4f}")
+        
+        return results
