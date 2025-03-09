@@ -86,3 +86,52 @@ class BacktestResultAnalyzer:
         peak = np.maximum.accumulate(account_values)
         drawdown = (peak - account_values) / peak * 100
         return drawdown.max()
+
+    @staticmethod
+    def compare_strategies(results_dict, metric='sharpe_ratio'):
+        """
+        Compares results from multiple strategies.
+        
+        Args:
+            results_dict: Dictionary mapping strategy names to results
+            metric: Metric to compare ('sharpe_ratio', 'pnl', etc.)
+        
+        Returns:
+            Dictionary with best strategy and comparison data
+        """
+        if not results_dict:
+            return {'best_strategy': None, 'best_score': 0, 'comparison': {}}
+        
+        comparison = {}
+        best_score = -float('inf')
+        best_strategy = None
+        
+        for strategy_name, results in results_dict.items():
+            # Extract metric value (handle both numeric and string formats)
+            if metric == 'sharpe_ratio':
+                score = results.get('sharpe_ratio', 0)
+                if isinstance(score, str):
+                    try:
+                        score = float(score)
+                    except ValueError:
+                        score = 0
+            elif metric == 'pnl':
+                pnl_str = results.get('pnl', '$0.00')
+                try:
+                    score = float(pnl_str.replace('$', '').replace(',', ''))
+                except ValueError:
+                    score = 0
+            else:
+                score = results.get(metric, 0)
+                
+            comparison[strategy_name] = score
+            
+            if score > best_score:
+                best_score = score
+                best_strategy = strategy_name
+        
+        return {
+            'best_strategy': best_strategy,
+            'best_score': best_score,
+            'comparison': comparison
+        }

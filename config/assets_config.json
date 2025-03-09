@@ -2,43 +2,47 @@
     "portfolios": {
         "stocks": {
             "description": "Portfolio of popular stocks",
-            "initial_capital": 10000,
             "assets": [
                 {
-                "ticker": "AAPL",
-                "period": "max",
-                "commission": 0.002
+                    "ticker": "AAPL",
+                    "period": "max",
+                    "commission": 0.002,
+                    "initial_capital": 1000
                 },
                 {
-                "ticker": "MSFT",
-                "period": "max",
-                "commission": 0.002
+                    "ticker": "MSFT",
+                    "period": "max",
+                    "commission": 0.002,
+                    "initial_capital": 1000
                 },
                 {
-                "ticker": "AMZN",
-                "period": "max",
-                "commission": 0.002
+                    "ticker": "AMZN",
+                    "period": "max",
+                    "commission": 0.002,
+                    "initial_capital": 1000
                 }
             ]
         },
         "indices": {
             "description": "Major market indices",
-            "initial_capital": 10000,
             "assets": [
                 {
                 "ticker": "SPY",
                 "period": "max",
-                "commission": 0.001
+                "commission": 0.002,
+                "initial_capital": 1000
                 },
                 {
                 "ticker": "QQQ",
                 "period": "max",
-                "commission": 0.001
+                "commission": 0.002,
+                "initial_capital": 1000
                 },
                 {
                 "ticker": "DIA",
                 "period": "max",
-                "commission": 0.001
+                "commission": 0.002,
+                "initial_capital": 1000
                 }
             ]
         }

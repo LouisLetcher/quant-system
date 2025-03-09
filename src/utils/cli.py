@@ -4,7 +4,7 @@ import os
 from src.backtesting_engine.strategy_runner import StrategyRunner
 from src.optimizer.optimization_runner import OptimizationRunner
 from src.reports.report_generator import ReportGenerator
-from src.reports.report_formatter import ReportFormatter
+from src.reports.report_exporter import ReportExporter
 from src.backtesting_engine.strategies.strategy_factory import StrategyFactory
 
 def load_assets_config():
@@ -25,57 +25,6 @@ def get_portfolio_config(portfolio_name):
     assets_config = load_assets_config()
     return assets_config.get('portfolios', {}).get(portfolio_name, None)
 
-def run_backtest(strategy, ticker, period="max", commission=0.001, initial_capital=10000, take_profit=None, stop_loss=None):
-    """Runs a backtest and prints results."""
-    # Check if ticker is a portfolio
-    if is_portfolio(ticker):
-        portfolio_config = get_portfolio_config(ticker)
-        print(f"Running portfolio backtest for {strategy} on portfolio '{ticker}'")
-        print(f"Portfolio description: {portfolio_config.get('description', 'No description')}")
-        print(f"Initial Capital: ${portfolio_config.get('initial_capital', initial_capital)}")
-        
-        # Run portfolio backtest
-        results = StrategyRunner.execute(
-            strategy, 
-            ticker,  # Pass the portfolio name
-            period=period,
-            commission=commission,
-            initial_capital=portfolio_config.get('initial_capital', initial_capital),
-            take_profit=take_profit,
-            stop_loss=stop_loss
-        )
-        formatted_results = ReportFormatter.format_backtest_results(results)
-        print("Portfolio Backtest Results:", formatted_results)
-        
-        # Generate portfolio HTML report
-        report_generator = ReportGenerator()
-        output_path = f"reports_output/portfolio_{ticker}_{strategy}.html"
-        report_generator.generate_portfolio_report(results, output_path)
-        print(f"📄 Portfolio HTML report generated at: {output_path}")
-        
-        return results
-    else:
-        # Standard single-asset backtest
-        print(f"Running backtest for {strategy} on {ticker} with period={period}...")
-        print(f"Parameters: Commission={commission}, Initial Capital=${initial_capital}")
-        if take_profit:
-            print(f"Take Profit: {take_profit}")
-        if stop_loss:
-            print(f"Stop Loss: {stop_loss}")
-            
-        results = StrategyRunner.execute(
-            strategy, 
-            ticker, 
-            period=period,
-            commission=commission, 
-            initial_capital=initial_capital, 
-            take_profit=take_profit, 
-            stop_loss=stop_loss
-        )
-        formatted_results = ReportFormatter.format_backtest_results(results)
-        print("Backtest Results:", formatted_results)
-        return results
-
 def list_portfolios():
     """List all available portfolios from assets_config.json"""
     assets_config = load_assets_config()
@@ -91,55 +40,8 @@ def list_portfolios():
         assets = ", ".join([asset['ticker'] for asset in config.get('assets', [])])
         print(f"📊 {name}: {config.get('description', 'No description')}")
         print(f"   🔸 Assets: {assets}")
-        print(f"   🔸 Initial Capital: ${config.get('initial_capital', 10000)}")
         print("-" * 80)
 
-def generate_report(report_type, strategy, ticker, period="max"):
-    """Generates an HTML report for backtest or optimization."""
-    # Check if this is a portfolio
-    if is_portfolio(ticker):
-        portfolio_config = get_portfolio_config(ticker)
-        print(f"Generating portfolio {report_type} report for {strategy} on portfolio '{ticker}'...")
-        
-        if report_type == "backtest":
-            results = StrategyRunner.execute(
-                strategy, 
-                ticker,  # Pass portfolio name
-                period=period,
-                initial_capital=portfolio_config.get('initial_capital', 10000)
-            )
-            formatted_data = ReportFormatter.format_backtest_results(results)
-            output_path = f"reports_output/portfolio_backtest_{strategy}_{ticker}.html"
-            
-            generator = ReportGenerator()
-            # Use a portfolio-specific template if available
-            generator.generate_report(formatted_data, "portfolio_backtest_report.html", output_path)
-        else:
-            print("⚠️ Portfolio optimization reports are not supported yet.")
-            return
-            
-        print(f"{report_type.capitalize()} Report saved to {output_path}")
-        return
-    
-    # Standard single-asset report generation
-    print(f"Generating {report_type} report for {strategy} on {ticker}...")
-    generator = ReportGenerator()
-    
-    if report_type == "backtest":
-        results = StrategyRunner.execute(strategy, ticker, period=period)
-        formatted_data = ReportFormatter.format_backtest_results(results)
-        output_path = f"reports_output/backtest_{strategy}_{ticker}.html"
-        generator.generate_report(formatted_data, "backtest_report.html", output_path)
-
-    elif report_type == "optimization":
-        runner = OptimizationRunner(strategy, ticker, period=period)
-        results = runner.run()
-        formatted_data = ReportFormatter.format_optimization_results(results)
-        output_path = f"reports_output/optimizer_{strategy}.html"
-        generator.generate_report({"strategy": strategy, "results": formatted_data}, "optimizer_report.html", output_path)
-
-    print(f"{report_type.capitalize()} Report saved to {output_path}")
-    
 def list_strategies():
     """List all available trading strategies"""
     factory = StrategyFactory()
@@ -151,87 +53,292 @@ def list_strategies():
         print(f"🔹 {strategy_name}")
     print("-" * 80)
 
+def backtest_single(strategy, ticker, period="max", commission=0.001, initial_capital=10000):
+    """Run a backtest for a single asset with a single strategy."""
+    print(f"Running backtest for {strategy} on {ticker} with period={period}...")
+    
+    results = StrategyRunner.execute(
+        strategy, 
+        ticker, 
+        period=period,
+        commission=commission, 
+        initial_capital=initial_capital
+    )
+    
+    output_path = f"reports_output/backtest_{strategy}_{ticker}.html"
+    generator = ReportGenerator()
+    generator.generate_report(results, "backtest_report.html", output_path)
+    
+    print(f"📄 HTML report generated at: {output_path}")
+    return results
+
+def backtest_all_strategies(ticker, period="max", metric="sharpe", commission=0.001, initial_capital=10000):
+    """Run a backtest for a single asset with all available strategies."""
+    print(f"Testing all strategies on asset {ticker}")
+    
+    factory = StrategyFactory()
+    strategies = factory.get_available_strategies()
+    print(f"Testing {len(strategies)} strategies")
+    
+    best_score = -float('inf')
+    best_strategy = None
+    all_results = {}
+    
+    for strategy_name in strategies:
+        print(f"  Testing {strategy_name}...")
+        
+        results = StrategyRunner.execute(
+            strategy_name, 
+            ticker,
+            period=period,
+            commission=commission,
+            initial_capital=initial_capital
+        )
+        
+        if metric == "sharpe":
+            score = results.get('sharpe_ratio', 0)
+        elif metric == "return":
+            score = results.get('return_pct', 0)
+        else:
+            score = results.get(metric, 0)
+            
+        all_results[strategy_name] = {
+            'score': score,
+            'results': results
+        }
+        
+        print(f"    {strategy_name}: {metric.capitalize()} = {score}")
+        
+        if score > best_score:
+            best_score = score
+            best_strategy = strategy_name
+    
+    print(f"✅ Best strategy for {ticker}: {best_strategy} ({metric.capitalize()}: {best_score})")
+    
+    report_data = {
+        'asset': ticker,
+        'strategies': all_results,
+        'best_strategy': best_strategy,
+        'best_score': best_score,
+        'metric': metric,
+        'is_multi_strategy': True
+    }
+    
+    output_path = f"reports_output/all_strategies_{ticker}.html"
+    generator = ReportGenerator()
+    generator.generate_report(report_data, "multi_strategy_report.html", output_path)
+    
+    print(f"📄 All Strategies Report saved to {output_path}")
+    return all_results
+
+def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
+    """Run a backtest of all assets in a portfolio with all strategies."""
+    portfolio_config = get_portfolio_config(portfolio_name)
+    
+    if not portfolio_config:
+        print(f"❌ Portfolio '{portfolio_name}' not found in assets_config.json")
+        print("Use the list-portfolios command to see available portfolios")
+        return {}
+    
+    print(f"Testing all strategies on portfolio '{portfolio_name}'")
+    print(f"Portfolio description: {portfolio_config.get('description', 'No description')}")
+    
+    factory = StrategyFactory()
+    strategies = factory.get_available_strategies()
+    
+    assets = portfolio_config.get('assets', [])
+    print(f"Testing {len(strategies)} strategies on {len(assets)} assets")
+    
+    best_strategies = {}
+    all_results = {}
+    
+    for asset_config in assets:
+        ticker = asset_config['ticker']
+        asset_period = asset_config.get('period', period)
+        commission = asset_config.get('commission', 0.001)
+        initial_capital = asset_config.get('initial_capital', 10000)
+        
+        print(f"\n🔍 Analyzing asset: {ticker}")
+        
+        best_score = -float('inf')
+        best_strategy = None
+        asset_results = {}
+        
+        for strategy_name in strategies:
+            print(f"  Testing {strategy_name}...")
+            
+            results = StrategyRunner.execute(
+                strategy_name, 
+                ticker,
+                period=asset_period,
+                commission=commission,
+                initial_capital=initial_capital
+            )
+            
+            if metric == "sharpe":
+                score = results.get('sharpe_ratio', 0)
+            elif metric == "return":
+                score = results.get('return_pct', 0)
+            else:
+                score = results.get(metric, 0)
+                
+            asset_results[strategy_name] = {
+                'score': score,
+                'results': results
+            }
+            
+            print(f"    {strategy_name}: {metric.capitalize()} = {score}")
+            
+            if score > best_score:
+                best_score = score
+                best_strategy = strategy_name
+        
+        best_strategies[ticker] = {
+            'strategy': best_strategy,
+            'score': best_score
+        }
+        all_results[ticker] = asset_results
+        
+        print(f"  ✅ Best strategy for {ticker}: {best_strategy} ({metric.capitalize()}: {best_score})")
+    
+    report_data = {
+        'portfolio': portfolio_name,
+        'description': portfolio_config.get('description', ''),
+        'assets': best_strategies,
+        'all_results': all_results,
+        'metric': metric,
+        'is_portfolio': True,
+        'strategy': 'Portfolio Strategy Optimization'
+    }
+
+    report_data['asset_list'] = [
+        {
+            'name': ticker,
+            'strategy': data['strategy'],
+            'initial_capital': all_results[ticker][data['strategy']]['results'].get('initial_capital', 0),
+            'final_value': all_results[ticker][data['strategy']]['results'].get('final_value', 0),
+            'return': all_results[ticker][data['strategy']]['results'].get('return_pct', '0%'),
+            'sharpe': round(data['score'], 2),
+            'max_drawdown': all_results[ticker][data['strategy']]['results'].get('max_drawdown', '0%'),
+            'trades': all_results[ticker][data['strategy']]['results'].get('trades', 0),
+        }
+        for ticker, data in best_strategies.items()
+        if ticker in all_results
+    ]
+    
+    output_path = f"reports_output/portfolio_strategy_optimizer_{portfolio_name}.html"
+    generator = ReportGenerator()
+    generator.generate_report(report_data, "multi_asset_report.html", output_path)
+    
+    print(f"\n📄 Portfolio Strategy Optimization Report saved to {output_path}")
+    return best_strategies
+
 def main():
     parser = argparse.ArgumentParser(description="Quant System CLI")
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Backtest Command for a single asset
-    backtest_parser = subparsers.add_parser("backtest", help="Run a backtest")
+    backtest_parser = subparsers.add_parser("backtest", help="Backtest a single asset with a specific strategy")
     backtest_parser.add_argument("--strategy", type=str, required=True, help="Trading strategy name")
-    backtest_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol or portfolio name")
+    backtest_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol")
     backtest_parser.add_argument("--period", type=str, default="max", 
                                 help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
-    backtest_parser.add_argument("--commission", type=float, default=0.001, help="Commission rate")
     backtest_parser.add_argument("--initial-capital", type=float, default=10000, help="Initial capital")
-    backtest_parser.add_argument("--take-profit", type=float, help="Take profit percentage")
-    backtest_parser.add_argument("--stop-loss", type=float, help="Stop loss percentage")
+    backtest_parser.add_argument("--commission", type=float, default=0.001, help="Commission rate")
 
-    # List Portfolios Command
-    list_portfolios_parser = subparsers.add_parser("list-portfolios", help="List available portfolios")
-    
-    list_strategies_parser = subparsers.add_parser("list-strategies", help="List available trading strategies")
+    all_strategies_parser = subparsers.add_parser("all-strategies", help="Backtest a single asset with all strategies")
+    all_strategies_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol")
+    all_strategies_parser.add_argument("--period", type=str, default="max", 
+                                help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
+    all_strategies_parser.add_argument("--metric", type=str, default="sharpe",
+                                help="Performance metric to use ('sharpe', 'return', etc.)")
+    all_strategies_parser.add_argument("--initial-capital", type=float, default=10000, help="Initial capital")
+    all_strategies_parser.add_argument("--commission", type=float, default=0.001, help="Commission rate")
 
-    # Portfolio Backtest Command
-    portfolio_parser = subparsers.add_parser("portfolio", help="Run a backtest on a portfolio")
-    portfolio_parser.add_argument("--strategy", type=str, required=True, help="Trading strategy name")
+    portfolio_parser = subparsers.add_parser("portfolio", help="Backtest all assets in a portfolio with all strategies")
     portfolio_parser.add_argument("--name", type=str, required=True, help="Portfolio name from assets_config.json")
     portfolio_parser.add_argument("--period", type=str, default="max", 
-                                help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
+                                help="Default data period (can be overridden by portfolio settings)")
+    portfolio_parser.add_argument("--metric", type=str, default="sharpe",
+                                help="Performance metric to use ('sharpe', 'return', etc.)")
 
-    # Optimization Command
-    optimize_parser = subparsers.add_parser("optimize", help="Run strategy optimization")
+    subparsers.add_parser("list-portfolios", help="List available portfolios")
+    subparsers.add_parser("list-strategies", help="List available trading strategies")
+
+    optimize_parser = subparsers.add_parser("optimize", help="Optimize strategy parameters")
     optimize_parser.add_argument("--strategy", type=str, required=True, help="Trading strategy name")
     optimize_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol")
+    optimize_parser.add_argument("--metric", type=str, default="sharpe", 
+                              help="Metric to optimize ('sharpe', 'return', etc.)")
     optimize_parser.add_argument("--period", type=str, default="max", 
-                                help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
-
-    # Report Generation Command
-    report_parser = subparsers.add_parser("report", help="Generate reports")
-    report_parser.add_argument("--type", type=str, required=True, choices=["backtest", "optimization"], help="Report type")
-    report_parser.add_argument("--strategy", type=str, required=True, help="Trading strategy name")
-    report_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol or portfolio name")
-    report_parser.add_argument("--period", type=str, default="max", 
-                              help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
+                              help="Data period (e.g., 'max', '1y', etc.)")
+    optimize_parser.add_argument("--iterations", type=int, default=50, 
+                              help="Number of optimization iterations")
 
     args = parser.parse_args()
 
     if args.command == "backtest":
-        run_backtest(
+        backtest_single(
             args.strategy, 
             args.ticker, 
             period=args.period,
             commission=args.commission,
-            initial_capital=args.initial_capital,
-            take_profit=args.take_profit,
-            stop_loss=args.stop_loss
+            initial_capital=args.initial_capital
+        )
+    
+    elif args.command == "all-strategies":
+        backtest_all_strategies(
+            args.ticker,
+            period=args.period,
+            metric=args.metric,
+            commission=args.commission,
+            initial_capital=args.initial_capital
+        )
+        
+    elif args.command == "portfolio":
+        backtest_portfolio(
+            args.name,
+            period=args.period,
+            metric=args.metric
         )
     
     elif args.command == "list-portfolios":
         list_portfolios()
-
-    elif args.command == "portfolio":
-        if not is_portfolio(args.name):
-            print(f"❌ Portfolio '{args.name}' not found in assets_config.json")
-            print("Use the list-portfolios command to see available portfolios")
-            return
-            
-        run_backtest(
-            args.strategy,
-            args.name,
-            period=args.period
-        )
-    
+        
     elif args.command == "list-strategies":
-        list_strategies()    
+        list_strategies()
 
     elif args.command == "optimize":
-        runner = OptimizationRunner(args.strategy, args.ticker, period=args.period)
-        results = runner.run()
-        formatted_results = ReportFormatter.format_optimization_results(results)
-        print("Optimization Results:", formatted_results)
-
-    elif args.command == "report":
-        generate_report(args.type, args.strategy, args.ticker, period=args.period)
+        strategy_class = StrategyFactory.get_strategy(args.strategy)
+        param_space = strategy_class.get_default_param_space() if hasattr(strategy_class, 'get_default_param_space') else {}
+        
+        if hasattr(StrategyRunner, 'optimize'):
+            results = StrategyRunner.optimize(
+                args.strategy,
+                args.ticker,
+                param_space=param_space,
+                metric=args.metric,
+                period=args.period,
+                iterations=args.iterations
+            )
+        else:
+            results = OptimizationRunner.optimize(
+                strategy=args.strategy,
+                ticker=args.ticker,
+                param_space=param_space,
+                metric=args.metric,
+                period=args.period,
+                iterations=args.iterations
+            )
+        
+        output_path = f"reports_output/optimizer_{args.strategy}_{args.ticker}.html"
+        generator = ReportGenerator()
+        generator.generate_report(
+            {"strategy": args.strategy, "ticker": args.ticker, "results": results}, 
+            "optimizer_report.html", 
+            output_path
+        )
+        
+        print(f"📄 Optimization report saved to {output_path}")
 
 if __name__ == "__main__":
     main()

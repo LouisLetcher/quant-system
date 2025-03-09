@@ -1,69 +1,179 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Backtest Report</title>
+    <title>Backtest Report - {{ data.strategy }} on {{ data.asset }}</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .summary { background-color: #e9f7ef; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        .positive { color: green; }
-        .negative { color: red; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #2980b9;
+            margin-top: 20px;
+        }
+        .summary {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .metric-title {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .strategy-name {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin-left: 10px;
+        }
+        .trades-section {
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
-    <h1>Backtest Report for {{ data.strategy }}</h1>
+    <h1>Backtest Report <span class="strategy-name">{{ data.strategy }}</span></h1>
     
     <div class="summary">
-        <h2>Summary</h2>
-        <p><strong>Asset:</strong> {{ data.asset }}</p>
-        <p><strong>Initial Capital:</strong> ${{ data.initial_capital|default(10000, true)|number_format(2) }}</p>
-        <p><strong>Final Value:</strong> ${{ data.final_value|default(data.initial_capital, true)|number_format(2) }}</p>
-        <p><strong>Profit & Loss:</strong> <span class="{{ 'positive' if data.pnl and data.pnl.startswith('$') and not data.pnl.startswith('$-') else 'negative' }}">{{ data.pnl }}</span></p>
-        <p><strong>Sharpe Ratio:</strong> {{ data.sharpe_ratio }}</p>
-        <p><strong>Max Drawdown:</strong> {{ data.max_drawdown }}</p>
-        <p><strong>Commission Rate:</strong> {{ data.commission|default(0.001, true) * 100 }}%</p>
-        <p><strong>Number of Trades:</strong> {{ data.trades|default(0, true) }}</p>
-        
-        {% if data.take_profit %}
-        <p><strong>Take Profit:</strong> {{ data.take_profit * 100 }}%</p>
-        {% endif %}
-        
-        {% if data.stop_loss %}
-        <p><strong>Stop Loss:</strong> {{ data.stop_loss * 100 }}%</p>
-        {% endif %}
+        <h2>{{ data.asset }} Performance Summary</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Initial Capital</div>
+                <div class="metric-value">${{ data.initial_capital|number_format }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Final Value</div>
+                <div class="metric-value">${{ data.final_value|number_format }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Profit/Loss</div>
+                <div class="metric-value {% if data.pnl.startswith('$-') %}negative{% else %}positive{% endif %}">
+                    {{ data.pnl }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Return</div>
+                <div class="metric-value {% if data.return_pct.startswith('-') %}negative{% else %}positive{% endif %}">
+                    {{ data.return_pct }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Sharpe Ratio</div>
+                <div class="metric-value">{{ data.sharpe_ratio }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Max Drawdown</div>
+                <div class="metric-value negative">{{ data.max_drawdown }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Total Trades</div>
+                <div class="metric-value">{{ data.trades }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Commission</div>
+                <div class="metric-value">{{ data.commission|percent }}</div>
+            </div>
+        </div>
     </div>
-
-    {% if data.performance_chart %}
-    <h2>Performance Chart</h2>
-    <img src="{{ data.performance_chart }}" width="80%" />
-    {% endif %}
-
+    
     {% if data.trades_list and data.trades_list|length > 0 %}
-    <h2>Trade Log</h2>
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>Trade Type</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th>P&L</th>
-        </tr>
-        {% for trade in data.trades_list %}
-        <tr>
-            <td>{{ trade.date }}</td>
-            <td>{{ trade.type }}</td>
-            <td>${{ trade.price|number_format(2) }}</td>
-            <td>{{ trade.quantity }}</td>
-            <td class="{{ 'positive' if trade.pnl >= 0 else 'negative' }}">
-                ${{ trade.pnl|default(0, true)|number_format(2) }}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-    {% else %}
-    <p><em>No detailed trade data available. Total trades: {{ data.trades|default(0, true) }}</em></p>
+    <div class="trades-section">
+        <h2>Trade History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Size</th>
+                    <th>Value</th>
+                    <th>P&L</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trade in data.trades_list %}
+                <tr>
+                    <td>{{ trade.date }}</td>
+                    <td>{{ trade.type }}</td>
+                    <td>${{ trade.price|number_format }}</td>
+                    <td>{{ trade.size|number_format }}</td>
+                    <td>${{ trade.value|number_format }}</td>
+                    <td class="{% if trade.pnl >= 0 %}positive{% else %}negative{% endif %}">
+                        ${{ trade.pnl|number_format }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% endif %}
+    
+    <footer style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #7f8c8d; font-size: 12px;">
+        <p>Generated by Quant Trading System on {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    </footer>
 </body>
 </html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Multi-Asset Backtest Report - {{ strategy }}</title>
+    <title>Multi-Asset Backtest Report - {{ data.strategy }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -98,14 +98,25 @@
             border-radius: 3px;
             margin-left: 10px;
         }
+        .best-strategy {
+            background-color: #27ae60;
+        }
+        .best-badge {
+            background-color: #27ae60;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
-    <h1>Multi-Asset Backtest Report <span class="strategy-name">{{ strategy }}</span></h1>
+    <h1>Multi-Asset Backtest Report <span class="strategy-name">{{ data.strategy }}</span></h1>
     
     <div class="summary">
         <h2>Overall Performance</h2>
-        <p>Consolidated report across multiple assets using the <strong>{{ strategy }}</strong> strategy</p>
+        <p>Consolidated report across multiple assets using the <strong>{{ data.strategy }}</strong> strategy</p>
         
         <table>
             <thead>
@@ -120,117 +131,94 @@
                 </tr>
             </thead>
             <tbody>
-                {% for ticker, asset_data in assets.items() %}
-                <tr>
-                    <td><strong>{{ ticker }}</strong></td>
-                    <td>${{ asset_data.initial_capital|default('10000')|number_format }}</td>
-                    <td>${{ asset_data.final_value|default('10000')|number_format }}</td>
-                    <td class="{% if asset_data.return_pct|default('0%')|float > 0 %}positive{% else %}negative{% endif %}">
-                        {{ asset_data.return_pct|default('0%') }}
-                    </td>
-                    <td>{{ asset_data.sharpe_ratio|default('0') }}</td>
-                    <td class="negative">{{ asset_data.max_drawdown|default('0%') }}</td>
-                    <td>{{ asset_data.trades|default(0) }}</td>
-                </tr>
-                {% endfor %}
+                {% if data.asset_list %}
+                    {% for asset in data.asset_list %}
+                    <tr>
+                        <td>{{ asset.name }}</td>
+                        <td>${{ asset.initial_capital|number_format }}</td>
+                        <td>${{ asset.final_value|number_format }}</td>
+                        <td class="{% if asset.return.startswith('-') %}negative{% else %}positive{% endif %}">
+                            {{ asset.return }}
+                        </td>
+                        <td>{{ asset.sharpe }}</td>
+                        <td class="negative">{{ asset.max_drawdown }}</td>
+                        <td>{{ asset.trades }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    {% for ticker, asset_data in data.assets.items() %}
+                    <tr>
+                        <td>{{ ticker }}</td>
+                        <td>${{ data.all_results[ticker][asset_data.strategy].results.initial_capital|default(0)|number_format }}</td>
+                        <td>${{ data.all_results[ticker][asset_data.strategy].results.final_value|default(0)|number_format }}</td>
+                        <td class="{% if data.all_results[ticker][asset_data.strategy].results.return_pct.startswith('-') %}negative{% else %}positive{% endif %}">
+                            {{ data.all_results[ticker][asset_data.strategy].results.return_pct|default('0%') }}
+                        </td>
+                        <td>{{ asset_data.score|default(0)|number_format }}</td>
+                        <td class="negative">{{ data.all_results[ticker][asset_data.strategy].results.max_drawdown|default('0%') }}</td>
+                        <td>{{ data.all_results[ticker][asset_data.strategy].results.trades|default(0) }}</td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
             </tbody>
         </table>
     </div>
     
-    {% for ticker, asset_data in assets.items() %}
+    {% for ticker, asset_data in data.assets.items() %}
     <div class="asset-section">
-        <h2>{{ ticker }} Performance Details</h2>
+        <h2>{{ ticker }} <span class="best-badge">Best: {{ asset_data.strategy }}</span></h2>
         
         <div class="metrics-grid">
             <div class="metric-card">
+                <div class="metric-title">Best Strategy</div>
+                <div class="metric-value">{{ asset_data.strategy }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">{{ data.metric|capitalize }}</div>
+                <div class="metric-value">{{ asset_data.score|number_format }}</div>
+            </div>
+            <div class="metric-card">
                 <div class="metric-title">Return</div>
-                <div class="metric-value {% if asset_data.return_pct|default('0%')|float > 0 %}positive{% else %}negative{% endif %}">
-                    {{ asset_data.return_pct|default('0%') }}
+                <div class="metric-value {% if data.all_results[ticker][asset_data.strategy].results.return_pct.startswith('-') %}negative{% else %}positive{% endif %}">
+                    {{ data.all_results[ticker][asset_data.strategy].results.return_pct|default('0%') }}
                 </div>
             </div>
             <div class="metric-card">
-                <div class="metric-title">Initial Capital</div>
-                <div class="metric-value">${{ asset_data.initial_capital|default('10000')|number_format }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-title">Final Value</div>
-                <div class="metric-value">${{ asset_data.final_value|default('10000')|number_format }}</div>
-            </div>
-            <div class="metric-card">
                 <div class="metric-title">Profit/Loss</div>
-                <div class="metric-value {% if asset_data.pnl|default('$0')|float > 0 %}positive{% else %}negative{% endif %}">
-                    {{ asset_data.pnl|default('$0') }}
+                <div class="metric-value {% if data.all_results[ticker][asset_data.strategy].results.pnl.startswith('$-') %}negative{% else %}positive{% endif %}">
+                    {{ data.all_results[ticker][asset_data.strategy].results.pnl|default('$0.00') }}
                 </div>
             </div>
         </div>
         
-        <h3>Trade Statistics</h3>
+        <h3>All Strategies Comparison</h3>
         <table>
-            <tr>
-                <th>Metric</th>
-                <th>Value</th>
-            </tr>
-            <tr>
-                <td>Number of Trades</td>
-                <td>{{ asset_data.trades|default(0) }}</td>
-            </tr>
-            <tr>
-                <td>Win Rate</td>
-                <td>{{ asset_data.win_rate|default('0%') }}</td>
-            </tr>
-            <tr>
-                <td>Max Drawdown</td>
-                <td class="negative">{{ asset_data.max_drawdown|default('0%') }}</td>
-            </tr>
-            <tr>
-                <td>Sharpe Ratio</td>
-                <td>{{ asset_data.sharpe_ratio|default('0') }}</td>
-            </tr>
-            {% if asset_data.commission_paid is defined %}
-            <tr>
-                <td>Commission Paid</td>
-                <td>${{ asset_data.commission_paid|default(0)|number_format }}</td>
-            </tr>
-            {% endif %}
-        </table>
-        
-        <h3>Strategy Parameters</h3>
-        <table>
-            <tr>
-                <th>Parameter</th>
-                <th>Value</th>
-            </tr>
-            <tr>
-                <td>Commission Rate</td>
-                <td>{{ asset_data.commission|default(0.001)|number_format(4) }}</td>
-            </tr>
-            <tr>
-                <td>Initial Capital</td>
-                <td>${{ asset_data.initial_capital|default(10000)|number_format }}</td>
-            </tr>
-            {% if asset_data.take_profit is defined %}
-            <tr>
-                <td>Take Profit</td>
-                <td>{{ asset_data.take_profit|percent }}</td>
-            </tr>
-            {% endif %}
-            {% if asset_data.stop_loss is defined %}
-            <tr>
-                <td>Stop Loss</td>
-                <td>{{ asset_data.stop_loss|percent }}</td>
-            </tr>
-            {% endif %}
-            
-            {% for key, value in asset_data.items() %}
-                {% if key not in ['initial_capital', 'final_value', 'return_pct', 'sharpe_ratio', 
-                               'max_drawdown', 'trades', 'win_rate', 'commission_paid', 
-                               'commission', 'take_profit', 'stop_loss', 'pnl', 'strategy', 'asset'] %}
+            <thead>
                 <tr>
-                    <td>{{ key|replace('_', ' ')|title }}</td>
-                    <td>{{ value }}</td>
+                    <th>Strategy</th>
+                    <th>{{ data.metric|capitalize }}</th>
+                    <th>Return</th>
+                    <th>Profit/Loss</th>
+                    <th>Max Drawdown</th>
+                    <th>Trades</th>
                 </tr>
-                {% endif %}
-            {% endfor %}
+            </thead>
+            <tbody>
+                {% for strategy_name, strategy_data in data.all_results[ticker].items()|sort(attribute='1.score', reverse=True) %}
+                <tr {% if strategy_name == asset_data.strategy %}style="font-weight: bold; background-color: #e8f7f0;"{% endif %}>
+                    <td>{{ strategy_name }} {% if strategy_name == asset_data.strategy %}<span class="best-badge">BEST</span>{% endif %}</td>
+                    <td>{{ strategy_data.score|number_format }}</td>
+                    <td class="{% if strategy_data.results.return_pct.startswith('-') %}negative{% else %}positive{% endif %}">
+                        {{ strategy_data.results.return_pct|default('0%') }}
+                    </td>
+                    <td class="{% if strategy_data.results.pnl.startswith('$-') %}negative{% else %}positive{% endif %}">
+                        {{ strategy_data.results.pnl|default('$0.00') }}
+                    </td>
+                    <td class="negative">{{ strategy_data.results.max_drawdown|default('0%') }}</td>
+                    <td>{{ strategy_data.results.trades|default(0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
     {% endfor %}
@@ -238,13 +226,5 @@
     <footer style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #7f8c8d; font-size: 12px;">
         <p>Generated by Quant Trading System on {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
     </footer>
-    
-    <script>
-        // Add any JavaScript for interactivity here
-        document.addEventListener('DOMContentLoaded', function() {
-            // For example, you could add event listeners to make tables sortable
-            console.log('Report loaded successfully');
-        });
-    </script>
 </body>
 </html>

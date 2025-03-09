@@ -221,3 +221,21 @@ class BacktestEngine:
             print(f"Debug - Raw trade count from backtest: {results.get('# Trades', 'Not found in results')}")
             print(f"📊 Backtest complete with {len(self.data)} data points")
             return results
+
+    # Add a simple method to retrieve optimization metrics
+    def get_optimization_metrics(self):
+        """Returns metrics that can be used for optimization."""
+        if self.is_portfolio:
+            return {
+                'sharpe': sum(r['Sharpe Ratio'] * r['Equity Final [$]'] for r in self.portfolio_results.values()) / 
+                        sum(r['Equity Final [$]'] for r in self.portfolio_results.values()),
+                'return': ((sum(r['Equity Final [$]'] for r in self.portfolio_results.values()) / 
+                        sum(self.cash.values())) - 1) * 100,
+                'drawdown': max(r['Max. Drawdown [%]'] for r in self.portfolio_results.values())
+            }
+        else:
+            return {
+                'sharpe': self.backtest.run()['Sharpe Ratio'],
+                'return': self.backtest.run()['Return [%]'],
+                'drawdown': self.backtest.run()['Max. Drawdown [%]']
+            }
