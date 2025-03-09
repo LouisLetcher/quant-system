@@ -26,6 +26,7 @@
         .summary {
             background-color: #f8f9fa;
             padding: 20px;
+            padding: 20px;
             border-radius: 5px;
             margin: 20px 0;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -196,6 +197,20 @@
                 <div class="metric-value">{{ asset_data.score|number_format }}</div>
             </div>
             <div class="metric-card">
+                <div class="metric-title">Profit Factor</div>
+                <div class="metric-value">{{ profit_factor|number_format(2) }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Total P&L</div>
+                <div class="metric-value {{ 'positive' if total_pnl > 0 else 'negative' }}">
+                    {{ total_pnl|currency }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Win Rate</div>
+                <div class="metric-value">{{ win_rate|percent }}</div>
+            </div>
+            <div class="metric-card">
                 <div class="metric-title">Return</div>
                 <div class="metric-value {% if data.all_results[ticker][asset_data.strategy].results.return_pct.startswith('-') %}negative{% else %}positive{% endif %}">
                     {{ data.all_results[ticker][asset_data.strategy].results.return_pct|default('0%') }}
@@ -219,6 +234,8 @@
                     <th>Profit/Loss</th>
                     <th>Max Drawdown</th>
                     <th>Trades</th>
+                    <th>Profit Factor</th>
+                    <th>Win Rate</th>
                 </tr>
             </thead>
             <tbody>

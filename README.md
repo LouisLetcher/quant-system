@@ -131,6 +131,21 @@ poetry run python -m src.utils.cli all-strategies --ticker TSLA --period max --m
 poetry run python -m src.utils.cli portfolio --name stocks --period max --metric sharpe
 ```
 
+### Test a single strategy across multiple timeframes
+```bash
+poetry run python -m src.utils.cli timeframes --strategy momentum --ticker AAPL
+```
+
+#### Find the optimal strategy and timeframe combination
+```bash
+poetry run python -m src.utils.cli find-optimal --ticker AAPL --metric sharpe
+```
+
+#### Test specific timeframes
+```bash
+poetry run python -m src.utils.cli timeframes --strategy mean_reversion --ticker MSFT --timeframes 3mo 6mo 1y
+```
+
 ### Additionally, you can use these utility commands
 ```bash
 poetry run python -m src.utils.cli list-portfolios

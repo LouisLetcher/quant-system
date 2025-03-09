@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Portfolio Optimization Report - {{ data.portfolio }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #2980b9;
+            margin-top: 20px;
+        }
+        .summary {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .asset-section {
+            margin-bottom: 40px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .metric-title {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .best-combo {
+            background-color: #27ae60;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+        .heatmap-table td {
+            text-align: center;
+        }
+        .score-0 { background-color: #f8d7da; } /* Worst */
+        .score-1 { background-color: #ffeeba; }
+        .score-2 { background-color: #fff3cd; }
+        .score-3 { background-color: #d4edda; }
+        .score-4 { background-color: #c3e6cb; } /* Best */
+        .best-cell { 
+            background-color: #28a745 !important; 
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Portfolio Optimization Report: {{ data.portfolio }}</h1>
+    
+    <div class="summary">
+        <h2>Optimal Strategy-Interval Combinations</h2>
+        <p>{{ data.description }}</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Asset</th>
+                    <th>Optimal Strategy</th>
+                    <th>Optimal Interval</th>
+                    <th>{{ data.metric|capitalize }}</th>
+                    <th>Return</th>
+                    <th>Total P&L</th>
+                    <th>Profit Factor</th>
+                    <th>Win Rate</th>
+                    <th>Max Drawdown</th>
+                    <th>Trades</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asset in data.asset_list %}
+                <tr>
+                    <td>{{ asset.name }}</td>
+                    <td>{{ asset.strategy }}</td>
+                    <td>{{ asset.interval }}</td>
+                    <td>{{ asset.score|number_format(2) }}</td>
+                    <td class="{% if asset.return|float > 0 %}positive{% else %}negative{% endif %}">
+                        {{ asset.return }}
+                    </td>
+                    <td class="{% if asset.get('total_pnl', 0)|float > 0 %}positive{% else %}negative{% endif %}">
+                        {{ asset.get('total_pnl', 0)|number_format(2) }}
+                    </td>
+                    <td class="{% if asset.get('profit_factor', 0)|float > 1 %}positive{% else %}negative{% endif %}">
+                        {{ asset.get('profit_factor', 1)|number_format(2) }}
+                    </td>
+                    <td class="{% if asset.get('win_rate', 0)|float > 50 %}positive{% else %}negative{% endif %}">
+                        {{ asset.get('win_rate', 0) }}%
+                    </td>
+                    <td class="negative">{{ asset.max_drawdown }}</td>
+                    <td>{{ asset.trades }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    {% for ticker, combinations in data.best_combinations.items() %}
+    <div class="asset-section">
+        <h2>{{ ticker }} <span class="best-combo">{{ combinations.strategy }} + {{ combinations.interval }}</span></h2>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Best Strategy</div>
+                <div class="metric-value">{{ combinations.strategy }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Best Interval</div>
+                <div class="metric-value">{{ combinations.interval }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">{{ data.metric|capitalize }}</div>
+                <div class="metric-value">{{ combinations.score|number_format(2) }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Return</div>
+                <div class="metric-value {% if combinations.get('return', '0%')|float > 0 %}positive{% else %}negative{% endif %}">
+                    {{ combinations.get('return', '0%') }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Total P&L</div>
+                <div class="metric-value {% if combinations.get('total_pnl', 0)|float > 0 %}positive{% else %}negative{% endif %}">
+                    {{ combinations.get('total_pnl', 0)|number_format(2) }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Profit Factor</div>
+                <div class="metric-value {% if combinations.get('profit_factor', 0)|float > 1 %}positive{% else %}negative{% endif %}">
+                    {{ combinations.get('profit_factor', 1)|number_format(2) }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Win Rate</div>
+                <div class="metric-value {% if combinations.get('win_rate', 0)|float > 50 %}positive{% else %}negative{% endif %}">
+                    {{ combinations.get('win_rate', 0) }}%
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Max Drawdown</div>
+                <div class="metric-value negative">{{ combinations.max_drawdown }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Trades</div>
+                <div class="metric-value">{{ combinations.trades }}</div>
+            </div>
+        </div>
+        
+        <h3>Strategy-Interval Heatmap</h3>
+        <p>Performance comparison across strategies and intervals using {{ data.metric|capitalize }}</p>
+        
+        <table class="heatmap-table">
+            <thead>
+                <tr>
+                    <th>Strategy / Interval</th>
+                    {% for interval in data.intervals %}
+                    <th>{{ interval }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for strategy in data.strategies %}
+                <tr>
+                    <td>{{ strategy }}</td>
+                    {% for interval in data.intervals %}
+                    {% if ticker in data.all_results and 
+                         strategy in data.all_results[ticker] and 
+                         interval in data.all_results[ticker][strategy] and
+                         data.all_results[ticker][strategy][interval].score != -float('inf') %}
+                        
+                        {% set score = data.all_results[ticker][strategy][interval].score %}
+                        {% set is_best = strategy == combinations.strategy and interval == combinations.interval %}
+                        
+                        <td class="{% if is_best %}best-cell{% else %}score-{{ (score / combinations.score * 4)|int }}{% endif %}">
+                            {{ score|number_format(2) }}
+                        </td>
+                    {% else %}
+                        <td>-</td>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+    
+    <footer style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #7f8c8d; font-size: 12px;">
+        <p>Generated by Quant Trading System on {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    </footer>
+</body>
+</html>

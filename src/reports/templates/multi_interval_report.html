@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multi-Interval Backtest Report - {{ data.strategy }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #2980b9;
+            margin-top: 20px;
+        }
+        .summary {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .best-badge {
+            background-color: #27ae60;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .best-row {
+            background-color: #e8f7f0 !important;
+            font-weight: bold;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .metric-title {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Multi-Interval Backtest Report: {{ data.strategy }} on {{ data.ticker }}</h1>
+    
+    <div class="summary">
+        <h2>Bar Interval Comparison</h2>
+        <p>Analysis of strategy performance across different bar intervals ({{ data.period }} period)</p>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Best Interval</div>
+                <div class="metric-value">{{ data.best_interval }}</div>
+            </div>
+            {% if data.best_result %}
+            <div class="metric-card">
+                <div class="metric-title">Best Sharpe</div>
+                <div class="metric-value">{{ data.best_result.sharpe_ratio|number_format(2) }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Best Return</div>
+                <div class="metric-value positive">{{ data.best_result.return_pct }}</div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Bar Interval</th>
+                    <th>Sharpe Ratio</th>
+                    <th>Return</th>
+                    <th>Max Drawdown</th>
+                    <th>Trades</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data.summary %}
+                <tr class="{% if item.is_best %}best-row{% endif %}">
+                    <td>{{ item.interval }}</td>
+                    <td>{{ item.sharpe|number_format(2) }}</td>
+                    <td class="{% if item.return|float > 0 %}positive{% else %}negative{% endif %}">
+                        {{ item.return }}
+                    </td>
+                    <td class="negative">{{ item.max_drawdown }}</td>
+                    <td>{{ item.trades }}</td>
+                    <td>
+                        {% if item.is_best %}
+                        <span class="best-badge">BEST</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <footer style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #7f8c8d; font-size: 12px;">
+        <p>Generated by Quant Trading System on {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    </footer>
+</body>
+</html>
