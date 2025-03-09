@@ -143,15 +143,18 @@ def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
     print(f"Testing all strategies on portfolio '{portfolio_name}'")
     print(f"Portfolio description: {portfolio_config.get('description', 'No description')}")
     
+    # Get all available strategies
     factory = StrategyFactory()
     strategies = factory.get_available_strategies()
     
     assets = portfolio_config.get('assets', [])
     print(f"Testing {len(strategies)} strategies on {len(assets)} assets")
     
+    # Track best strategy for each asset
     best_strategies = {}
     all_results = {}
     
+    # For each asset in the portfolio
     for asset_config in assets:
         ticker = asset_config['ticker']
         asset_period = asset_config.get('period', period)
@@ -162,11 +165,15 @@ def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
         
         best_score = -float('inf')
         best_strategy = None
+        fallback_strategy = None
+        fallback_score = -float('inf')
         asset_results = {}
         
+        # Test each strategy on this asset
         for strategy_name in strategies:
             print(f"  Testing {strategy_name}...")
             
+            # Run backtest for this combination
             results = StrategyRunner.execute(
                 strategy_name, 
                 ticker,
@@ -175,6 +182,7 @@ def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
                 initial_capital=initial_capital
             )
             
+            # Extract performance metric
             if metric == "sharpe":
                 score = results.get('sharpe_ratio', 0)
             elif metric == "return":
@@ -187,20 +195,61 @@ def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
                 'results': results
             }
             
-            print(f"    {strategy_name}: {metric.capitalize()} = {score}")
+            # Track best overall strategy as fallback (regardless of trades)
+            if score > fallback_score:
+                fallback_score = score
+                fallback_strategy = strategy_name
             
-            if score > best_score:
+            # Get number of trades
+            trade_count = results.get('trades', 0)
+            if isinstance(trade_count, str) and trade_count.isdigit():
+                trade_count = int(trade_count)
+            elif not isinstance(trade_count, int):
+                # Try alternate key format from backtest engine
+                trade_count = results.get('# Trades', 0)
+                
+            print(f"    {strategy_name}: {metric.capitalize()} = {score}, Trades = {trade_count}")
+            
+            # Only consider strategies with at least 1 trade
+            if score > best_score and trade_count > 0:
                 best_score = score
                 best_strategy = strategy_name
         
+        # If no valid strategies with trades, use a fallback but mark it clearly
+        if best_strategy is None:
+            print(f"⚠️ Warning: No valid strategies with trades found for {ticker}")
+            
+            # Use a strategy with at least 1 trade, even if not the best score
+            for strategy_name, strategy_data in asset_results.items():
+                trade_count = strategy_data['results'].get('trades', 
+                             strategy_data['results'].get('# Trades', 0))
+                
+                if trade_count > 0:
+                    best_strategy = strategy_name
+                    best_score = strategy_data['score']
+                    print(f"  Using {strategy_name} as fallback - has {trade_count} trades with {metric}={best_score}")
+                    break
+            
+            # If still no strategy with trades, use the overall best but mark as invalid
+            if best_strategy is None:
+                best_strategy = fallback_strategy
+                best_score = fallback_score
+                print(f"  Using {best_strategy} as last resort, but it has 0 trades (INVALID STRATEGY)")
+                
+                # Set a flag to mark this as an invalid strategy in the results
+                if best_strategy is not None and best_strategy in asset_results:
+                    asset_results[best_strategy]['invalid_strategy'] = True
+        
         best_strategies[ticker] = {
             'strategy': best_strategy,
-            'score': best_score
+            'score': best_score,
+            'invalid': best_strategy is not None and asset_results.get(best_strategy, {}).get('invalid_strategy', False)
         }
         all_results[ticker] = asset_results
         
         print(f"  ✅ Best strategy for {ticker}: {best_strategy} ({metric.capitalize()}: {best_score})")
     
+    # Generate optimization report
     report_data = {
         'portfolio': portfolio_name,
         'description': portfolio_config.get('description', ''),
@@ -211,28 +260,46 @@ def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
         'strategy': 'Portfolio Strategy Optimization'
     }
 
-    report_data['asset_list'] = [
-        {
+    report_data['asset_list'] = []
+    for ticker, data in best_strategies.items():
+        if ticker not in all_results or data['strategy'] is None:
+            print(f"⚠️ Skipping {ticker} due to missing strategy data")
+            continue
+            
+        strategy_name = data['strategy']
+        if strategy_name not in all_results[ticker]:
+            print(f"⚠️ Strategy {strategy_name} data missing for {ticker}")
+            continue
+            
+        strategy_results = all_results[ticker][strategy_name]['results']
+        trade_count = strategy_results.get('trades', strategy_results.get('# Trades', 0))
+        
+        # Add a warning flag for strategies with 0 trades
+        warning = ""
+        if trade_count == 0:
+            warning = "⚠️ NO TRADES (INVALID)"
+        
+        report_data['asset_list'].append({
             'name': ticker,
-            'strategy': data['strategy'],
-            'initial_capital': all_results[ticker][data['strategy']]['results'].get('initial_capital', 0),
-            'final_value': all_results[ticker][data['strategy']]['results'].get('final_value', 0),
-            'return': all_results[ticker][data['strategy']]['results'].get('return_pct', '0%'),
+            'strategy': f"{strategy_name} {warning}",
+            'initial_capital': strategy_results.get('initial_capital', 0),
+            'final_value': strategy_results.get('final_value', 0),
+            'return': strategy_results.get('return_pct', '0%'),
             'sharpe': round(data['score'], 2),
-            'max_drawdown': all_results[ticker][data['strategy']]['results'].get('max_drawdown', '0%'),
-            'trades': all_results[ticker][data['strategy']]['results'].get('trades', 0),
-        }
-        for ticker, data in best_strategies.items()
-        if ticker in all_results
-    ]
+            'max_drawdown': strategy_results.get('max_drawdown', '0%'),
+            'trades': trade_count,
+            'warning': warning != ""
+        })
     
     output_path = f"reports_output/portfolio_strategy_optimizer_{portfolio_name}.html"
     generator = ReportGenerator()
+    
+    # Modify the template to handle the warning flag
+    # If you need to update the template directly, you can do that separately
     generator.generate_report(report_data, "multi_asset_report.html", output_path)
     
     print(f"\n📄 Portfolio Strategy Optimization Report saved to {output_path}")
     return best_strategies
-
 def main():
     parser = argparse.ArgumentParser(description="Quant System CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)

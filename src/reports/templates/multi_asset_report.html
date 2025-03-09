@@ -109,6 +109,18 @@
             font-size: 12px;
             margin-left: 10px;
         }
+        .warning-badge {
+            background-color: #e74c3c;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .strategy-invalid {
+            text-decoration: line-through;
+            color: #e74c3c;
+        }
     </style>
 </head>
 <body>
@@ -157,6 +169,12 @@
                         <td>{{ asset_data.score|default(0)|number_format }}</td>
                         <td class="negative">{{ data.all_results[ticker][asset_data.strategy].results.max_drawdown|default('0%') }}</td>
                         <td>{{ data.all_results[ticker][asset_data.strategy].results.trades|default(0) }}</td>
+                        <td>
+                            <span class="{% if asset.warning %}strategy-invalid{% endif %}">{{ asset.strategy }}</span>
+                            {% if asset.warning %}
+                            <span class="warning-badge">NO TRADES - INVALID</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 {% endif %}
