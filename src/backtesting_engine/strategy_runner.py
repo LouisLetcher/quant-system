@@ -236,3 +236,90 @@ class StrategyRunner:
         print(f"   Best {metric} score: {results['best_score']:.4f}")
         
         return results
+
+    @staticmethod
+    def execute_multi_timeframe(strategy_name, ticker, timeframes=None, commission=0.001, initial_capital=10000, take_profit=None, stop_loss=None):
+        """
+        Tests a strategy across multiple timeframes to find the optimal period.
+        
+        Args:
+            strategy_name: Name of the strategy to run
+            ticker: Stock ticker symbol
+            timeframes: List of timeframes to test (e.g., ["1mo", "3mo", "6mo", "1y", "2y", "5y", "max"])
+            commission: Commission rate
+            initial_capital: Initial capital amount
+            take_profit: Take profit percentage
+            stop_loss: Stop loss percentage
+            
+        Returns:
+            Dictionary with results for each timeframe and the best timeframe
+        """
+        if timeframes is None:
+            # Standard Timeframes von kurzfristig nach langfristig
+            timeframes = ["1mo", "3mo", "6mo", "1y", "2y", "5y", "max"]
+        
+        # 🔍 Ensure strategy exists
+        strategy_class = StrategyFactory.get_strategy(strategy_name)
+        if strategy_class is None:
+            raise ValueError(f"❌ Strategy '{strategy_name}' not found.")
+        
+        print(f"🔎 Testing {strategy_name} on {ticker} across {len(timeframes)} timeframes...")
+        
+        results = {}
+        best_score = -float('inf')
+        best_timeframe = None
+        best_result = None
+        
+        for period in timeframes:
+            print(f"  ⏱️ Testing timeframe: {period}")
+            
+            try:
+                # Run backtest for this timeframe
+                result = StrategyRunner.execute(
+                    strategy_name, 
+                    ticker, 
+                    period=period,
+                    commission=commission, 
+                    initial_capital=initial_capital,
+                    take_profit=take_profit,
+                    stop_loss=stop_loss
+                )
+                
+                # Store result
+                results[period] = result
+                
+                # Evaluate performance (default to Sharpe ratio)
+                score = result.get('sharpe_ratio', 0)
+                trade_count = result.get('trades', result.get('# Trades', 0))
+                
+                # Only consider valid results with trades
+                if score > best_score and trade_count > 0:
+                    best_score = score
+                    best_timeframe = period
+                    best_result = result
+                    
+                print(f"    {period}: Sharpe = {score}, Trades = {trade_count}")
+                
+            except Exception as e:
+                print(f"    ❌ Error testing {period}: {str(e)}")
+                results[period] = {"error": str(e)}
+        
+        # If no valid results with trades found, just pick the best score
+        if best_timeframe is None and results:
+            for period, result in results.items():
+                if isinstance(result, dict) and 'sharpe_ratio' in result:
+                    score = result.get('sharpe_ratio', 0)
+                    if score > best_score:
+                        best_score = score
+                        best_timeframe = period
+                        best_result = result
+        
+        print(f"✅ Best timeframe for {strategy_name} on {ticker}: {best_timeframe} (Sharpe: {best_score})")
+        
+        return {
+            "all_results": results,
+            "best_timeframe": best_timeframe,
+            "best_result": best_result,
+            "strategy": strategy_name,
+            "ticker": ticker
+        }
