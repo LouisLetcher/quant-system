@@ -16,7 +16,8 @@ class BacktestResultAnalyzer:
                 "max_drawdown": "0.00%",
                 "trades": 0,
                 "initial_capital": initial_capital,
-                "final_value": initial_capital
+                "final_value": initial_capital,
+                "suspicious_result": False
             }
         
         # Check if this is a portfolio result
@@ -26,6 +27,17 @@ class BacktestResultAnalyzer:
             final_value = results['Equity Final [$]']
             pnl = final_value - initial_capital
             
+            # Add validation for suspicious results
+            return_pct = (pnl / initial_capital) * 100
+            trade_count = results['# Trades']
+            
+            # Flag unrealistic results
+            if trade_count == 0 and return_pct > 1000:  # Over 1000% with no trades
+                print(f"⚠️ WARNING: Strategy shows {return_pct:.2f}% return with 0 trades. Results may be unreliable.")
+                suspicious = True
+            else:
+                suspicious = False
+            
             # Create main portfolio summary
             portfolio_summary = {
                 "strategy": results['_strategy'].__name__,
@@ -33,13 +45,14 @@ class BacktestResultAnalyzer:
                 "pnl": f"${pnl:,.2f}",
                 "sharpe_ratio": round(results['Sharpe Ratio'], 2),
                 "max_drawdown": f"{results['Max. Drawdown [%]']:.2f}%",
-                "trades": results['# Trades'],
+                "trades": trade_count,
                 "initial_capital": initial_capital,
                 "final_value": final_value,
                 "return_pct": f"{results['Return [%]']:.2f}%",
                 "is_portfolio": True,
                 "assets": results['_assets'],
-                "asset_details": {}
+                "asset_details": {},
+                "suspicious_result": suspicious
             }
             
             # Add individual asset details
@@ -66,17 +79,29 @@ class BacktestResultAnalyzer:
             final_value = results['Equity Final [$]']
             pnl = final_value - initial_capital
             
+            # Add validation for suspicious results
+            return_pct = (pnl / initial_capital) * 100
+            trade_count = results.get('# Trades', 0)
+            
+            # Flag unrealistic results
+            if trade_count == 0 and return_pct > 1000:  # Over 1000% with no trades
+                print(f"⚠️ WARNING: Strategy shows {return_pct:.2f}% return with 0 trades. Results may be unreliable.")
+                suspicious = True
+            else:
+                suspicious = False
+            
             return {
                 "strategy": results._strategy.__class__.__name__,
                 "asset": asset_name,
                 "pnl": f"${pnl:,.2f}",
                 "sharpe_ratio": round(results['Sharpe Ratio'], 2),
                 "max_drawdown": f"{results['Max. Drawdown [%]']:.2f}%",
-                "trades": results.get('# Trades', 0),
+                "trades": trade_count,
                 "initial_capital": initial_capital,
                 "final_value": final_value,
-                "return_pct": f"{(pnl / initial_capital) * 100:.2f}%",
-                "is_portfolio": False
+                "return_pct": f"{return_pct:.2f}%",
+                "is_portfolio": False,
+                "suspicious_result": suspicious
             }
 
     @staticmethod
