@@ -9,6 +9,7 @@ from src.backtesting_engine.strategies.strategy_factory import StrategyFactory
 from src.backtesting_engine.data_loader import DataLoader
 from src.backtesting_engine.engine import BacktestEngine
 from src.backtesting_engine.result_analyzer import BacktestResultAnalyzer
+from src.utils.config_manager import ConfigManager
 
 def load_assets_config():
     """Load the assets configuration from config/assets_config.json"""
@@ -87,6 +88,10 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
     Returns:
         Dictionary with best strategy-interval combination for each asset
     """
+    # Get configuration for complete history requirement
+    config = ConfigManager()
+    require_complete_history = config.get('backtest.require_complete_history', True)
+    
     if intervals is None:
         intervals = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1wk"]
     
@@ -121,6 +126,59 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
         
         print(f"\n🔍 Finding optimal combination for: {ticker}")
         
+        # Determine which intervals to test for this asset
+        valid_intervals = []
+        if require_complete_history:
+            # Get the complete history of the stock for validation
+            daily_data = DataLoader.load_data(ticker, period="max", interval="1d")
+            if daily_data is None or daily_data.empty:
+                print(f"❌ No daily data available for {ticker}")
+                continue
+                
+            stock_start_date = daily_data.index.min()
+            print(f"📊 {ticker} daily data starts at {stock_start_date}")
+            
+            # Filter intervals that have data from the beginning
+            for interval in intervals:
+                # Daily data is always valid
+                if interval == "1d":
+                    valid_intervals.append(interval)
+                    continue
+                    
+                # For other intervals, check the data
+                try:
+                    interval_data = DataLoader.load_data(
+                        ticker, 
+                        period="max", 
+                        interval=interval
+                    )
+                    
+                    if interval_data is None or interval_data.empty:
+                        print(f"  ⚠️ Skipping {interval} - no data available")
+                        continue
+                        
+                    interval_start_date = interval_data.index.min()
+                    has_complete_history = interval_start_date <= stock_start_date
+                    
+                    if has_complete_history:
+                        valid_intervals.append(interval)
+                        print(f"  ✅ {interval} has complete history from {interval_start_date}")
+                    else:
+                        print(f"  ⚠️ Skipping {interval} - data starts at {interval_start_date}, needed from {stock_start_date}")
+                        
+                except Exception as e:
+                    print(f"  ❌ Error checking {interval} data: {str(e)}")
+            
+            # If we have no valid intervals, use just daily data
+            if not valid_intervals:
+                print(f"  ⚠️ No intervals have complete data, falling back to daily timeframe")
+                valid_intervals = ["1d"]
+        else:
+            # If we don't require complete history, use all intervals
+            valid_intervals = intervals
+        
+        print(f"Testing {len(strategies)} strategies × {len(valid_intervals)} intervals")
+        
         best_score = -float('inf')
         best_strategy = None
         best_interval = None
@@ -131,7 +189,7 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
             if strategy_name not in asset_results:
                 asset_results[strategy_name] = {}
                 
-            for interval in intervals:
+            for interval in valid_intervals:
                 print(f"  Testing {strategy_name} with {interval} interval...")
                 
                 try:
@@ -214,7 +272,7 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
             print(f"⚠️ No optimal combination with trades found for {ticker}, looking for any strategy with trades...")
             
             for strategy_name in strategies:
-                for interval in intervals:
+                for interval in valid_intervals:
                     if (strategy_name in asset_results and 
                         interval in asset_results[strategy_name] and
                         isinstance(asset_results[strategy_name][interval], dict) and
@@ -240,7 +298,7 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
             print(f"⚠️ Warning: No strategies with trades found for {ticker}, using best available score")
             
             for strategy_name in strategies:
-                for interval in intervals:
+                for interval in valid_intervals:
                     if (strategy_name in asset_results and 
                         interval in asset_results[strategy_name] and
                         isinstance(asset_results[strategy_name][interval], dict) and
@@ -270,9 +328,23 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
                 return_pct = result.get('return_pct', '0%')
                 max_drawdown = result.get('max_drawdown', '0%')
                 
+                # Add all detailed metrics from the results
                 best_combinations[ticker]['trades'] = trade_count
-                best_combinations[ticker]['return'] = return_pct  # Ensure return is set as a dict key
+                best_combinations[ticker]['return'] = return_pct
                 best_combinations[ticker]['max_drawdown'] = max_drawdown
+                
+                # Add the detailed trade data for charts and tables
+                best_combinations[ticker]['equity_curve'] = result.get('equity_curve', [])
+                best_combinations[ticker]['drawdown_curve'] = result.get('drawdown_curve', [])
+                best_combinations[ticker]['trades_list'] = result.get('trades_list', [])
+                best_combinations[ticker]['win_rate'] = result.get('win_rate', 0)
+                best_combinations[ticker]['profit_factor'] = result.get('profit_factor', 0)
+                best_combinations[ticker]['avg_win'] = result.get('avg_win', 0)
+                best_combinations[ticker]['avg_loss'] = result.get('avg_loss', 0)
+                best_combinations[ticker]['initial_capital'] = result.get('initial_capital', 0)
+                best_combinations[ticker]['final_value'] = result.get('final_value', 0)
+                best_combinations[ticker]['total_pnl'] = result.get('final_value', 0) - result.get('initial_capital', 0)
+
             
             print(f"  ✅ Best for {ticker}: {best_strategy} + {best_interval} ({metric}: {best_score})")
         else:
@@ -294,7 +366,7 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
         'best_combinations': best_combinations,
         'all_results': all_results,
         'metric': metric,
-        'intervals': intervals,
+        'intervals': valid_intervals,
         'strategies': strategies,
         'is_portfolio_optimal': True
     }
@@ -304,22 +376,34 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
     for ticker, data in best_combinations.items():
         if not data['strategy'] or not data['interval']:
             continue
-            
+
+        # Get the trades count
+        trades = data.get('trades', 0)
+        if isinstance(trades, str) and trades.isdigit():
+            trades = int(trades)
+
+        # Skip assets with 0 trades
+        if trades == 0:
+            print(f"  ⚠️ Skipping {ticker} from report - strategy has 0 trades")
+            continue
+
         asset_list.append({
             'name': ticker,
             'strategy': data['strategy'],
             'interval': data['interval'],
             'score': data['score'],
             'return': data.get('return', '0%'),
-            'trades': data.get('trades', 0),
-            'max_drawdown': data.get('max_drawdown', '0%')
+            'trades': trades,
+            'max_drawdown': data.get('max_drawdown', '0%'),
+            'win_rate': data.get('win_rate', 0),
+            'total_pnl': data.get('final_value', 0) - data.get('initial_capital', 0)
         })
-    
+
     report_data['asset_list'] = asset_list
-    
+
     # Generate the report
     output_path = f"reports_output/portfolio_optimal_{portfolio_name}.html"
-    
+
     # When generating the report, add more robust error handling
     try:
         generator = ReportGenerator()
@@ -351,7 +435,7 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
     return best_combinations
 
 
-def backtest_all_strategies(ticker, period="max", metric="sharpe", commission=0.001, initial_capital=10000):
+def backtest_all_strategies(ticker, period="max", metric="profit_factor", commission=0.001, initial_capital=10000):
     """Run a backtest for a single asset with all available strategies."""
     print(f"Testing all strategies on asset {ticker}")
     
@@ -374,7 +458,9 @@ def backtest_all_strategies(ticker, period="max", metric="sharpe", commission=0.
             initial_capital=initial_capital
         )
         
-        if metric == "sharpe":
+        if metric == "profit_factor":
+            score = results.get('profit_factor', 0)
+        elif metric == "sharpe":
             score = results.get('sharpe_ratio', 0)
         elif metric == "return":
             score = results.get('return_pct', 0)
@@ -386,6 +472,37 @@ def backtest_all_strategies(ticker, period="max", metric="sharpe", commission=0.
             'results': results
         }
         
+        # Filter out strategies with 0 trades
+        valid_strategies = {}
+        for strategy_name, strategy_data in all_results.items():
+            results = strategy_data['results']
+            trade_count = results.get('trades', 0)
+            
+            if isinstance(trade_count, str) and trade_count.isdigit():
+                trade_count = int(trade_count)
+                
+            if trade_count > 0:
+                valid_strategies[strategy_name] = strategy_data
+            else:
+                print(f"  ⚠️ Skipping {strategy_name} from report - has 0 trades")
+        
+        # Check if best strategy was filtered out
+    if best_strategy not in valid_strategies and valid_strategies:
+        # Select a new best strategy from valid strategies
+        new_best_score = -float('inf')
+        new_best_strategy = None
+        for strategy_name, strategy_data in valid_strategies.items():
+            if strategy_data['score'] > new_best_score:
+                new_best_score = strategy_data['score']
+                new_best_strategy = strategy_name
+        
+        if new_best_strategy:
+            print(f"⚠️ Original best strategy '{best_strategy}' had 0 trades. New best: {new_best_strategy}")
+            best_strategy = new_best_strategy
+            best_score = new_best_score
+        else:
+            print(f"⚠️ Warning: No strategies with trades found")
+        
         print(f"    {strategy_name}: {metric.capitalize()} = {score}")
         
         if score > best_score:
@@ -396,7 +513,7 @@ def backtest_all_strategies(ticker, period="max", metric="sharpe", commission=0.
     
     report_data = {
         'asset': ticker,
-        'strategies': all_results,
+        'strategies': valid_strategies,
         'best_strategy': best_strategy,
         'best_score': best_score,
         'metric': metric,
@@ -460,12 +577,12 @@ def backtest_multi_interval(strategy, ticker, intervals=None, period="max", comm
             results[interval] = analyzed_result
             
             # Track the best interval
-            score = analyzed_result.get('sharpe_ratio', 0)
+            score = analyzed_result.get('profit_factor', 0)  # Changed from sharpe_ratio to profit_factor
             trade_count = analyzed_result.get('trades', 0)
             if isinstance(trade_count, str) and trade_count.isdigit():
                 trade_count = int(trade_count)
-                
-            print(f"    {interval}: Sharpe = {score}, Trades = {trade_count}")
+                    
+            print(f"    {interval}: Profit Factor = {score}, Sharpe = {analyzed_result.get('sharpe_ratio', 0)}, Trades = {trade_count}")
             
             # Only consider valid results with trades
             if score > best_score and trade_count > 0:
@@ -500,6 +617,11 @@ def backtest_multi_interval(strategy, ticker, intervals=None, period="max", comm
             trade_count = result.get('trades', 0)
             is_best = interval == best_interval
             
+            # Skip intervals with 0 trades
+            if trade_count == 0:
+                print(f"  ⚠️ Skipping {interval} from report - has 0 trades")
+                continue
+                
             summary_data.append({
                 'interval': interval,
                 'sharpe': result.get('sharpe_ratio', 0),
@@ -518,6 +640,7 @@ def backtest_multi_interval(strategy, ticker, intervals=None, period="max", comm
     
     print(f"📄 Multi-Interval Report saved to {output_path}")
     return results
+
 def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
     """Run a backtest of all assets in a portfolio with all strategies."""
     portfolio_config = get_portfolio_config(portfolio_name)
@@ -661,14 +784,19 @@ def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
         strategy_results = all_results[ticker][strategy_name]['results']
         trade_count = strategy_results.get('trades', strategy_results.get('# Trades', 0))
         
-        # Add a warning flag for strategies with 0 trades
-        warning = ""
+        # Skip assets with 0 trades entirely
         if trade_count == 0:
-            warning = "⚠️ NO TRADES (INVALID)"
+            print(f"⚠️ Skipping {ticker} from report - strategy has 0 trades")
+            continue
+        
+        # Check if there are any warnings for this asset/strategy
+        warning = ""
+        if data.get('invalid', False):
+            warning = "Strategy has 0 trades"
         
         report_data['asset_list'].append({
             'name': ticker,
-            'strategy': f"{strategy_name} {warning}",
+            'strategy': strategy_name,
             'initial_capital': strategy_results.get('initial_capital', 0),
             'final_value': strategy_results.get('final_value', 0),
             'return': strategy_results.get('return_pct', '0%'),
@@ -684,7 +812,7 @@ def backtest_portfolio(portfolio_name, period="max", metric="sharpe"):
     output_path = f"reports_output/portfolio_strategy_optimizer_{portfolio_name}.html"
     generator = ReportGenerator()
     
-    # Modify the template to handle the warning flag
+        # Modify the template to handle the warning flag
     # If you need to update the template directly, you can do that separately
     generator.generate_report(report_data, "multi_asset_report.html", output_path)
     
@@ -708,8 +836,8 @@ def main():
     all_strategies_parser.add_argument("--ticker", type=str, required=True, help="Stock ticker symbol")
     all_strategies_parser.add_argument("--period", type=str, default="max", 
                                 help="Data period: '1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'")
-    all_strategies_parser.add_argument("--metric", type=str, default="sharpe",
-                                help="Performance metric to use ('sharpe', 'return', etc.)")
+    all_strategies_parser.add_argument("--metric", type=str, default="profit_factor",
+                                help="Performance metric to use ('profit_factor', 'sharpe', 'return', etc.)")
     all_strategies_parser.add_argument("--initial-capital", type=float, default=10000, help="Initial capital")
     all_strategies_parser.add_argument("--commission", type=float, default=0.001, help="Commission rate")
 
@@ -717,8 +845,8 @@ def main():
     portfolio_parser.add_argument("--name", type=str, required=True, help="Portfolio name from assets_config.json")
     portfolio_parser.add_argument("--period", type=str, default="max", 
                                 help="Default data period (can be overridden by portfolio settings)")
-    portfolio_parser.add_argument("--metric", type=str, default="sharpe",
-                                help="Performance metric to use ('sharpe', 'return', etc.)")
+    portfolio_parser.add_argument("--metric", type=str, default="profit_factor",
+                            help="Performance metric to use ('profit_factor', 'sharpe', 'return', etc.)")
 
     # New command for testing different bar intervals for a single strategy
     interval_parser = subparsers.add_parser("intervals", help="Backtest a strategy across multiple bar intervals")
@@ -740,8 +868,10 @@ def main():
                                        help="Bar intervals to test")
     portfolio_optimal_parser.add_argument("--period", type=str, default="max", 
                                        help="Default data period (can be overridden by portfolio settings)")
-    portfolio_optimal_parser.add_argument("--metric", type=str, default="sharpe",
-                                       help="Performance metric to use ('sharpe', 'return', etc.)")
+    portfolio_optimal_parser.add_argument("--metric", type=str, default="profit_factor",
+                                   help="Performance metric to use ('profit_factor', 'sharpe', 'return', etc.)")
+    portfolio_optimal_parser.add_argument("--require-complete-history", action="store_true",
+                                   help="If specified, only test intervals with data from stock inception")
 
     # Utility commands
     list_portfolios_parser = subparsers.add_parser("list-portfolios", help="List available portfolios")
@@ -792,6 +922,11 @@ def main():
         )
     
     elif args.command == "portfolio-optimal":
+        # If argument is provided, override config setting
+        if args.require_complete_history is not None:
+            config = ConfigManager()
+            config.set("backtest", "require_complete_history", args.require_complete_history)
+            
         backtest_portfolio_optimal(
             args.name,
             intervals=args.intervals,

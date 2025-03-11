@@ -272,9 +272,9 @@ class ReportGenerator:
         # Generate the portfolio report
         return self.generate_report(portfolio_results, self.TEMPLATES['portfolio'], output_path)
         
-    def generate_optimizer_report(self, optimizer_results: Dict[str, Any], output_path: Optional[str] = None) -> str:
+    def generate_optimizer_report(self, optimizer_results: dict[str, Any], output_path: Optional[str] = None) -> str:
         """
-        Generates an optimizer HTML report.
+        Generate an optimizer HTML report.
         
         Args:
             optimizer_results: Dictionary containing optimizer results

@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Portfolio Optimization Report - {{ data.portfolio }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -111,6 +112,44 @@
             color: white;
             font-weight: bold;
         }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin: 30px 0;
+        }
+        .trades-section {
+            margin-top: 30px;
+        }
+        .trade-win {
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+        .trade-loss {
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .kpi-card {
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .kpi-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .kpi-title {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
     </style>
 </head>
 <body>
@@ -129,7 +168,6 @@
                     <th>{{ data.metric|capitalize }}</th>
                     <th>Return</th>
                     <th>Total P&L</th>
-                    <th>Profit Factor</th>
                     <th>Win Rate</th>
                     <th>Max Drawdown</th>
                     <th>Trades</th>
@@ -142,14 +180,11 @@
                     <td>{{ asset.strategy }}</td>
                     <td>{{ asset.interval }}</td>
                     <td>{{ asset.score|number_format(2) }}</td>
-                    <td class="{% if asset.return|float > 0 %}positive{% else %}negative{% endif %}">
+                    <td class="{% if asset.return|string|replace('%', '')|replace(',', '')|float > 0 %}positive{% else %}negative{% endif %}">
                         {{ asset.return }}
                     </td>
                     <td class="{% if asset.get('total_pnl', 0)|float > 0 %}positive{% else %}negative{% endif %}">
                         {{ asset.get('total_pnl', 0)|number_format(2) }}
-                    </td>
-                    <td class="{% if asset.get('profit_factor', 0)|float > 1 %}positive{% else %}negative{% endif %}">
-                        {{ asset.get('profit_factor', 1)|number_format(2) }}
                     </td>
                     <td class="{% if asset.get('win_rate', 0)|float > 50 %}positive{% else %}negative{% endif %}">
                         {{ asset.get('win_rate', 0) }}%
@@ -181,20 +216,14 @@
             </div>
             <div class="metric-card">
                 <div class="metric-title">Return</div>
-                <div class="metric-value {% if combinations.get('return', '0%')|float > 0 %}positive{% else %}negative{% endif %}">
+                <div class="metric-value {% if combinations.get('return', '0%')|string|replace('%', '')|replace(',', '')|float > 0 %}positive{% else %}negative{% endif %}">
                     {{ combinations.get('return', '0%') }}
-                </div>
+                </div>                
             </div>
             <div class="metric-card">
                 <div class="metric-title">Total P&L</div>
                 <div class="metric-value {% if combinations.get('total_pnl', 0)|float > 0 %}positive{% else %}negative{% endif %}">
                     {{ combinations.get('total_pnl', 0)|number_format(2) }}
-                </div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-title">Profit Factor</div>
-                <div class="metric-value {% if combinations.get('profit_factor', 0)|float > 1 %}positive{% else %}negative{% endif %}">
-                    {{ combinations.get('profit_factor', 1)|number_format(2) }}
                 </div>
             </div>
             <div class="metric-card">
@@ -226,14 +255,23 @@
                 </tr>
             </thead>
             <tbody>
-                {% for strategy in data.strategies %}
+            {% for strategy in data.strategies %}
+                {% set has_trades = false %}
+                {% if ticker in data.all_results and strategy in data.all_results[ticker] %}
+                    {% for interval_key, interval_data in data.all_results[ticker][strategy].items() %}
+                        {% if interval_data.result is defined and interval_data.result.trades > 0 %}
+                            {% set has_trades = true %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% if has_trades %}
                 <tr>
                     <td>{{ strategy }}</td>
                     {% for interval in data.intervals %}
                     {% if ticker in data.all_results and 
-                         strategy in data.all_results[ticker] and 
-                         interval in data.all_results[ticker][strategy] and
-                         data.all_results[ticker][strategy][interval].score != -float('inf') %}
+                        strategy in data.all_results[ticker] and 
+                        interval in data.all_results[ticker][strategy] and
+                        data.all_results[ticker][strategy][interval].score != -float('inf') %}
                         
                         {% set score = data.all_results[ticker][strategy][interval].score %}
                         {% set is_best = strategy == combinations.strategy and interval == combinations.interval %}
@@ -246,14 +284,164 @@
                     {% endif %}
                     {% endfor %}
                 </tr>
-                {% endfor %}
+                {% endif %}
+            {% endfor %}
             </tbody>
         </table>
+
+        <!-- Equity Chart -->
+<h3>Equity Curve</h3>
+<div class="chart-container">
+    <canvas id="equityChart_{{ ticker }}"></canvas>
+</div>
+
+<!-- Profitable Trades KPI Section -->
+<h3>Trade Performance</h3>
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-title">Win Rate</div>
+        <div class="kpi-value">{{ combinations.win_rate|default('N/A')|percent }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">Profit Factor</div>
+        <div class="kpi-value">{{ combinations.profit_factor|default('N/A')|number_format(2) }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">Avg. Winning Trade</div>
+        <div class="kpi-value">{{ combinations.avg_win|default('N/A')|percent }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">Avg. Losing Trade</div>
+        <div class="kpi-value">{{ combinations.avg_loss|default('N/A')|percent }}</div>
+    </div>
+</div>
+
+<!-- Trades Table -->
+<h3 class="trades-section">Trade History</h3>
+{% if combinations.trades_list|default([]) %}
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Entry Date</th>
+            <th>Exit Date</th>
+            <th>Type</th>
+            <th>Entry Price</th>
+            <th>Exit Price</th>
+            <th>Size</th>
+            <th>Profit/Loss</th>
+            <th>Return</th>
+            <th>Duration</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for trade in combinations.trades_list|sort(attribute='entry_date', reverse=True) %}
+        <tr class="{% if trade.pnl > 0 %}trade-win{% else %}trade-loss{% endif %}">
+            <td>{{ loop.index }}</td>
+            <td>{{ trade.entry_date }}</td>
+            <td>{{ trade.exit_date|default('Open') }}</td>
+            <td>{{ trade.type }}</td>
+            <td>${{ trade.entry_price|number_format(2) }}</td>
+            <td>${{ trade.exit_price|default(0)|number_format(2) }}</td>
+            <td>{{ trade.size|number_format(0) }}</td>
+            <td class="{% if trade.pnl > 0 %}positive{% else %}negative{% endif %}">
+                ${{ trade.pnl|number_format(2) }}
+            </td>
+            <td class="{% if trade.return_pct > 0 %}positive{% else %}negative{% endif %}">
+                {{ trade.return_pct|number_format(2) }}%
+            </td>
+            <td>{{ trade.duration|default('N/A') }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No detailed trade data available.</p>
+{% endif %}
+
     </div>
     {% endfor %}
     
     <footer style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #7f8c8d; font-size: 12px;">
         <p>Generated by Quant Trading System on {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
     </footer>
-</body>
+
+    <!-- Add this before the closing </body> tag -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% for ticker, combinations in data.best_combinations.items() %}
+                {% if combinations.equity_curve|default([]) %}
+                    const ctx_{{ ticker|replace('.', '_') }} = document.getElementById('equityChart_{{ ticker }}');
+                    
+                    if (ctx_{{ ticker|replace('.', '_') }}) {
+                        const equityData_{{ ticker|replace('.', '_') }} = {{ combinations.equity_curve|tojson }};
+                        const dates_{{ ticker|replace('.', '_') }} = equityData_{{ ticker|replace('.', '_') }}.map(point => point.date);
+                        const values_{{ ticker|replace('.', '_') }} = equityData_{{ ticker|replace('.', '_') }}.map(point => point.value);
+                        
+                        new Chart(ctx_{{ ticker|replace('.', '_') }}, {
+                            type: 'line',
+                            data: {
+                                labels: dates_{{ ticker|replace('.', '_') }},
+                                datasets: [{
+                                    label: 'Equity Curve',
+                                    data: values_{{ ticker|replace('.', '_') }},
+                                    borderColor: '#2980b9',
+                                    backgroundColor: 'rgba(41, 128, 185, 0.1)',
+                                    borderWidth: 2,
+                                    fill: true,
+                                    tension: 0.1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: 'Equity Curve for {{ combinations.strategy }} on {{ ticker }}'
+                                    },
+                                    tooltip: {
+                                        mode: 'index',
+                                        intersect: false,
+                                        callbacks: {
+                                            label: function(context) {
+                                                return `Equity: $${context.raw.toLocaleString('en-US', {style: 'decimal', maximumFractionDigits: 2})}`;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Date'
+                                        },
+                                        ticks: {
+                                            maxTicksLimit: 10
+                                        }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Equity ($)'
+                                        },
+                                        beginAtZero: false
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        console.error(`Canvas element 'equityChart_${ticker}' not found`);
+                    }
+                {% else %}
+                    console.log('No equity curve data available for {{ ticker }}');
+                    const container = document.querySelector('.chart-container');
+                    if (container) {
+                        container.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%; color:#7f8c8d;">No equity curve data available</div>';
+                    }
+                {% endif %}
+            {% endfor %}
+        });
+    </script>
+    </body>
 </html>

@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Strategy Comparison Report - {{ data.asset }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -108,6 +109,44 @@
             font-size: 12px;
             margin-left: 10px;
         }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin: 30px 0;
+        }
+        .trades-section {
+            margin-top: 30px;
+        }
+        .trade-win {
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+        .trade-loss {
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .kpi-card {
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .kpi-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .kpi-title {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
     </style>
 </head>
 <body>
@@ -204,7 +243,202 @@
                 <div class="metric-value">{{ data.strategies[data.best_strategy].results.commission|percent }}</div>
             </div>
         </div>
+        
+        <!-- Equity Chart for Best Strategy -->
+        <h3>Equity Curve</h3>
+        <div class="chart-container">
+            <canvas id="equityChart"></canvas>
+        </div>
+        
+        <!-- Profitable Trades KPI Section -->
+        <h3>Trade Performance</h3>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Win Rate</div>
+                <div class="kpi-value">{{ data.strategies[data.best_strategy].results.win_rate|default('N/A')|percent }}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Profit Factor</div>
+                <div class="kpi-value">{{ data.strategies[data.best_strategy].results.profit_factor|default('N/A')|number_format }}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Avg. Winning Trade</div>
+                <div class="kpi-value">{{ data.strategies[data.best_strategy].results.avg_win|default('N/A')|percent }}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Avg. Losing Trade</div>
+                <div class="kpi-value">{{ data.strategies[data.best_strategy].results.avg_loss|default('N/A')|percent }}</div>
+            </div>
+        </div>
+        
+        <!-- Trades Table -->
+        <h3 class="trades-section">Trade History</h3>
+        {% if data.strategies[data.best_strategy].results.trades_list|default([]) %}
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Entry Date</th>
+                    <th>Exit Date</th>
+                    <th>Type</th>
+                    <th>Entry Price</th>
+                    <th>Exit Price</th>
+                    <th>Size</th>
+                    <th>Profit/Loss</th>
+                    <th>Return</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trade in data.strategies[data.best_strategy].results.trades_list|sort(attribute='entry_date', reverse=True) %}
+                <tr class="{% if trade.pnl > 0 %}trade-win{% else %}trade-loss{% endif %}">
+                    <td>{{ loop.index }}</td>
+                    <td>{{ trade.entry_date }}</td>
+                    <td>{{ trade.exit_date|default('Open') }}</td>
+                    <td>{{ trade.type }}</td>
+                    <td>${{ trade.entry_price|number_format(2) }}</td>
+                    <td>${{ trade.exit_price|default(0)|number_format(2) }}</td>
+                    <td>{{ trade.size|number_format(0) }}</td>
+                    <td class="{% if trade.pnl > 0 %}positive{% else %}negative{% endif %}">
+                        ${{ trade.pnl|number_format(2) }}
+                    </td>
+                    <td class="{% if trade.return_pct > 0 %}positive{% else %}negative{% endif %}">
+                        {{ trade.return_pct|number_format(2) }}%
+                    </td>
+                    <td>{{ trade.duration|default('N/A') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No detailed trade data available.</p>
+        {% endif %}
     </div>
+    
+    <!-- JavaScript for Chart -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if equity data is available
+            {% if data.strategies[data.best_strategy].results.equity_curve|default([]) %}
+                const ctx = document.getElementById('equityChart').getContext('2d');
+                
+                const equityData = {{ data.strategies[data.best_strategy].results.equity_curve|tojson }};
+                const dates = equityData.map(point => point.date);
+                const values = equityData.map(point => point.value);
+                
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Equity Curve',
+                            data: values,
+                            borderColor: '#2980b9',
+                            backgroundColor: 'rgba(41, 128, 185, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Equity Curve for {{ data.best_strategy }} on {{ data.asset }}'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Equity: $${context.raw.toLocaleString('en-US', {maximumFractionDigits: 2})}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                },
+                                ticks: {
+                                    maxTicksLimit: 10
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Equity ($)'
+                                },
+                                beginAtZero: false
+                            }
+                        }
+                    }
+                });
+            {% else %}
+                // If equity data is not available, display a message
+                document.getElementById('equityChart').innerHTML = '<div style="display:flex; justify-content:center; align-items:center; height:100%; color:#7f8c8d;">No equity curve data available</div>';
+            {% endif %}
+            
+            // Add drawdown chart if drawdown data is available
+            {% if data.strategies[data.best_strategy].results.drawdown_curve|default([]) %}
+                const drawdownCtx = document.getElementById('drawdownChart').getContext('2d');
+                
+                const drawdownData = {{ data.strategies[data.best_strategy].results.drawdown_curve|tojson }};
+                const drawdownDates = drawdownData.map(point => point.date);
+                const drawdownValues = drawdownData.map(point => point.value);
+                
+                new Chart(drawdownCtx, {
+                    type: 'line',
+                    data: {
+                        labels: drawdownDates,
+                        datasets: [{
+                            label: 'Drawdown (%)',
+                            data: drawdownValues,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Drawdown for {{ data.best_strategy }} on {{ data.asset }}'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                },
+                                ticks: {
+                                    maxTicksLimit: 10
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Drawdown (%)'
+                                },
+                                beginAtZero: true,
+                                reverse: true,
+                                suggestedMax: 100
+                            }
+                        }
+                    }
+                });
+            {% endif %}
+        });
+    </script>
     {% endif %}
     
     <footer style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; text-align: center; color: #7f8c8d; font-size: 12px;">
