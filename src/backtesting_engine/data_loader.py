@@ -6,45 +6,52 @@ from src.data_scraper.cache import Cache
 class DataLoader:
     """Loads historical price data for backtesting, using cache when available."""
     @staticmethod
-    @staticmethod
     def load_data(ticker, period="max", interval="1d", start=None, end=None):
         """
         Loads price data for a ticker using DataManager.
         """
         print(f"🔍 Loading {ticker} data with interval {interval}...")
-        
-        # First try to load daily data, then resample if needed
-        data = DataManager.get_stock_data(ticker, start, end, "1d")
-        
+    
+        # Load data with the specific requested interval
+        data = DataManager.get_stock_data(ticker, start, end, interval)
+    
         if data is None or data.empty:
-            print(f"❌ No data available for {ticker}")
-            return None
+            print(f"⚠️ No data available for {ticker} with {interval} interval. Trying daily data...")
         
-        # Resample data to requested interval if different from daily
-        if interval != "1d":
-            try:
-                # Map common intervals to pandas resample rule
-                interval_map = {
-                    "1m": "1min", "5m": "5min", "15m": "15min", "30m": "30min",
-                    "1h": "1H", "4h": "4H", "1d": "1D", "1wk": "1W", "1mo": "1M", "3mo": "3M"
-                }
-                resample_rule = interval_map.get(interval, "1D")
-                
-                # Resample OHLCV data
-                data = data.resample(resample_rule).agg({
-                    'Open': 'first',
-                    'High': 'max',
-                    'Low': 'min',
-                    'Close': 'last',
-                    'Volume': 'sum'
-                }).dropna()
-                
-                print(f"✅ Resampled to {interval} - got {len(data)} bars")
-            except Exception as e:
-                print(f"⚠️ Error resampling to {interval}: {e}")
-                # Return original data if resampling fails
-                print(f"✅ Using original data - {len(data)} bars")
+            # Fall back to daily data if the specific interval isn't available
+            data = DataManager.get_stock_data(ticker, start, end, "1d")
         
+            if data is None or data.empty:
+                print(f"❌ No data available for {ticker}")
+                return None
+            
+            # If daily data is loaded but a different interval was requested, resample
+            if interval != "1d":
+                try:
+                    # Map common intervals to pandas resample rule
+                    interval_map = {
+                        "1m": "1min", "5m": "5min", "15m": "15min", "30m": "30min",
+                        "1h": "1H", "4h": "4H", "1d": "1D", "1wk": "1W", "1mo": "1ME", "3mo": "3ME"
+                    }
+                    resample_rule = interval_map.get(interval, "1D")
+                
+                    # Resample OHLCV data
+                    data = data.resample(resample_rule).agg({
+                        'Open': 'first',
+                        'High': 'max',
+                        'Low': 'min',
+                        'Close': 'last',
+                        'Volume': 'sum'
+                    }).dropna()
+                
+                    print(f"✅ Resampled daily data to {interval} - got {len(data)} bars")
+                except Exception as e:
+                    print(f"⚠️ Error resampling to {interval}: {e}")
+                    print(f"✅ Using original daily data - {len(data)} bars")
+        else:
+            print(f"✅ Loaded {len(data)} {interval} bars for {ticker}")
+    
+        # Rest of the method remains the same...
         # Filter by period if needed
         if period and period != "max":
             # Convert period string to timedelta
