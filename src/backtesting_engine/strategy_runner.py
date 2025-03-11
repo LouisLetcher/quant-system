@@ -289,7 +289,7 @@ class StrategyRunner:
                 results[period] = result
                 
                 # Evaluate performance (default to Sharpe ratio)
-                score = result.get('sharpe_ratio', 0)
+                score = result.get('profit_factor', 0)
                 trade_count = result.get('trades', result.get('# Trades', 0))
                 
                 # Only consider valid results with trades
@@ -297,8 +297,8 @@ class StrategyRunner:
                     best_score = score
                     best_timeframe = period
                     best_result = result
-                    
-                print(f"    {period}: Sharpe = {score}, Trades = {trade_count}")
+
+                print(f"    {period}: Profit Factor = {score}, Sharpe = {result.get('sharpe_ratio', 0)}, Trades = {trade_count}")
                 
             except Exception as e:
                 print(f"    ❌ Error testing {period}: {str(e)}")
