@@ -56,7 +56,7 @@ def list_strategies():
         print(f"🔹 {strategy_name}")
     print("-" * 80)
 
-def backtest_single(strategy, ticker, period="max", commission=0.001, initial_capital=10000):
+def backtest_single(strategy, ticker, period="max", commission=0.000, initial_capital=1000):
     """Run a backtest for a single asset with a single strategy."""
     print(f"Running backtest for {strategy} on {ticker} with period={period}...")
     
@@ -121,8 +121,8 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
     for asset_config in assets:
         ticker = asset_config['ticker']
         asset_period = asset_config.get('period', period)
-        commission = asset_config.get('commission', 0.001)
-        initial_capital = asset_config.get('initial_capital', 10000)
+        commission = asset_config.get('commission', 0.000)
+        initial_capital = asset_config.get('initial_capital', 1000)
         
         print(f"\n🔍 Finding optimal combination for: {ticker}")
         

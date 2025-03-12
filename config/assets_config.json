@@ -6,19 +6,19 @@
                 {
                     "ticker": "AAPL",
                     "period": "max",
-                    "commission": 0.002,
+                    "commission": 0.000,
                     "initial_capital": 1000
                 },
                 {
                     "ticker": "MSFT",
                     "period": "max",
-                    "commission": 0.002,
+                    "commission": 0.000,
                     "initial_capital": 1000
                 },
                 {
                     "ticker": "AMZN",
                     "period": "max",
-                    "commission": 0.002,
+                    "commission": 0.000,
                     "initial_capital": 1000
                 }
             ]
@@ -29,19 +29,19 @@
                 {
                 "ticker": "SPY",
                 "period": "max",
-                "commission": 0.002,
+                "commission": 0.000,
                 "initial_capital": 1000
                 },
                 {
                 "ticker": "QQQ",
                 "period": "max",
-                "commission": 0.002,
+                "commission": 0.000,
                 "initial_capital": 1000
                 },
                 {
                 "ticker": "DIA",
                 "period": "max",
-                "commission": 0.002,
+                "commission": 0.000,
                 "initial_capital": 1000
                 }
             ]

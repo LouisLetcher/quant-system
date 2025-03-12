@@ -221,6 +221,10 @@
                 </div>                
             </div>
             <div class="metric-card">
+                <div class="metric-title">Initial Capital</div>
+                <div class="metric-value">${{ combinations.get('initial_capital', 0)|number_format(2) }}</div>
+            </div>
+            <div class="metric-card">
                 <div class="metric-title">Total P&L</div>
                 <div class="metric-value {% if combinations.get('total_pnl', 0)|float > 0 %}positive{% else %}negative{% endif %}">
                     {{ combinations.get('total_pnl', 0)|number_format(2) }}
@@ -240,6 +244,7 @@
                 <div class="metric-title">Trades</div>
                 <div class="metric-value">{{ combinations.trades }}</div>
             </div>
+            
         </div>
         
         <h3>Strategy-Interval Heatmap</h3>
@@ -332,6 +337,7 @@
             <th>Profit/Loss</th>
             <th>Return</th>
             <th>Duration</th>
+            <th>Status</th>
         </tr>
     </thead>
     <tbody>
@@ -351,6 +357,7 @@
                 {{ trade.return_pct|number_format(2) }}%
             </td>
             <td>{{ trade.duration|default('N/A') }}</td>
+            <td>{{ 'Open' if trade.exit_date is none else 'Closed' }}</td>
         </tr>
         {% endfor %}
     </tbody>
