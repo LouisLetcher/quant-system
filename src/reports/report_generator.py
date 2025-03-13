@@ -28,10 +28,13 @@ class ReportGenerator:
         )
         
         # Add custom filters for formatting
-        self.env.filters['number_format'] = lambda value, precision=2: f"{float(value if pd.notna(value) else 0):,.{precision}f}"
+        self.env.filters['number_format'] = lambda value, precision=2: (
+            f"{float(value):,.{precision}f}" if isinstance(value, (int, float)) or (isinstance(value, str) and value.replace('.', '').isdigit())
+            else value
+        )
         self.env.filters['currency'] = lambda value: f"${float(value if pd.notna(value) else 0):,.2f}"
-        self.env.filters['percent'] = lambda value: f"{float(value if pd.notna(value) else 0):.2f}%"
-        
+        # More comprehensive filter handling
+        self.env.filters['percent'] = lambda value: f"{float(value if pd.notna(value) and not isinstance(value, str) else 0):.2f}%" if value != 'N/A' else 'N/A'
         # Add global functions for templates
         self.env.globals['now'] = datetime.now
         self.env.globals['float'] = float  # Make float() available in templates

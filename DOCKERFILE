@@ -1,6 +1,36 @@
-FROM python:3.9-slim
+FROM python:3.10-slim
+
+# Set working directory
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
+
+# Configure Poetry
+RUN poetry config virtualenvs.create false
+
+# Copy project files
+COPY pyproject.toml poetry.lock* ./
+
+# Install dependencies
+RUN poetry install --no-dev --no-interaction --no-ansi
+
+# Copy the rest of the application
 COPY . .
-CMD ["python", "src/main.py"]
+
+# Create required directories
+RUN mkdir -p reports_output .cache
+
+# Expose the application port
+EXPOSE 8000
+
+# Command to run the application
+CMD ["poetry", "run", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

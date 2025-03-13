@@ -86,18 +86,19 @@ class BacktestResultAnalyzer:
                 asset_final = asset_result['Equity Final [$]']
                 asset_initial = initial_capital / len(results['_assets'])
                 asset_pnl = asset_final - asset_initial
-                
+
                 # Extract additional metrics for this asset
                 asset_win_rate = asset_result.get('Win Rate [%]', 0)
                 asset_profit_factor = asset_result.get('Profit Factor', 0)
                 asset_avg_win = asset_result.get('Best Trade [%]', 0)
                 asset_avg_loss = asset_result.get('Worst Trade [%]', 0)
-                
+
                 # Extract asset-specific curves and trades
                 asset_equity_curve = BacktestResultAnalyzer._extract_equity_curve(asset_result)
                 asset_drawdown_curve = BacktestResultAnalyzer._extract_drawdown_curve(asset_result)
                 asset_trades_list = BacktestResultAnalyzer._extract_trades_list(asset_result)
-                
+                tv_profit_factor = BacktestResultAnalyzer.calculate_tradingview_profit_factor(trades_list)
+
                 portfolio_summary["asset_details"][asset_ticker] = {
                     "pnl": f"${asset_pnl:,.2f}",
                     "sharpe_ratio": round(asset_result['Sharpe Ratio'], 2),
@@ -109,13 +110,14 @@ class BacktestResultAnalyzer:
                     "weight": f"{(asset_final / final_value) * 100:.2f}%",
                     "win_rate": asset_win_rate,
                     "profit_factor": asset_profit_factor,
+                    "tv_profit_factor": round(tv_profit_factor, 2),
                     "avg_win": asset_avg_win,
                     "avg_loss": asset_avg_loss,
                     "equity_curve": asset_equity_curve,
                     "drawdown_curve": asset_drawdown_curve,
                     "trades_list": asset_trades_list
                 }
-            
+
             return portfolio_summary
         else:
             # Handle single asset results
@@ -144,13 +146,15 @@ class BacktestResultAnalyzer:
             equity_curve = BacktestResultAnalyzer._extract_equity_curve(results)
             drawdown_curve = BacktestResultAnalyzer._extract_drawdown_curve(results)
             trades_list = BacktestResultAnalyzer._extract_trades_list(results)
+            tv_profit_factor = BacktestResultAnalyzer.calculate_tradingview_profit_factor(trades_list)
             
             return {
                 "strategy": results._strategy.__class__.__name__,
                 "asset": asset_name,
                 "pnl": f"${pnl:,.2f}",
                 "sharpe_ratio": round(results['Sharpe Ratio'], 2),
-                "profit_factor": profit_factor,  # Ensure profit factor is included
+                "profit_factor": profit_factor,
+                "tv_profit_factor": round(tv_profit_factor, 2),
                 "max_drawdown": f"{results['Max. Drawdown [%]']:.2f}%",
                 "trades": trade_count,
                 "initial_capital": initial_capital,
@@ -285,6 +289,16 @@ class BacktestResultAnalyzer:
             print(f"⚠️ Error extracting drawdown curve: {e}")
             return []
 
+    @staticmethod
+    def calculate_tradingview_profit_factor(trades_list):
+        """Calculate profit factor using TradingView's method."""
+        gross_profit = sum(trade['pnl'] for trade in trades_list if trade['pnl'] > 0)
+        gross_loss = sum(abs(trade['pnl']) for trade in trades_list if trade['pnl'] < 0)
+        
+        if gross_loss == 0:
+            return float('inf')  # Avoid division by zero
+        
+        return gross_profit / gross_loss
 
     @staticmethod
     def _extract_trades_list(results):

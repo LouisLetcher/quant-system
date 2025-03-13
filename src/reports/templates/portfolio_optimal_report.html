@@ -166,6 +166,7 @@
                     <th>Optimal Strategy</th>
                     <th>Optimal Interval</th>
                     <th>{{ data.metric|capitalize }}</th>
+                    <th>TV Profit Factor</th>
                     <th>Return</th>
                     <th>Total P&L</th>
                     <th>Win Rate</th>
@@ -180,6 +181,7 @@
                     <td>{{ asset.strategy }}</td>
                     <td>{{ asset.interval }}</td>
                     <td>{{ asset.score|number_format(2) }}</td>
+                    <td>{{ asset.get('tv_profit_factor', 'N/A') }}</td>
                     <td class="{% if asset.return|string|replace('%', '')|replace(',', '')|float > 0 %}positive{% else %}negative{% endif %}">
                         {{ asset.return }}
                     </td>
@@ -213,6 +215,10 @@
             <div class="metric-card">
                 <div class="metric-title">{{ data.metric|capitalize }}</div>
                 <div class="metric-value">{{ combinations.score|number_format(2) }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">TradingView Profit Factor</div>
+                <div class="metric-value">{{ combinations.get('tv_profit_factor', 'N/A')|number_format(2) }}</div>
             </div>
             <div class="metric-card">
                 <div class="metric-title">Return</div>
@@ -310,6 +316,16 @@
     <div class="kpi-card">
         <div class="kpi-title">Profit Factor</div>
         <div class="kpi-value">{{ combinations.profit_factor|default('N/A')|number_format(2) }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-title">TradingView Profit Factor</div>
+        <div class="kpi-value">
+    {% if combinations.get('tv_profit_factor') != 'N/A' and combinations.get('tv_profit_factor') is not none %}
+        {{ combinations.get('tv_profit_factor')|number_format(2) }}
+    {% else %}
+        N/A
+    {% endif %}
+</div>
     </div>
     <div class="kpi-card">
         <div class="kpi-title">Avg. Winning Trade</div>
