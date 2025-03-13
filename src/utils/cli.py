@@ -337,6 +337,9 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
                 best_combinations[ticker]['equity_curve'] = result.get('equity_curve', [])
                 best_combinations[ticker]['drawdown_curve'] = result.get('drawdown_curve', [])
                 best_combinations[ticker]['trades_list'] = result.get('trades_list', [])
+                trades_list = result.get('trades_list', [])
+                tv_profit_factor = BacktestResultAnalyzer.calculate_tradingview_profit_factor(trades_list)
+                best_combinations[ticker]['tv_profit_factor'] = round(tv_profit_factor, 2)
                 best_combinations[ticker]['win_rate'] = result.get('win_rate', 0)
                 best_combinations[ticker]['profit_factor'] = result.get('profit_factor', 0)
                 best_combinations[ticker]['avg_win'] = result.get('avg_win', 0)
@@ -396,7 +399,8 @@ def backtest_portfolio_optimal(portfolio_name, intervals=None, period="max", met
             'trades': trades,
             'max_drawdown': data.get('max_drawdown', '0%'),
             'win_rate': data.get('win_rate', 0),
-            'total_pnl': data.get('final_value', 0) - data.get('initial_capital', 0)
+            'total_pnl': data.get('final_value', 0) - data.get('initial_capital', 0),
+            'tv_profit_factor': data.get('tv_profit_factor', 'N/A')
         })
 
     report_data['asset_list'] = asset_list

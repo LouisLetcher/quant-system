@@ -207,8 +207,15 @@ class BacktestEngine:
                 '_strategy': self.strategy_class,
                 'asset_results': self.portfolio_results
             }
-            
+
             print(f"📊 Portfolio Backtest complete for {len(self.data)} assets")
+            raw_pf = combined_result.get('Profit Factor', 0)
+            print(f"Debug - Raw profit factor: {raw_pf}")
+            print(f"Debug - Trades from engine: {combined_result.get('_trades', [])}")
+            
+            # Print each trade's profit/loss to verify calculations
+            for trade in combined_result.get('_trades', []):
+                print(f"Trade PnL: {trade.get('PnL', 'N/A')}")
             return combined_result
         else:
             print("🚀 Running Backtesting.py Engine...")
@@ -220,6 +227,10 @@ class BacktestEngine:
             # Add debug info about trades
             print(f"Debug - Raw trade count from backtest: {results.get('# Trades', 'Not found in results')}")
             print(f"📊 Backtest complete with {len(self.data)} data points")
+            raw_pf = results.get('Profit Factor', 0)
+            print(f"Debug - Raw profit factor: {raw_pf}")
+            print(f"Debug - Trades from engine: {results.get('_trades', [])}")
+            
             return results
 
     # Add a simple method to retrieve optimization metrics
@@ -227,9 +238,9 @@ class BacktestEngine:
         """Returns metrics that can be used for optimization."""
         if self.is_portfolio:
             return {
-                'sharpe': sum(r['Sharpe Ratio'] * r['Equity Final [$]'] for r in self.portfolio_results.values()) / 
+                'sharpe': sum(r['Sharpe Ratio'] * r['Equity Final [$]'] for r in self.portfolio_results.values()) /
                         sum(r['Equity Final [$]'] for r in self.portfolio_results.values()),
-                'return': ((sum(r['Equity Final [$]'] for r in self.portfolio_results.values()) / 
+                'return': ((sum(r['Equity Final [$]'] for r in self.portfolio_results.values()) /
                         sum(self.cash.values())) - 1) * 100,
                 'drawdown': max(r['Max. Drawdown [%]'] for r in self.portfolio_results.values())
             }
