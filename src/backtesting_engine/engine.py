@@ -163,14 +163,15 @@ class BacktestEngine:
                 strategy=self.strategy_class,
                 cash=self.cash,
                 commission=self.commission,
-                trade_on_close=True
+                trade_on_close=True,
+                hedging=False,
+                exclusive_orders=True
             )
-
     def run(self):
         """Runs the backtest and returns results."""
         if self.is_portfolio:
             print(f"🚀 Running Portfolio Backtesting for {len(self.data)} assets...")
-            
+        
             def run_single_backtest(ticker):
                 bt = Backtest(
                     data=self.data[ticker],
@@ -181,20 +182,20 @@ class BacktestEngine:
                 )
                 result = bt.run()
                 return ticker, result
-            
+        
             # Run backtests in parallel
             with ThreadPoolExecutor() as executor:
                 results = list(executor.map(
                     lambda item: run_single_backtest(item[0]), 
                     self.data.items()
                 ))
-            
+        
             self.portfolio_results = {ticker: result for ticker, result in results}
-            
+        
             # Aggregate portfolio results
             total_final_equity = sum(r['Equity Final [$]'] for r in self.portfolio_results.values())
             total_initial_equity = sum(self.cash.values())
-            
+        
             # Create a combined result object
             combined_result = {
                 '_portfolio': True,
@@ -209,31 +210,65 @@ class BacktestEngine:
             }
 
             print(f"📊 Portfolio Backtest complete for {len(self.data)} assets")
-            raw_pf = combined_result.get('Profit Factor', 0)
-            print(f"Debug - Raw profit factor: {raw_pf}")
-            print(f"Debug - Trades from engine: {combined_result.get('_trades', [])}")
-            
-            # Print each trade's profit/loss to verify calculations
-            for trade in combined_result.get('_trades', []):
-                print(f"Trade PnL: {trade.get('PnL', 'N/A')}")
+            print(f"Debug - Raw profit factor: {combined_result.get('Profit Factor', 0)}")
+        
             return combined_result
         else:
             print("🚀 Running Backtesting.py Engine...")
             results = self.backtest.run()
-            
+        
             if results is None:
                 raise RuntimeError("❌ Backtesting.py did not return any results.")
-                
-            # Add debug info about trades
-            print(f"Debug - Raw trade count from backtest: {results.get('# Trades', 'Not found in results')}")
-            print(f"📊 Backtest complete with {len(self.data)} data points")
-            raw_pf = results.get('Profit Factor', 0)
-            print(f"Debug - Raw profit factor: {raw_pf}")
-            print(f"Debug - Trades from engine: {results.get('_trades', [])}")
-            
-            return results
-
-    # Add a simple method to retrieve optimization metrics
+        
+            # Log all metrics from Backtesting.py's results
+            print("\n📊 BACKTEST RESULTS 📊")
+            print("=" * 50)
+        
+            # Time metrics
+            print(f"Start Date: {results.get('Start', 'N/A')}")
+            print(f"End Date: {results.get('End', 'N/A')}")
+            print(f"Duration: {results.get('Duration', 'N/A')}")
+        
+            # Equity and Return metrics
+            print(f"Equity Final [$]: {results.get('Equity Final [$]', 'N/A')}")
+            print(f"Equity Peak [$]: {results.get('Equity Peak [$]', 'N/A')}")
+            print(f"Return [%]: {results.get('Return [%]', 'N/A')}")
+            print(f"Exposure Time [%]: {results.get('Exposure Time [%]', 'N/A')}")
+        
+            # Trade metrics
+            print(f"# Trades: {results.get('# Trades', 'N/A')}")
+            print(f"Win Rate [%]: {results.get('Win Rate [%]', 'N/A')}")
+            print(f"Best Trade [%]: {results.get('Best Trade [%]', 'N/A')}")
+            print(f"Worst Trade [%]: {results.get('Worst Trade [%]', 'N/A')}")
+            print(f"Avg. Trade [%]: {results.get('Avg. Trade [%]', 'N/A')}")
+            print(f"Max. Trade Duration: {results.get('Max. Trade Duration', 'N/A')}")
+            print(f"Avg. Trade Duration: {results.get('Avg. Trade Duration', 'N/A')}")
+        
+            # Performance metrics
+            print(f"Profit Factor: {results.get('Profit Factor', 'N/A')}")
+            print(f"Expectancy [%]: {results.get('Expectancy [%]', 'N/A')}")
+            print(f"SQN: {results.get('SQN', 'N/A')}")
+        
+            # Risk metrics
+            print(f"Sharpe Ratio: {results.get('Sharpe Ratio', 'N/A')}")
+            print(f"Sortino Ratio: {results.get('Sortino Ratio', 'N/A')}")
+            print(f"Calmar Ratio: {results.get('Calmar Ratio', 'N/A')}")
+            print(f"Max. Drawdown [%]: {results.get('Max. Drawdown [%]', 'N/A')}")
+        
+            # Log additional data structures (summarized to prevent excessive output)
+            if '_equity_curve' in results:
+                print(f"\nEquity Curve: DataFrame with {len(results['_equity_curve'])} rows")
+        
+            if '_trades' in results and not results['_trades'].empty:
+                trades_df = results['_trades']
+                print(f"\nTrades: DataFrame with {len(trades_df)} trades")
+                if len(trades_df) > 0:
+                    print("\nFirst trade sample:")
+                    print(trades_df.iloc[0])
+        
+            print("=" * 50)
+        
+            return results        
     def get_optimization_metrics(self):
         """Returns metrics that can be used for optimization."""
         if self.is_portfolio:
@@ -250,3 +285,7 @@ class BacktestEngine:
                 'return': self.backtest.run()['Return [%]'],
                 'drawdown': self.backtest.run()['Max. Drawdown [%]']
             }
+
+    def get_backtest_object(self):
+        """Return the underlying Backtest object for direct plotting."""
+        return self.backtest  # Assuming self.backtest holds the Backtesting.py Backtest object

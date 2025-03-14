@@ -15,25 +15,29 @@ class Scraper:
     _backoff_factor = 2  # Exponential backoff factor
 
     @staticmethod
-    def fetch_data(ticker: str, start: str = None, end: str = None, interval: str = "1d"):
+    def fetch_data(ticker: str, start: str = None, end: str = None, interval: str = "1d", period: str = None):
         """Fetch historical stock data from Yahoo Finance."""
         Scraper._apply_rate_limit()
-        
-        print(f"🔍 Fetching data for {ticker} from {start} to {end}...")
-        data = yf.download(ticker, start=start, end=end, interval=interval)
+
+        if period:
+            print(f"🔍 Fetching data for {ticker} with period={period}...")
+            data = yf.download(ticker, period=period, interval=interval)
+        else:
+            print(f"🔍 Fetching data for {ticker} from {start} to {end}...")
+            data = yf.download(ticker, start=start, end=end, interval=interval)
 
         if data.empty:
-            raise ValueError(f"⚠️ No data found for {ticker} from {start} to {end}.")
+            raise ValueError(f"⚠️ No data found for {ticker}.")
 
         data.index = pd.to_datetime(data.index)
         print(f"✅ Data fetched: {len(data)} rows for {ticker}.")
         return data
-    
+
     @staticmethod
     def fetch_batch_data(tickers: List[str], start: str = None, end: str = None, interval: str = "1d") -> Dict[str, pd.DataFrame]:
         """
         Fetch historical stock data for multiple tickers in a single request.
-        
+
         Args:
             tickers: List of ticker symbols
             start: Start date

@@ -24,7 +24,7 @@ backtests/results/
 
 # Exclude reports output
 reports_output/
-reports_output//**
+reports_output/**
 
 # Ignore QuantConnect Lean files
 lean_config.json
