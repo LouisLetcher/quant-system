@@ -1,108 +1,110 @@
+import os
+import pandas as pd
+from datetime import datetime, timedelta
 from src.data_scraper.scraper import Scraper
 from src.data_scraper.cache import Cache
-from src.data_scraper.data_cleaner import DataCleaner
-import pandas as pd
-from typing import List, Dict, Optional
+from src.utils.config_manager import ConfigManager
 
 class DataManager:
+    """Manages data fetching, caching, and preprocessing."""
+    
     @staticmethod
-    def get_stock_data(ticker, start_date=None, end_date=None, interval="1d"):
-        """Get stock data from cache or fetch it if not available."""
-        # First try to load from cache
-        data = Cache.load_from_cache(ticker, interval)
+    def get_stock_data(ticker, start_date=None, end_date=None, interval="1d", use_cache=True):
+        """
+        Get stock data, using cache if available and recent.
         
-        if data is not None:
-            print(f"✅ Data retrieved for {ticker} from cache: {len(data)} rows.")
-            return data
+        Args:
+            ticker: Stock ticker symbol
+            start_date: Start date (YYYY-MM-DD)
+            end_date: End date (YYYY-MM-DD)
+            interval: Bar interval ("1d", "1wk", etc.)
+            use_cache: Whether to use cached data if available
+            
+        Returns:
+            DataFrame with OHLCV data or None if data not available
+        """
+        # Convert date strings to datetime objects if provided
+        start = pd.to_datetime(start_date) if start_date else None
+        end = pd.to_datetime(end_date) if end_date else pd.to_datetime(datetime.now().date())
         
-        print(f"🔍 Checking cache for {ticker} data...")
+        # Check if we have cached data
+        if use_cache:
+            cached_data = Cache.load_from_cache(ticker, interval)
+            
+            if cached_data is not None and not cached_data.empty:
+                # Check if cached data is recent enough
+                if interval == "1d" and end - cached_data.index[-1] < timedelta(days=2):
+                    print(f"✅ Using cached data for {ticker} ({interval})")
+                    
+                    # Filter data based on date range
+                    if start:
+                        cached_data = cached_data[cached_data.index >= start]
+                    if end:
+                        cached_data = cached_data[cached_data.index <= end]
+                    
+                    return cached_data
         
+        # If no cache or cache is outdated, fetch from API
         try:
-            # If not in cache, fetch from Yahoo Finance
-            # The rate limiting is now handled inside the Scraper class
-            data = Scraper.fetch_data(ticker, start_date, end_date, interval)
+            # For period-based requests
+            if start is None:
+                # Convert to period string if start_date is None
+                period = "max"  # Default to max
+                data = Scraper.fetch_data(ticker, period=period, end=end_date, interval=interval)
+            else:
+                # For date range requests
+                data = Scraper.fetch_data(ticker, start=start_date, end=end_date, interval=interval)
             
-            # Clean data
-            data = DataCleaner.remove_missing_values(data)
+            # Cache the data for future use
+            if data is not None and not data.empty:
+                Cache.save_to_cache(ticker, data, interval)
             
-            # Save to cache
-            Cache.save_to_cache(ticker, data, interval)
-            
-            print(f"✅ Data retrieved for {ticker}: {len(data)} rows.")
             return data
+            
         except Exception as e:
-            print(f"❌ Error getting data for {ticker}: {e}")
+            print(f"❌ Error fetching data for {ticker}: {str(e)}")
             return None
     
     @staticmethod
-    def get_batch_stock_data(tickers: List[str], start_date=None, end_date=None, interval="1d") -> Dict[str, pd.DataFrame]:
+    def preprocess_data(data):
         """
-        Get stock data for multiple tickers with batch processing and rate limiting.
-        First checks cache, then fetches missing data via batch requests.
+        Preprocess data for backtesting.
         
         Args:
-            tickers: List of ticker symbols
-            start_date: Start date for data
-            end_date: End date for data
-            interval: Data interval ('1d', '1wk', etc.)
+            data: DataFrame with OHLCV data
             
         Returns:
-            Dictionary mapping tickers to their respective DataFrames
+            Preprocessed DataFrame
         """
-        result = {}
-        missing_tickers = []
+        if data is None or data.empty:
+            return None
         
-        # First check cache for all tickers
-        for ticker in tickers:
-            data = Cache.load_from_cache(ticker, interval)
-            if data is not None:
-                result[ticker] = data
-                print(f"✅ Data retrieved for {ticker} from cache: {len(data)} rows.")
-            else:
-                missing_tickers.append(ticker)
+        # Make a copy to avoid modifying the original
+        df = data.copy()
         
-        if not missing_tickers:
-            return result
+        # Ensure all required columns exist
+        required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
         
-        # Fetch missing tickers with a batch request
-        print(f"🔍 Fetching data for {len(missing_tickers)} tickers not found in cache...")
-        try:
-            batch_data = Scraper.fetch_batch_data(missing_tickers, start_date, end_date, interval)
-            
-            # Process and cache each ticker's data
-            for ticker, data in batch_data.items():
-                if data is not None and not data.empty:
-                    # Clean data
-                    clean_data = DataCleaner.remove_missing_values(data)
-                    
-                    # Save to cache
-                    Cache.save_to_cache(ticker, clean_data, interval)
-                    
-                    # Add to result
-                    result[ticker] = clean_data
-            
-            # Check if any tickers failed to fetch
-            failed_tickers = set(missing_tickers) - set(batch_data.keys())
-            if failed_tickers:
-                print(f"❌ Failed to retrieve data for: {', '.join(failed_tickers)}")
-                
-            return result
-            
-        except Exception as e:
-            print(f"❌ Error in batch data retrieval: {e}")
-            
-            # Fall back to individual requests for each ticker with retry logic
-            print("⚠️ Falling back to individual requests...")
-            for ticker in missing_tickers:
-                for retry in range(Scraper._max_retries):
-                    try:
-                        data = DataManager.get_stock_data(ticker, start_date, end_date, interval)
-                        if data is not None:
-                            result[ticker] = data
-                        break
-                    except Exception as retry_error:
-                        if retry < Scraper._max_retries - 1:
-                            wait_time = (Scraper._backoff_factor ** retry) * Scraper._min_interval
-                            print(f"⚠️ Retry {retry+1}/{Scraper._max_retries} for {ticker} after {wait_time:.2f}s")
-                
-            return result
+        # Check for missing columns
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            print(f"⚠️ Missing columns: {missing_columns}")
+            return None
+        
+        # Handle missing values
+        df = df.dropna(subset=['Close'])
+        
+        # Fill other missing values
+        for col in required_columns:
+            if col in df.columns:
+                # Forward fill, then backward fill
+                df[col] = df[col].fillna(method='ffill').fillna(method='bfill')
+        
+        # Ensure index is datetime
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = pd.to_datetime(df.index)
+        
+        # Sort by date
+        df = df.sort_index()
+        
+        return df

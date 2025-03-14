@@ -16,6 +16,7 @@ class ReportGenerator:
         'single_strategy': "backtest_report.html",
         'multi_strategy': "multi_strategy_report.html", 
         'portfolio': "multi_asset_report.html",
+        'portfolio_detailed': "portfolio_detailed_report.html",
         'optimizer': "optimizer_report.html"
     }
 
@@ -45,10 +46,15 @@ class ReportGenerator:
             # Deep copy to avoid modifying original data
             safe_results = copy.deepcopy(results)
         
-            # Handle data differently based on report type
+            # Pre-process best_combinations to fix common issues
+            if 'best_combinations' in safe_results:
+                for ticker, combo in safe_results['best_combinations'].items():
+                    # Fix trade count discrepancy
+                    if 'trades_list' in combo and (combo.get('trades', 0) == 0 or combo.get('trades') is None):
+                        combo['trades'] = len(combo['trades_list'])
+        
+            # Continue with existing code...
             template_vars = self._prepare_template_variables(safe_results, template_name)
-
-            # Render template with prepared variables
             template = self.env.get_template(template_name)
             rendered_html = template.render(**template_vars)
 
@@ -69,6 +75,7 @@ class ReportGenerator:
             print(traceback.format_exc())
             self._generate_error_report(results, e, output_path)
             return output_path
+        
     def _prepare_template_variables(self, data: Dict[str, Any], template_name: str) -> Dict[str, Any]:
         # Deep clean any NaN values in the data
         def clean_special_values(obj):
@@ -84,23 +91,17 @@ class ReportGenerator:
                         clean_special_values(item)
                     elif item is None or (isinstance(item, float) and (math.isnan(item) or math.isinf(item))):
                         obj[i] = 0.0
-        
+
         # Apply cleaning to the data
         clean_special_values(data)
-        
-        # Continue with your existing code...
-        """
-        Prepares variables for template rendering based on report type.
-    
-        Args:
-            data: Original data dictionary
-            template_name: Name of the template to prepare variables for
-        
-        Returns:
-            Dictionary of variables ready for template rendering
-        """
+
+        # For detailed portfolio reports (new template type)
+        if template_name == self.TEMPLATES['portfolio_detailed']:
+            # Direct passthrough of all variables from prepare_portfolio_report_data
+            return data
+
         # For portfolio reports (multi-asset)
-        if template_name == self.TEMPLATES['portfolio']:
+        elif template_name == self.TEMPLATES['portfolio']:
             return {
                 "data": data,
                 "strategy": data.get("strategy", "Unknown Strategy"),
@@ -109,7 +110,7 @@ class ReportGenerator:
                 "asset_details": data.get("asset_details", {}),
                 "asset_list": data.get("asset_list", [])
             }
-    
+
         # For multi-strategy reports
         elif template_name == self.TEMPLATES['multi_strategy']:
             return {
@@ -121,7 +122,7 @@ class ReportGenerator:
                 "best_score": data.get("best_score", 0),
                 "metric": data.get("metric", "sharpe")
             }
-        
+
         # For optimizer reports
         elif template_name == self.TEMPLATES['optimizer']:
             return {
@@ -130,24 +131,44 @@ class ReportGenerator:
                 "results": data.get("results", []),
                 "metric": data.get("metric", "sharpe")
             }
-    
+
+        # When preparing portfolio optimal report data
+        if template_name == "portfolio_optimal_report.html":
+            for ticker, combinations in data.get('best_combinations', {}).items():
+                # Create mappings from backtesting.py's naming to template's expected naming
+                if 'Profit Factor' in combinations and 'profit_factor' not in combinations:
+                    combinations['profit_factor'] = combinations['Profit Factor']
+        
+                if 'Return [%]' in combinations and 'return' not in combinations:
+                    combinations['return'] = f"{combinations['Return [%]']:.2f}%"
+            
+                if 'Win Rate [%]' in combinations and 'win_rate' not in combinations:
+                    combinations['win_rate'] = combinations['Win Rate [%]']
+            
+                if 'Max. Drawdown [%]' in combinations and 'max_drawdown' not in combinations:
+                    combinations['max_drawdown'] = f"{combinations['Max. Drawdown [%]']:.2f}%"
+            
+                if '# Trades' in combinations and 'trades' not in combinations:
+                    combinations['trades'] = combinations['# Trades']
+                elif 'trades_list' in combinations and ('trades' not in combinations or combinations['trades'] == 0):
+                    combinations['trades'] = len(combinations['trades_list'])
+            
         # For standard single-strategy reports
         result = {"data": data}
-    
+
         # Add default values if needed
         if isinstance(data, dict):
-            if 'trades' not in data:
-                data['trades'] = data.get('trades', 0)
-            
+            if 'trades' not in data and '# Trades' in data:
+                data['trades'] = data['# Trades']
+    
             if 'trades_list' not in data and 'trades' in data:
                 data['trades_list'] = []
-    
+
         return result    
     def _generate_error_report(self, data: Dict[str, Any], error: Exception, output_path: str) -> None:
         """
         Generates a simple HTML error report when template rendering fails.
-        """
-        # Create a copy of data to avoid modifying the original
+        """        # Create a copy of data to avoid modifying the original
         safe_data = copy.deepcopy(data) if data is not None else {}
         
         # Recursively clean NaN values in the data
@@ -256,6 +277,55 @@ class ReportGenerator:
         # Generate the report
         return self.generate_report(comparison_data, self.TEMPLATES['multi_strategy'], output_path)
     
+    def format_report_data(self, backtest_results):
+        """Pre-process data before passing to template to ensure proper formatting"""
+        # Deep copy to avoid modifying original
+        formatted_data = copy.deepcopy(backtest_results)
+
+        # Ensure profit factor is properly formatted
+        for ticker, combinations in formatted_data.get('best_combinations', {}).items():
+            # Set trades count based on trades_list if necessary
+            if 'trades_list' in combinations and (combinations.get('trades', 0) == 0 or combinations.get('trades') is None):
+                combinations['trades'] = len(combinations['trades_list'])
+            
+            # Process profit factor
+            if 'profit_factor' in combinations:
+                
+                # Format depending on value size
+                if combinations['profit_factor'] > 100:
+                    combinations['profit_factor'] = round(combinations['profit_factor'], 1)
+                elif combinations['profit_factor'] > 10:
+                    combinations['profit_factor'] = round(combinations['profit_factor'], 2)
+                else:
+                    combinations['profit_factor'] = round(combinations['profit_factor'], 4)
+                    
+            # Calculate total P&L from trades if not present
+            if 'total_pnl' not in combinations and 'trades_list' in combinations:
+                combinations['total_pnl'] = sum(trade.get('pnl', 0) for trade in combinations['trades_list'])
+                
+            # Ensure other key metrics exist
+            if 'return' not in combinations:
+                combinations['return'] = '0.00%'
+                
+            if 'win_rate' not in combinations and 'trades_list' in combinations:
+                trades = combinations['trades_list']
+                win_count = sum(1 for trade in trades if trade.get('pnl', 0) > 0)
+                combinations['win_rate'] = round((win_count / len(trades) * 100), 2) if trades else 0
+                
+            if 'max_drawdown' not in combinations:
+                combinations['max_drawdown'] = '0.00%'
+            
+            # Format trade data
+            if 'trades_list' in combinations:
+                for trade in combinations['trades_list']:
+                    # Ensure date formatting
+                    if 'entry_date' in trade and not isinstance(trade['entry_date'], str):
+                        trade['entry_date'] = str(trade['entry_date'])
+                    if 'exit_date' in trade and not isinstance(trade['exit_date'], str):
+                        trade['exit_date'] = str(trade['exit_date'])
+
+        return formatted_data
+
     def generate_portfolio_report(self, portfolio_results: Dict[str, Any], output_path: Optional[str] = None) -> str:
         """
         Generates a portfolio HTML report from backtest results.
@@ -271,10 +341,39 @@ class ReportGenerator:
         if output_path is None:
             portfolio_name = portfolio_results.get('portfolio', 'unknown')
             output_path = f"reports_output/portfolio_{portfolio_name}.html"
-        
-        # Generate the portfolio report
+
+        # Create asset_list for template if not present
+        if 'best_combinations' in portfolio_results and 'asset_list' not in portfolio_results:
+            asset_list = []
+            for ticker, data in portfolio_results['best_combinations'].items():
+                # Use direct mappings from backtesting.py metrics when available
+                asset_data = {
+                    'name': ticker,
+                    'strategy': data.get('strategy', 'Unknown'),
+                    'interval': data.get('interval', '1d'),
+                    'score': data.get('score', 0),
+                    'profit_factor': data.get('Profit Factor', data.get('profit_factor', 0)),
+                    'return': data.get('Return [%]', data.get('return', '0.00%')),
+                    'total_pnl': data.get('Equity Final [$]', 0) - data.get('initial_capital', 0),
+                    'win_rate': data.get('Win Rate [%]', data.get('win_rate', 0)),
+                    'max_drawdown': data.get('Max. Drawdown [%]', data.get('max_drawdown', '0.00%')),
+                    'trades': data.get('# Trades', data.get('trades', 0))
+                }
+                
+                # Format numeric values appropriately
+                if isinstance(asset_data['return'], (int, float)):
+                    asset_data['return'] = f"{asset_data['return']:.2f}%"
+                    
+                if isinstance(asset_data['max_drawdown'], (int, float)):
+                    asset_data['max_drawdown'] = f"{asset_data['max_drawdown']:.2f}%"
+                    
+                asset_list.append(asset_data)
+            
+            portfolio_results['asset_list'] = asset_list
+
+        # Generate the report
         return self.generate_report(portfolio_results, self.TEMPLATES['portfolio'], output_path)
-        
+    
     def generate_optimizer_report(self, optimizer_results: dict[str, Any], output_path: Optional[str] = None) -> str:
         """
         Generate an optimizer HTML report.
@@ -294,3 +393,44 @@ class ReportGenerator:
         
         # Generate the report
         return self.generate_report(optimizer_results, self.TEMPLATES['optimizer'], output_path)
+
+    def generate_detailed_portfolio_report(self, portfolio_results, output_path=None):
+        """
+        Generates a comprehensive HTML report for portfolio backtest results
+        with equity curves, drawdown charts, and detailed trade tables.
+        
+        Args:
+            portfolio_results: Dictionary containing portfolio backtest results
+            output_path: Path where the report will be saved (optional)
+            
+        Returns:
+            Path to the generated report file
+        """
+        # Generate default output path if not provided
+        if output_path is None:
+            portfolio_name = portfolio_results.get('portfolio', 'unknown')
+            output_path = f"reports_output/portfolio_detailed_{portfolio_name}.html"
+        
+        # Prepare data for the report
+        from src.reports.report_formatter import ReportFormatter
+        from src.reports.report_visualizer import ReportVisualizer
+        import pandas as pd
+        
+        # Format the data for reporting
+        report_data = ReportFormatter.prepare_portfolio_report_data(portfolio_results)
+        
+        # Generate equity and drawdown visualizations for each asset
+        for asset in report_data['assets']:
+            if asset['equity_curve']:
+                # Convert equity curve to DataFrame for visualization
+                dates = [pd.to_datetime(point['date']) for point in asset['equity_curve']]
+                values = [point['value'] for point in asset['equity_curve']]
+                equity_df = pd.DataFrame({'equity': values}, index=dates)
+                
+                # Generate visualizations
+                asset['equity_chart'] = ReportVisualizer.plot_equity_and_drawdown(equity_df)
+            else:
+                asset['equity_chart'] = None
+        
+        # Generate the report
+        return self.generate_report(report_data, self.TEMPLATES['portfolio_detailed'], output_path)
