@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import numpy as np
 from scipy.optimize import minimize
+
 
 class ParameterTuner:
     """Tunes strategy parameters to maximize performance metrics."""

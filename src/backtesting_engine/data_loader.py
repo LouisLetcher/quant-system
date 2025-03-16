@@ -1,5 +1,7 @@
-import pandas as pd
+from __future__ import annotations
+
 from src.data_scraper.data_manager import DataManager
+
 
 class DataLoader:
     """Loads historical price data for backtesting, using cache when available."""
@@ -8,16 +10,6 @@ class DataLoader:
     def load_data(ticker, period="max", interval="1d", start=None, end=None):
         """
         Loads price data for a ticker using DataManager.
-        
-        Args:
-            ticker: Stock ticker symbol
-            period: Time period for data (e.g., "1y", "max")
-            interval: Bar interval ("1d", "1wk", etc.)
-            start: Start date (overrides period if provided)
-            end: End date
-            
-        Returns:
-            DataFrame with OHLCV data or None if data not available
         """
         print(f"🔍 Loading {ticker} data with interval {interval}...")
 
@@ -39,24 +31,51 @@ class DataLoader:
                 try:
                     # Map common intervals to pandas resample rule
                     interval_map = {
-                        "1m": "1min", "5m": "5min", "15m": "15min", "30m": "30min",
-                        "1h": "1H", "4h": "4H", "1d": "1D", "1wk": "1W", "1mo": "1ME", "3mo": "3ME"
+                        "1m": "1min",
+                        "5m": "5min",
+                        "15m": "15min",
+                        "30m": "30min",
+                        "1h": "1h",
+                        "4h": "4h",
+                        "1d": "1D",
+                        "1wk": "1W",
+                        "1mo": "1M",
+                        "3mo": "3M",
                     }
                     resample_rule = interval_map.get(interval, "1D")
 
-                    # Resample OHLCV data
-                    data = data.resample(resample_rule).agg({
-                        'Open': 'first',
-                        'High': 'max',
-                        'Low': 'min',
-                        'Close': 'last',
-                        'Volume': 'sum'
-                    }).dropna()
+                    # Save original data length
+                    original_length = len(data)
 
-                    print(f"✅ Resampled daily data to {interval} - got {len(data)} bars")
+                    # Resample OHLCV data
+                    data = (
+                        data.resample(resample_rule)
+                        .agg(
+                            {
+                                "Open": "first",
+                                "High": "max",
+                                "Low": "min",
+                                "Close": "last",
+                                "Volume": "sum",
+                            }
+                        )
+                        .dropna()
+                    )
+
+                    # Check if we have enough data after resampling
+                    if len(data) > 0:
+                        print(f"✅ Resampled daily data to {interval} - got {len(data)} bars from {original_length} original bars")
+                        return data
+                    else:
+                        print(f"⚠️ No data available after resampling to {interval}")
+                        # Return the original daily data instead of None
+                        print(f"⚠️ Falling back to daily data with {original_length} bars")
+                        return DataManager.get_stock_data(ticker, start, end, "1d")
                 except Exception as e:
-                    print(f"❌ Error resampling data: {str(e)}")
-                    return None
+                    print(f"❌ Error resampling data: {e!s}")
+                    # Return the original daily data instead of None
+                    print(f"⚠️ Falling back to daily data due to resampling error")
+                    return DataManager.get_stock_data(ticker, start, end, "1d")
 
         print(f"✅ Got {len(data)} bars for {ticker}")
         return data

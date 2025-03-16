@@ -1,13 +1,13 @@
+from __future__ import annotations
+
 from src.backtesting_engine.strategies.index_trend import IndexTrendStrategy
 from src.backtesting_engine.strategies.inside_day import InsideDayStrategy
+
 
 class StrategyFactory:
     """Factory class for creating strategy instances."""
 
-    _strategies = {
-        "index_trend": IndexTrendStrategy,
-        "inside_day": InsideDayStrategy
-    }
+    _strategies = {"index_trend": IndexTrendStrategy, "inside_day": InsideDayStrategy}
 
     @classmethod
     def get_strategy(cls, strategy_name):

@@ -1,5 +1,9 @@
-from src.backtesting_engine.strategies.base_strategy import BaseStrategy
+from __future__ import annotations
+
 import pandas as pd
+
+from src.backtesting_engine.strategies.base_strategy import BaseStrategy
+
 
 class IndexTrendStrategy(BaseStrategy):
     """
@@ -17,14 +21,24 @@ class IndexTrendStrategy(BaseStrategy):
         super().init()
 
         # Calculate Fast and Slow Simple Moving Averages
-        self.fast_sma = self.I(lambda x: pd.Series(x).rolling(self.fast_sma_period).mean(), self.data.Close)
-        self.slow_sma = self.I(lambda x: pd.Series(x).rolling(self.slow_sma_period).mean(), self.data.Close)
+        self.fast_sma = self.I(
+            lambda x: pd.Series(x).rolling(self.fast_sma_period).mean(), self.data.Close
+        )
+        self.slow_sma = self.I(
+            lambda x: pd.Series(x).rolling(self.slow_sma_period).mean(), self.data.Close
+        )
 
     def next(self):
         """Trading logic for each bar."""
         # Check for crossovers using the last two periods
-        fast_crossed_above_slow = self.fast_sma[-2] < self.slow_sma[-2] and self.fast_sma[-1] > self.slow_sma[-1]
-        fast_crossed_below_slow = self.fast_sma[-2] > self.slow_sma[-2] and self.fast_sma[-1] < self.slow_sma[-1]
+        fast_crossed_above_slow = (
+            self.fast_sma[-2] < self.slow_sma[-2]
+            and self.fast_sma[-1] > self.slow_sma[-1]
+        )
+        fast_crossed_below_slow = (
+            self.fast_sma[-2] > self.slow_sma[-2]
+            and self.fast_sma[-1] < self.slow_sma[-1]
+        )
 
         # If we don't have a position and fast SMA crosses above slow SMA
         if not self.position and fast_crossed_above_slow:

@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.ruff_cache/
 
 # Ignore Jupyter Notebook checkpoints
 .ipynb_checkpoints/
@@ -88,6 +89,7 @@ env/
 ENV/
 env.bak/
 venv.bak/
+.venv/
 
 # Ignore Python-specific files
 *.pyd
