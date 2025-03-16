@@ -1,6 +1,7 @@
 """
 Backtest command implementations for the CLI.
 """
+
 from __future__ import annotations
 
 from src.backtesting_engine.strategies.strategy_factory import StrategyFactory
@@ -12,16 +13,17 @@ from src.utils.logger import Logger, get_logger
 # Get a logger for this module
 logger = get_logger(__name__)
 
+
 def backtest_single(args):
     """Run a backtest for a single asset with a single strategy."""
     # Set up CLI logging
     log_file = Logger.setup_cli_logging("backtest_single")
     logger.info(f"Starting backtest for {args.strategy} on {args.ticker}...")
-    
+
     # Capture stdout/stderr if desired
-    if getattr(args, 'capture_output', False):
+    if getattr(args, "capture_output", False):
         Logger.capture_stdout()
-    
+
     try:
         # Get default parameters
         defaults = get_default_parameters()
@@ -35,7 +37,9 @@ def backtest_single(args):
             )
         else:
             commission = (
-                args.commission if args.commission is not None else defaults["commission"]
+                args.commission
+                if args.commission is not None
+                else defaults["commission"]
             )
             initial_capital = (
                 args.initial_capital
@@ -43,7 +47,9 @@ def backtest_single(args):
                 else defaults["initial_capital"]
             )
 
-        logger.info(f"Using commission: {commission}, initial capital: {initial_capital}")
+        logger.info(
+            f"Using commission: {commission}, initial capital: {initial_capital}"
+        )
 
         results = StrategyRunner.execute(
             args.strategy,
@@ -66,7 +72,7 @@ def backtest_single(args):
         return None
     finally:
         # Restore stdout/stderr if captured
-        if getattr(args, 'capture_output', False):
+        if getattr(args, "capture_output", False):
             Logger.restore_stdout()
 
 

@@ -42,7 +42,7 @@ def register_commands(subparsers):
     parent_parser.add_argument(
         "--log", action="store_true", help="Enable detailed logging of command output"
     )
-    
+
     # List portfolios command
     list_portfolios_parser = subparsers.add_parser(
         "list-portfolios", help="List available portfolios", parents=[parent_parser]
@@ -51,6 +51,8 @@ def register_commands(subparsers):
 
     # List strategies command
     list_strategies_parser = subparsers.add_parser(
-        "list-strategies", help="List available trading strategies", parents=[parent_parser]
+        "list-strategies",
+        help="List available trading strategies",
+        parents=[parent_parser],
     )
     list_strategies_parser.set_defaults(func=lambda args: list_strategies(args))

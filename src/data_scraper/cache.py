@@ -7,13 +7,13 @@ import pandas as pd
 
 class Cache:
     CACHE_DIR = "cache/"
-    
+
     @staticmethod
     def save_to_cache(ticker: str, data: pd.DataFrame, interval="1d"):
         """Saves stock data to a local CSV cache."""
         os.makedirs(Cache.CACHE_DIR, exist_ok=True)
         file_path = Cache._get_cache_file_path(ticker, interval)
-    
+
         # Convert MultiIndex columns to simple columns before saving
         if isinstance(data.columns, pd.MultiIndex):
             # Create a new DataFrame with simple column names
@@ -29,10 +29,10 @@ class Cache:
             if len(simplified_data.columns) == 5:
                 simplified_data.to_csv(file_path, index=True)
                 return
-    
+
         # Original logic if not MultiIndex or conversion failed
         data.to_csv(file_path, index=True)
-        
+
     @staticmethod
     def load_from_cache(ticker: str, interval="1d") -> pd.DataFrame:
         """Load data from cache if it exists"""
@@ -55,10 +55,10 @@ class Cache:
 
                 # Convert index to datetime more flexibly
                 df.index = pd.to_datetime(df.index, errors="coerce")
-    
+
                 # Only filter out rows where ALL values are NaN
-                df = df.dropna(how='all')
-    
+                df = df.dropna(how="all")
+
                 # Add check to ensure DataFrame has data
                 if df.empty:
                     print(f"⚠️ Cache file for {ticker} exists but contains no data")

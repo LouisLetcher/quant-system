@@ -363,12 +363,14 @@ class ReportGenerator:
                 )
 
             # Ensure other key metrics exist
-            if 'Return [%]' in combinations:
-                combinations['return'] = f"{combinations['Return [%]']:.2f}%"
-            elif 'return_pct' in combinations and isinstance(combinations['return_pct'], (int, float)):
-                combinations['return'] = f"{combinations['return_pct']:.2f}%"
-            elif 'return' not in combinations:
-                combinations['return'] = '0.00%'
+            if "Return [%]" in combinations:
+                combinations["return"] = f"{combinations['Return [%]']:.2f}%"
+            elif "return_pct" in combinations and isinstance(
+                combinations["return_pct"], (int, float)
+            ):
+                combinations["return"] = f"{combinations['return_pct']:.2f}%"
+            elif "return" not in combinations:
+                combinations["return"] = "0.00%"
             if "win_rate" not in combinations and "trades_list" in combinations:
                 trades = combinations["trades_list"]
                 win_count = sum(1 for trade in trades if trade.get("pnl", 0) > 0)
@@ -479,11 +481,11 @@ class ReportGenerator:
     def generate_detailed_portfolio_report(self, portfolio_results, output_path=None):
         """
         Generates a detailed portfolio HTML report from backtest results.
-        
+
         Args:
             portfolio_results: Dictionary containing portfolio backtest results
             output_path: Path where the report will be saved (optional)
-            
+
         Returns:
             Path to the generated report file
         """
@@ -492,30 +494,33 @@ class ReportGenerator:
             if output_path is None:
                 portfolio_name = portfolio_results.get("portfolio", "unknown")
                 output_path = f"reports_output/portfolio_{portfolio_name}_detailed.html"
-            
+
             # Ensure directory exists
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            
+
             # Prepare data for the template
-            template_vars = self._prepare_portfolio_detailed_report_data(portfolio_results)
-            
+            template_vars = self._prepare_portfolio_detailed_report_data(
+                portfolio_results
+            )
+
             # Get the template
             template = self.env.get_template("portfolio_detailed_report.html")
-            
+
             # Render the template
             rendered_html = template.render(**template_vars)
-            
+
             # Write the rendered HTML to the output file
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(rendered_html)
-            
+
             return output_path
         except Exception as e:
             print(f"❌ Error generating report: {e}")
-            print(f"Template: portfolio_detailed_report.html")
+            print("Template: portfolio_detailed_report.html")
             import traceback
+
             print(traceback.format_exc())
-            
+
             # Try to save a simplified report as fallback
             try:
                 # Create a very simple HTML report with just the basic information
@@ -548,7 +553,7 @@ class ReportGenerator:
                             <th>Trades</th>
                         </tr>
                 """
-                
+
                 # Add basic asset information
                 if "best_combinations" in portfolio_results:
                     for ticker, data in portfolio_results["best_combinations"].items():
@@ -556,9 +561,13 @@ class ReportGenerator:
                         interval = data.get("interval", "Unknown")
                         return_pct = data.get("return_pct", 0)
                         trades = data.get("trades_count", 0)
-                        
-                        return_class = "positive" if return_pct > 0 else "negative" if return_pct < 0 else ""
-                        
+
+                        return_class = (
+                            "positive"
+                            if return_pct > 0
+                            else "negative" if return_pct < 0 else ""
+                        )
+
                         simple_html += f"""
                         <tr>
                             <td>{ticker}</td>
@@ -568,18 +577,18 @@ class ReportGenerator:
                             <td>{trades}</td>
                         </tr>
                         """
-                
+
                 simple_html += """
                     </table>
                     <p><em>This is a simplified fallback report. Please check the logs for more information about the error.</em></p>
                 </body>
                 </html>
                 """
-                
+
                 # Write the simplified HTML to the output file
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(simple_html)
-                
+
                 print(f"📄 Fallback report saved to: {output_path}")
                 return output_path
             except Exception as fallback_error:
@@ -590,15 +599,15 @@ class ReportGenerator:
     def _prepare_portfolio_detailed_report_data(self, portfolio_results):
         """
         Prepare data for the detailed portfolio report.
-        
+
         Args:
             portfolio_results: Raw portfolio results
-            
+
         Returns:
             Formatted data for the template
         """
         from datetime import datetime
-        
+
         # Basic portfolio information
         report_data = {
             "portfolio_name": portfolio_results.get("portfolio", "Unknown Portfolio"),
@@ -612,56 +621,53 @@ class ReportGenerator:
                 "max_drawdown": 0,
                 "profit_factor": 0,
                 "total_trades": 0,
-                "win_rate": 0
-            }
+                "win_rate": 0,
+            },
         }
-        
+
         # Define required metrics with default values
         required_metrics = {
             # Return metrics
-            'return_pct': 0,
-            'return_annualized': 0,
-            'buy_hold_return': 0,
-            'cagr': 0,
-            
+            "return_pct": 0,
+            "return_annualized": 0,
+            "buy_hold_return": 0,
+            "cagr": 0,
             # Risk metrics
-            'sharpe_ratio': 0,
-            'sortino_ratio': 0,
-            'calmar_ratio': 0,
-            'max_drawdown_pct': 0,
-            'avg_drawdown': 0,
-            'avg_drawdown_duration': 'N/A',
-            'volatility': 0,
-            'alpha': 0,
-            'beta': 0,
-            
+            "sharpe_ratio": 0,
+            "sortino_ratio": 0,
+            "calmar_ratio": 0,
+            "max_drawdown_pct": 0,
+            "avg_drawdown": 0,
+            "avg_drawdown_duration": "N/A",
+            "volatility": 0,
+            "alpha": 0,
+            "beta": 0,
             # Trade metrics
-            'trades_count': 0,
-            'win_rate': 0,
-            'profit_factor': 0,
-            'expectancy': 0,
-            'sqn': 0,
-            'kelly_criterion': 0,
-            'avg_trade_pct': 0,
-            'avg_trade': 0,
-            'best_trade_pct': 0,
-            'best_trade': 0,
-            'worst_trade_pct': 0,
-            'worst_trade': 0,
-            'avg_trade_duration': 'N/A',
-            'max_trade_duration': 'N/A',
-            'exposure_time': 0,
-            
+            "trades_count": 0,
+            "win_rate": 0,
+            "profit_factor": 0,
+            "expectancy": 0,
+            "sqn": 0,
+            "kelly_criterion": 0,
+            "avg_trade_pct": 0,
+            "avg_trade": 0,
+            "best_trade_pct": 0,
+            "best_trade": 0,
+            "worst_trade_pct": 0,
+            "worst_trade": 0,
+            "avg_trade_duration": "N/A",
+            "max_trade_duration": "N/A",
+            "exposure_time": 0,
             # Account metrics
-            'initial_capital': 10000,
-            'equity_final': 10000,
-            'equity_peak': 10000,
+            "initial_capital": 10000,
+            "equity_final": 10000,
+            "equity_peak": 10000,
         }
-        
+
         # Process each asset's results
         best_combinations = portfolio_results.get("best_combinations", {})
         all_results = portfolio_results.get("all_results", {})
-        
+
         total_return = 0
         total_trades = 0
         weighted_sharpe = 0
@@ -669,33 +675,35 @@ class ReportGenerator:
         total_profit_factor = 0
         total_win_rate = 0
         asset_count = 0
-        
+
         # Process each asset
         for ticker, best_combo in best_combinations.items():
             if best_combo is None or best_combo.get("strategy") is None:
                 continue
-                    
+
             asset_count += 1
-                
+
             # Get the asset's detailed results
             asset_results = all_results.get(ticker, {})
-                
+
             # Create asset entry for the report with default values for all required metrics
             asset_entry = {
                 "ticker": ticker,
                 "strategy": best_combo.get("strategy", "Unknown"),
                 "interval": best_combo.get("interval", "1d"),
             }
-            
+
             # Add all required metrics with default values
             for metric, default_value in required_metrics.items():
                 asset_entry[metric] = best_combo.get(metric, default_value)
-                
+
             # Add equity curve and chart
             asset_entry["equity_curve"] = best_combo.get("equity_curve", [])
-            asset_entry["equity_chart"] = None  # Will be populated later if visualization is added
+            asset_entry["equity_chart"] = (
+                None  # Will be populated later if visualization is added
+            )
             asset_entry["strategies"] = []
-                
+
             # Accumulate summary statistics
             total_return += best_combo.get("return_pct", 0)
             total_trades += best_combo.get("trades_count", 0)
@@ -703,7 +711,7 @@ class ReportGenerator:
             max_drawdown = max(max_drawdown, best_combo.get("max_drawdown_pct", 0))
             total_profit_factor += best_combo.get("profit_factor", 0)
             total_win_rate += best_combo.get("win_rate", 0)
-                
+
             # Process strategies for this asset
             if "strategies" in asset_results:
                 for strategy_data in asset_results["strategies"]:
@@ -711,35 +719,41 @@ class ReportGenerator:
                         "name": strategy_data.get("name", "Unknown"),
                         "best_timeframe": strategy_data.get("best_timeframe", ""),
                         "best_score": strategy_data.get("best_score", 0),
-                        "timeframes": []
+                        "timeframes": [],
                     }
-                        
+
                     # Process timeframes for this strategy
                     for timeframe_data in strategy_data.get("timeframes", []):
                         # Skip entries with errors
                         if "error" in timeframe_data:
                             continue
-                                
+
                         # Create timeframe entry with default values for all required metrics
                         timeframe_entry = {
                             "interval": timeframe_data.get("interval", ""),
                         }
-                        
+
                         # Add all required metrics with default values
                         for metric, default_value in required_metrics.items():
-                            timeframe_entry[metric] = timeframe_data.get(metric, default_value)
-                            
+                            timeframe_entry[metric] = timeframe_data.get(
+                                metric, default_value
+                            )
+
                         # Add equity curve, chart and trades
-                        timeframe_entry["equity_curve"] = timeframe_data.get("equity_curve", [])
-                        timeframe_entry["equity_chart"] = None  # Will be populated if visualization is added
+                        timeframe_entry["equity_curve"] = timeframe_data.get(
+                            "equity_curve", []
+                        )
+                        timeframe_entry["equity_chart"] = (
+                            None  # Will be populated if visualization is added
+                        )
                         timeframe_entry["trades"] = timeframe_data.get("trades", [])
-                            
+
                         strategy_entry["timeframes"].append(timeframe_entry)
-                        
+
                     asset_entry["strategies"].append(strategy_entry)
-                
+
             report_data["assets"].append(asset_entry)
-        
+
         # Calculate portfolio summary
         if asset_count > 0:
             report_data["summary"] = {
@@ -748,28 +762,29 @@ class ReportGenerator:
                 "max_drawdown": max_drawdown,
                 "profit_factor": total_profit_factor / asset_count,
                 "total_trades": total_trades,
-                "win_rate": total_win_rate / asset_count
+                "win_rate": total_win_rate / asset_count,
             }
-        
+
         # Add visualization capabilities if needed
         try:
-            import matplotlib.pyplot as plt
-            import io
             import base64
-            from matplotlib.dates import DateFormatter
-            import pandas as pd
-            import numpy as np
+            import io
             from datetime import datetime
-            
+
+            import matplotlib.pyplot as plt
+            import numpy as np
+            import pandas as pd
+            from matplotlib.dates import DateFormatter
+
             # Function to generate equity curve and drawdown visualizations
             def generate_equity_chart(equity_curve_data):
                 if not equity_curve_data or len(equity_curve_data) < 2:
                     return None
-                    
+
                 # Convert equity curve data to DataFrame
                 dates = []
                 values = []
-                
+
                 for point in equity_curve_data:
                     try:
                         date = datetime.strptime(point["date"], "%Y-%m-%d %H:%M:%S")
@@ -778,44 +793,59 @@ class ReportGenerator:
                             date = datetime.strptime(point["date"], "%Y-%m-%d")
                         except ValueError:
                             continue
-                            
+
                     dates.append(date)
                     values.append(point["value"])
-                    
+
                 if not dates or not values:
                     return None
-                    
+
                 equity_df = pd.DataFrame({"equity": values}, index=dates)
-                
+
                 # Calculate drawdown
                 equity_df["peak"] = equity_df["equity"].cummax()
-                equity_df["drawdown"] = (equity_df["equity"] / equity_df["peak"] - 1) * 100
-                
+                equity_df["drawdown"] = (
+                    equity_df["equity"] / equity_df["peak"] - 1
+                ) * 100
+
                 # Create the plot
-                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), gridspec_kw={"height_ratios": [3, 1]})
-                
+                fig, (ax1, ax2) = plt.subplots(
+                    2, 1, figsize=(10, 8), gridspec_kw={"height_ratios": [3, 1]}
+                )
+
                 # Plot equity curve
-                ax1.plot(equity_df.index, equity_df["equity"], label="Equity", color="#2980b9")
+                ax1.plot(
+                    equity_df.index,
+                    equity_df["equity"],
+                    label="Equity",
+                    color="#2980b9",
+                )
                 ax1.set_title("Equity Curve")
                 ax1.set_ylabel("Equity ($)")
                 ax1.grid(True, alpha=0.3)
                 ax1.legend()
-                
+
                 # Plot drawdown
-                ax2.fill_between(equity_df.index, 0, equity_df["drawdown"], color="#e74c3c", alpha=0.3)
+                ax2.fill_between(
+                    equity_df.index,
+                    0,
+                    equity_df["drawdown"],
+                    color="#e74c3c",
+                    alpha=0.3,
+                )
                 ax2.plot(equity_df.index, equity_df["drawdown"], color="#e74c3c")
                 ax2.set_title("Drawdown")
                 ax2.set_ylabel("Drawdown (%)")
                 ax2.set_ylim(bottom=min(equity_df["drawdown"].min() * 1.1, -1), top=1)
                 ax2.grid(True, alpha=0.3)
-                
+
                 # Format x-axis dates
                 date_format = DateFormatter("%Y-%m-%d")
                 ax1.xaxis.set_major_formatter(date_format)
                 ax2.xaxis.set_major_formatter(date_format)
-                
+
                 plt.tight_layout()
-                
+
                 # Convert plot to base64 string
                 buffer = io.BytesIO()
                 plt.savefig(buffer, format="png")
@@ -823,24 +853,26 @@ class ReportGenerator:
                 image_png = buffer.getvalue()
                 buffer.close()
                 plt.close(fig)
-                
+
                 return base64.b64encode(image_png).decode("utf-8")
-            
+
             # Generate charts for each asset and strategy timeframe
             for asset in report_data["assets"]:
                 # Generate chart for the best combination
                 if asset["equity_curve"]:
                     asset["equity_chart"] = generate_equity_chart(asset["equity_curve"])
-                    
+
                 # Generate charts for each strategy timeframe
                 for strategy in asset["strategies"]:
                     for timeframe in strategy["timeframes"]:
                         if timeframe["equity_curve"]:
-                            timeframe["equity_chart"] = generate_equity_chart(timeframe["equity_curve"])
-        
+                            timeframe["equity_chart"] = generate_equity_chart(
+                                timeframe["equity_curve"]
+                            )
+
         except ImportError:
             print("⚠️ Matplotlib not available. Equity charts will not be generated.")
         except Exception as e:
             print(f"⚠️ Error generating equity charts: {e}")
-        
+
         return report_data
