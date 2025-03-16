@@ -31,6 +31,7 @@ This Quant Trading System enables traders, quants, and financial analysts to:
 - Generate professional HTML reports with interactive charts
 - Run portfolio-level analysis across multiple assets
 - Find optimal combinations of strategies and timeframes
+- Fine-tune strategy parameters for best performance
 
 Whether you're a professional trader or a financial enthusiast, this system provides the tools to validate and refine your trading strategies with rigorous quantitative analysis.
 
@@ -51,12 +52,15 @@ Whether you're a professional trader or a financial enthusiast, this system prov
 - Bayesian optimization for parameter tuning
 - Performance metric selection (Sharpe, profit factor, returns)
 - Hyperparameter search with constraints
+- Random and grid search optimization methods
 
 ✅ **Portfolio Analysis**
 - Multi-asset backtesting
 - Portfolio optimization
 - Risk assessment and drawdown analysis
 - Asset correlation analysis
+- Optimal strategy/timeframe selection
+- Parameter fine-tuning for best combinations
 
 ✅ **Reporting & Visualization**
 - Interactive HTML reports with charts
@@ -64,6 +68,7 @@ Whether you're a professional trader or a financial enthusiast, this system prov
 - Trade analysis tables with win/loss highlighting
 - Performance metrics dashboards
 - Tabbed interface for easy navigation across assets
+- Parameter optimization reports
 
 ✅ **API & Integration**
 - FastAPI backend for frontend integration
@@ -80,6 +85,7 @@ quant-system/
 │   ├── cli/                # Command-line interface
 │   ├── data_scraper/       # Data acquisition modules
 │   ├── optimizer/          # Optimization algorithms
+│   ├── portfolio/          # Portfolio analysis modules
 │   ├── reports/            # Report generation & templates
 │   └── utils/              # Utility functions
 ├── config/                 # Configuration files
@@ -193,6 +199,11 @@ poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --metric 
 poetry run python -m src.cli.main optimize --strategy mean_reversion --ticker AAPL --metric sharpe --iterations 50
 ```
 
+#### Optimize Parameters for Best Portfolio Combinations
+```bash
+poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric sharpe --max-tries 200 --method random --open-browser
+```
+
 ### Utility Commands
 
 #### List Available Portfolios
@@ -235,6 +246,9 @@ poetry run python -m src.cli.main list-portfolios
 
 # Find optimal strategy-timeframe combinations for each asset
 poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --metric profit_factor --intervals 1d 1h 4h --open-browser
+
+# Further optimize the parameters of the best combinations
+poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric profit_factor --max-tries 200 --open-browser
 ```
 
 ### Detailed Portfolio Analysis
@@ -245,6 +259,9 @@ poetry run python -m src.cli.main portfolio --name tech_stocks --period 5y --met
 
 # Compare different timeframes for optimal performance
 poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --intervals 1d 1h 4h --metric profit_factor --open-browser
+
+# Fine-tune strategy parameters for best performance
+poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric sharpe --max-tries 100 --method grid --open-browser
 ```
 
 The detailed reports include:
@@ -253,6 +270,7 @@ The detailed reports include:
 - Equity curves with drawdown visualization
 - Detailed trade tables with win/loss highlighting
 - Key metrics including Sharpe ratio, profit factor, and maximum drawdown
+- Parameter optimization results showing improvements
 
 ## 🎯 Code Quality
 

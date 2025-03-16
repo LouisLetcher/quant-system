@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from src.portfolio.parameter_optimizer import optimize_portfolio_parameters
+
 # Import the separated modules
 from src.portfolio.portfolio_backtest import backtest_portfolio
 from src.portfolio.portfolio_optimizer import backtest_portfolio_optimal
@@ -109,3 +111,44 @@ def register_commands(subparsers):
         help="Require complete history for backtest",
     )
     portfolio_optimal_parser.set_defaults(func=backtest_portfolio_optimal)
+
+    # Add a new command for parameter optimization
+    portfolio_optimize_params_parser = subparsers.add_parser(
+        "portfolio-optimize-params",
+        help="Optimize parameters for the best strategy/timeframe combinations found in a portfolio",
+    )
+    portfolio_optimize_params_parser.add_argument(
+        "--name", required=True, help="Portfolio name from assets_config.json"
+    )
+    portfolio_optimize_params_parser.add_argument(
+        "--report-path",
+        dest="report_path",
+        help="Path to the portfolio report HTML file (optional, will use default if not provided)",
+    )
+    portfolio_optimize_params_parser.add_argument(
+        "--metric",
+        default="sharpe",
+        help="Metric to optimize for (sharpe, return, profit_factor)",
+    )
+    portfolio_optimize_params_parser.add_argument(
+        "--max-tries",
+        dest="max_tries",
+        type=int,
+        default=100,
+        help="Maximum number of optimization attempts per strategy",
+    )
+    portfolio_optimize_params_parser.add_argument(
+        "--method",
+        choices=["random", "grid"],
+        default="random",
+        help="Optimization method to use (random or grid search)",
+    )
+    portfolio_optimize_params_parser.add_argument(
+        "--open-browser",
+        action="store_true",
+        help="Open report in browser after completion",
+    )
+    portfolio_optimize_params_parser.add_argument(
+        "--log", action="store_true", help="Enable detailed logging of command output"
+    )
+    portfolio_optimize_params_parser.set_defaults(func=optimize_portfolio_parameters)

@@ -4,13 +4,13 @@ import argparse
 import codecs
 import sys
 
+from src.cli.commands import backtest_commands, optimizer_commands, portfolio_commands, utility_commands
+
 # Set console output encoding to UTF-8
 if sys.stdout.encoding != "utf-8":
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.buffer, "strict")
 if sys.stderr.encoding != "utf-8":
     sys.stderr = codecs.getwriter("utf-8")(sys.stderr.buffer, "strict")
-
-from src.cli.commands import backtest_commands, optimizer_commands, portfolio_commands, utility_commands
 
 
 def main():
