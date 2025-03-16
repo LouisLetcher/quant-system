@@ -3,7 +3,7 @@ name = "quant-system"
 version = "0.1.0"
 description = "A Python-based Quant Trading System with FastAPI, Backtrader, and yfinance"
 authors = ["LouisLetcher <heck.manu@icloud.com>"]
-license = "MIT"
+license = "Proprietary"
 readme = "README.md"
 packages = [{ include = "src", from = "." }]
 
@@ -22,7 +22,7 @@ sqlalchemy = "^2.0"
 asyncpg = "^0.30"
 alembic = "^1.14"
 bayesian-optimization = "^2.0"
-backtesting = "^0.6.2"
+backtesting = "^0.6"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3"

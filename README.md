@@ -1,149 +1,337 @@
 # 📊 Quant Trading System
 
-A **Python-based Quantitative Trading System** that:
-- Scrapes stock data from **Yahoo Finance (`yfinance`)**
-- Backtests trading strategies using **Backtrader**
-- Optimizes strategy parameters using **Bayesian Optimization**
-- Generates **HTML reports** for backtest results
-- Provides **API endpoints (FastAPI)** for frontend integration
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![Poetry](https://img.shields.io/badge/Poetry-Package%20Manager-1E293B)](https://python-poetry.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## 🔥 Features
-✅ **Data Scraper** (Yahoo Finance)  
-✅ **Backtester** (Supports multiple trading strategies)  
-✅ **Strategy Optimizer** (Using Bayesian Optimization)  
-✅ **HTML Report Generation** (For backtest visualization)  
-✅ **FastAPI-based API** for serving data  
-✅ **PostgreSQL/MongoDB Database Integration**  
-✅ **Docker Support for Deployment**  
+A comprehensive Python-based quantitative trading system for backtesting, optimizing, and analyzing algorithmic trading strategies with professional-grade reports.
+
+## 📑 Table of Contents
+- [Overview](#-overview)
+- [Key Features](#-key-features)
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Installation & Setup](#-installation--setup)
+- [Configuration](#-configuration)
+- [CLI Commands](#-cli-commands)
+- [Example Workflows](#-example-workflows)
+- [Code Quality](#-code-quality)
+- [Deployment](#-deployment)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
+
+## 🔍 Overview
+
+This Quant Trading System enables traders, quants, and financial analysts to:
+
+- Backtest trading strategies against historical market data
+- Optimize strategy parameters for maximum performance
+- Analyze performance with comprehensive metrics
+- Generate professional HTML reports with interactive charts
+- Run portfolio-level analysis across multiple assets
+- Find optimal combinations of strategies and timeframes
+- Fine-tune strategy parameters for best performance
+
+Whether you're a professional trader or a financial enthusiast, this system provides the tools to validate and refine your trading strategies with rigorous quantitative analysis.
+
+## 🔥 Key Features
+
+✅ **Data Acquisition & Management**
+- Fetch historical price data from Yahoo Finance (`yfinance`)
+- Intelligent caching system for efficient data retrieval
+- Data cleaning and preprocessing utilities
+
+✅ **Backtesting Engine**
+- Multiple built-in trading strategies
+- Custom strategy development framework
+- Commission modeling and slippage simulation
+- Multi-timeframe analysis
+
+✅ **Strategy Optimization**
+- Bayesian optimization for parameter tuning
+- Performance metric selection (Sharpe, profit factor, returns)
+- Hyperparameter search with constraints
+- Random and grid search optimization methods
+
+✅ **Portfolio Analysis**
+- Multi-asset backtesting
+- Portfolio optimization
+- Risk assessment and drawdown analysis
+- Asset correlation analysis
+- Optimal strategy/timeframe selection
+- Parameter fine-tuning for best combinations
+
+✅ **Reporting & Visualization**
+- Interactive HTML reports with charts
+- Detailed portfolio reports with equity curves and drawdown charts
+- Trade analysis tables with win/loss highlighting
+- Performance metrics dashboards
+- Tabbed interface for easy navigation across assets
+- Parameter optimization reports
+
+✅ **API & Integration**
+- FastAPI backend for frontend integration
+- Database integration for storing results
+- Docker support for deployment
+
+## 🏗 Architecture
+
+```
+quant-system/
+├── src/
+│   ├── api/                # FastAPI endpoints
+│   ├── backtesting_engine/ # Backtesting functionality
+│   ├── cli/                # Command-line interface
+│   ├── data_scraper/       # Data acquisition modules
+│   ├── optimizer/          # Optimization algorithms
+│   ├── portfolio/          # Portfolio analysis modules
+│   ├── reports/            # Report generation & templates
+│   └── utils/              # Utility functions
+├── config/                 # Configuration files
+├── reports_output/         # Generated report output
+└── tests/                  # Test suites
+```
 
 ## 🛠 Tech Stack
-- **FastAPI** (Backend API)
-- **yfinance** (Data Scraping)
-- **Backtrader** (Backtesting)
-- **Bayesian Optimization** (Parameter Tuning)
-- **PostgreSQL/MongoDB** (Data Storage)
-- **Jinja2** (HTML Reporting)
-- **Docker** (Containerization)
-- **Poetry** (Dependency Management)
 
-## 📂 Project Structure
-```
-quant_system/
-│── src/
-│   ├── api/
-│   ├── backtester/
-│   ├── data_scraper/
-│   ├── database/
-│   ├── models/
-│   ├── optimizer/
-│   ├── reports/
-│   ├── services/
-│   ├── tests/
-│   ├── utils/
-│── reports_output/
-│── pyproject.toml
-│── README.md
-│── Dockerfile
-│── .env
-│── .gitignore
-````
+- **FastAPI**: Backend API framework for frontend integration
+- **Backtesting.py**: Core backtesting engine
+- **yfinance**: Market data acquisition
+- **Bayesian Optimization**: Parameter tuning algorithms
+- **PostgreSQL/MongoDB**: Data storage options
+- **Jinja2 + Chart.js**: HTML report generation with interactive charts
+- **Docker**: Containerization for deployment
+- **Poetry**: Dependency management
+- **Pandas & NumPy**: Data manipulation and analysis
+- **Matplotlib**: Visualization for equity curves and drawdowns
 
 ## 🚀 Installation & Setup
 
-### **1️⃣ Install Poetry**
-If you haven't installed **Poetry**, run:
+### Prerequisites
+- Python 3.8+
+- Poetry package manager
+- Git
+
+### 1️⃣ Install Poetry (if not already installed)
 ```bash
 pip install poetry
 ```
 
-### **2️⃣ Install Poetry**
+### 2️⃣ Clone Repository
 ```bash
 git clone https://github.com/yourusername/quant-system.git
 cd quant-system
 ```
 
-### **3️⃣ Install Dependencies**
+### 3️⃣ Install Dependencies
 ```bash
 poetry install
 ```
 
-### **4️⃣ Activate Virtual Environment**
+### 4️⃣ Activate Virtual Environment
 ```bash
 poetry shell
 ```
 
-### **5️⃣ Start the FastAPI Server**
-```bash
-poetry run uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+## ⚙️ Configuration
+
+### Portfolio Configuration
+Create `config/assets_config.json` with your portfolio settings:
+
+```json
+{
+    "portfolios": {
+        "tech_stocks": {
+            "description": "Technology sector stocks",
+            "assets": [
+                {
+                    "ticker": "AAPL",
+                    "commission": 0.001,
+                    "initial_capital": 10000
+                },
+                {
+                    "ticker": "MSFT",
+                    "commission": 0.001,
+                    "initial_capital": 10000
+                }
+            ]
+        }
+    }
+}
 ```
 
+## 🧪 CLI Commands
 
-### **📌 Access API Documentation at:**
+### Strategy Backtesting
+
+#### Single Strategy Backtest
+```bash
+poetry run python -m src.cli.main backtest --strategy mean_reversion --ticker AAPL --period max
+```
+
+#### Test All Available Strategies on a Single Asset
+```bash
+poetry run python -m src.cli.main all-strategies --ticker TSLA --period max --metric profit_factor
+```
+
+#### Backtest a Portfolio with All Strategies
+```bash
+poetry run python -m src.cli.main portfolio --name tech_stocks --period max --metric sharpe --open-browser
+```
+
+### Timeframe Analysis
+
+#### Test Different Timeframes for a Strategy
+```bash
+poetry run python -m src.cli.main intervals --strategy momentum --ticker AAPL
+```
+
+#### Find Optimal Strategy and Timeframe Combination
+```bash
+poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --metric sharpe --intervals 1d 1h 4h --open-browser
+```
+
+### Strategy Optimization
+
+#### Optimize Strategy Parameters
+```bash
+poetry run python -m src.cli.main optimize --strategy mean_reversion --ticker AAPL --metric sharpe --iterations 50
+```
+
+#### Optimize Parameters for Best Portfolio Combinations
+```bash
+poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric sharpe --max-tries 200 --method random --open-browser
+```
+
+### Utility Commands
+
+#### List Available Portfolios
+```bash
+poetry run python -m src.cli.main list-portfolios
+```
+
+#### List Available Strategies
+```bash
+poetry run python -m src.cli.main list-strategies
+```
+
+## 📋 Example Workflows
+
+### Momentum Strategy Development Workflow
+
+1. Create a portfolio configuration in `config/assets_config.json`
+```bash
+# List available strategies
+poetry run python -m src.cli.main list-strategies
+
+# Backtest the momentum strategy on Apple
+poetry run python -m src.cli.main backtest --strategy momentum --ticker AAPL --period 5y
+
+# Optimize the strategy parameters
+poetry run python -m src.cli.main optimize --strategy momentum --ticker AAPL --metric sharpe --iterations 100
+
+# Test the strategy across different timeframes
+poetry run python -m src.cli.main intervals --strategy momentum --ticker AAPL
+
+# Apply the strategy to a portfolio
+poetry run python -m src.cli.main portfolio --name tech_stocks --period 5y --metric sharpe --open-browser
+```
+
+### Finding the Best Strategy for a Portfolio
+
+```bash
+# List available portfolios
+poetry run python -m src.cli.main list-portfolios
+
+# Find optimal strategy-timeframe combinations for each asset
+poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --metric profit_factor --intervals 1d 1h 4h --open-browser
+
+# Further optimize the parameters of the best combinations
+poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric profit_factor --max-tries 200 --open-browser
+```
+
+### Detailed Portfolio Analysis
+
+```bash
+# Generate a detailed portfolio report with equity curves and trade tables
+poetry run python -m src.cli.main portfolio --name tech_stocks --period 5y --metric sharpe --open-browser
+
+# Compare different timeframes for optimal performance
+poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --intervals 1d 1h 4h --metric profit_factor --open-browser
+
+# Fine-tune strategy parameters for best performance
+poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric sharpe --max-tries 100 --method grid --open-browser
+```
+
+The detailed reports include:
+- Performance summary statistics for the entire portfolio
+- Interactive tabs to view each asset's performance
+- Equity curves with drawdown visualization
+- Detailed trade tables with win/loss highlighting
+- Key metrics including Sharpe ratio, profit factor, and maximum drawdown
+- Parameter optimization results showing improvements
+
+## 🎯 Code Quality
+
+Run these commands to maintain code quality:
+
+```bash
+# Format code
+poetry run black src/
+
+# Sort imports
+poetry run isort src/
+
+# Run linter
+poetry run ruff check src/
+```
+
+## 🚀 Deployment
+
+### Deploy with Docker
+
+```bash
+# Build Docker image
+docker build -t quant-trading-app .
+
+# Run container
+docker run -p 8000:8000 quant-trading-app
+```
+
+### Access API Endpoints
+
+Once deployed, access the API at:
 ```
 http://localhost:8000/docs
 ```
 
-## 🏆 Running a Backtest & Generating Reports
-### Backtest a Strategy
-### Generate HTML Report
-### View Report in Browser
+## 🔧 Troubleshooting
 
-## 📜 API Endpoints
+### Common Issues
 
-| Method | Endpoint               | Description            |
-|--------|------------------------|------------------------|
-| GET    | /data/{ticker}         | Fetch stock data       |
-| GET    | /backtest/{strategy}   | Run backtest           |
-| GET    | /optimize/{strategy}   | Optimize strategy      |
-| GET    | /report/{strategy}     | View backtest report   |
-
-
-## 🧪 Running Tests
+#### Module Import Errors
+If you encounter "No module named 'src.utils'" or similar:
 ```bash
-poetry run pytest
+# Ensure you have __init__.py files in all directories
+touch src/__init__.py
+touch src/utils/__init__.py
 ```
 
-## 🎯 Linting & Formatting
-Ensure code quality by running:
+#### Data Fetching Issues
+If you encounter problems with data fetching:
 ```bash
-poetry run black src/
-poetry run isort src/
-poetry run ruff check src/
+# Check your internet connection
+# Try with a different ticker or time period
+poetry run python -m src.cli.main backtest --strategy mean_reversion --ticker SPY --period 1y
 ```
 
-To automatically fix issues where possible:
+#### Report Generation Errors
+Ensure the reports_output directory exists:
 ```bash
-poetry run ruff check --fix src/
+mkdir -p reports_output
 ```
-
-You can also run all linting tools at once with:
-```bash
-poetry run black src/ && poetry run isort src/ && poetry run ruff check src/
-```
-
-## 🚀 Deploy with Docker
-
-### Build the Docker Image
-
-```bash
-docker build -t quant-trading-app .
-```
-
-### Run the Container
-
-```bash
-docker run -p 8000:8000 quant-trading-app
-```
-
-## 🔮 Future Enhancements
-- Frontend (React/MERN) Integration
-- Live Trading Module (Alpaca API / Interactive Brokers)
-- Multi-Asset Portfolio Optimization
-
-## 🤝 Contributions
-
-Feel free to fork and submit PRs! 🚀
 
 ## 📜 License
 
-MIT License - Use it freely! 🎯
+Proprietary License - All rights reserved.

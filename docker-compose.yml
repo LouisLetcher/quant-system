@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # FastAPI backend service
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - ./reports_output:/app/reports_output
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/quant_db
+      - MONGO_URI=mongodb://mongo:27017/quant_db
+      - PYTHONPATH=/app
+    depends_on:
+      - postgres
+      - mongo
+    command: poetry run uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=quant_db
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  # MongoDB Database
+  mongo:
+    image: mongo:6
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+
+  # Backtest worker (optional, for larger distributed setups)
+  backtest_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+      - ./reports_output:/app/reports_output
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/quant_db
+      - MONGO_URI=mongodb://mongo:27017/quant_db
+      - PYTHONPATH=/app
+    depends_on:
+      - postgres
+      - mongo
+    command: poetry run python -m src.workers.backtest_worker
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  mongo_data:
+
+networks:
+  default:
+    name: quant_network

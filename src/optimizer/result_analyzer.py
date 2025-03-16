@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Dict, Any
+
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO)
@@ -10,9 +12,9 @@ class OptimizerResultAnalyzer:
     """Analyzes the results of optimization backtests."""
 
     @staticmethod
-    def analyze(results, ticker=None, initial_capital=10000):
+    def analyze(result, ticker=None, initial_capital=None):
         """Extracts key performance metrics from the backtest results."""
-        if results is None:
+        if result is None:
             print("❌ No results returned from Backtest Engine.")
             return {
                 "strategy": "N/A",
@@ -22,36 +24,63 @@ class OptimizerResultAnalyzer:
                 "max_drawdown": "0.00%",
                 "trades": 0,
                 "initial_capital": initial_capital,
-                "final_value": initial_capital
+                "final_value": initial_capital,
             }
 
         # Get strategy name directly from results
-        strategy_name = results._strategy.__class__.__name__
-        
+        strategy_name = result._strategy.__class__.__name__
+
         # Try multiple approaches to get the asset name
         asset_name = ticker if ticker else "N/A"
-        if hasattr(results._strategy, '_data') and hasattr(results._strategy._data, 'name'):
-            asset_name = results._strategy._data.name
-        elif hasattr(results, '_data') and hasattr(results._data, 'name'):
-            asset_name = results._data.name
-        
+        if hasattr(result._strategy, "_data") and hasattr(
+            result._strategy._data, "name"
+        ):
+            asset_name = result._strategy._data.name
+        elif hasattr(result, "_data") and hasattr(result._data, "name"):
+            asset_name = result._data.name
+
         # Calculate PnL correctly
-        final_value = results['Equity Final [$]']
+        final_value = result["Equity Final [$]"]
         pnl = final_value - initial_capital
-        
+
         # Access the stats via dictionary interface that Backtesting.py provides
-        return {
+        analyzed_result = {
             "strategy": strategy_name,
             "asset": asset_name,
             "pnl": f"${pnl:,.2f}",
-            "sharpe_ratio": round(results['Sharpe Ratio'], 2),
-            "max_drawdown": f"{results['Max. Drawdown [%]']:.2f}%",
-            "trades": results['# Trades'],
-            "win_rate": f"{results['Win Rate [%]']:.2f}%",
+            "sharpe_ratio": round(result["Sharpe Ratio"], 2),
+            "max_drawdown": f"{result['Max. Drawdown [%]']:.2f}%",
+            "trades": result["# Trades"],
             "initial_capital": initial_capital,
             "final_value": final_value,
-            "return_pct": f"{(pnl / initial_capital) * 100:.2f}%"
+            "return_pct": f"{(pnl / initial_capital) * 100:.2f}%",
         }
+
+        # Calculate win rate (percentage of profitable trades)
+        if "trades" in result and hasattr(result, "trades") and result.trades:
+            winning_trades = sum(1 for trade in result.trades if trade.pl > 0)
+            total_trades = len(result.trades)
+            win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
+            analyzed_result["win_rate"] = win_rate
+        else:
+            analyzed_result["win_rate"] = 0
+
+        # Calculate profit factor (gross profit / gross loss)
+        if "trades" in result and hasattr(result, "trades") and result.trades:
+            gross_profit = sum(trade.pl for trade in result.trades if trade.pl > 0)
+            gross_loss = abs(sum(trade.pl for trade in result.trades if trade.pl < 0))
+            profit_factor = (
+                gross_profit / gross_loss
+                if gross_loss > 0
+                else (float("inf") if gross_profit > 0 else 0)
+            )
+            analyzed_result["profit_factor"] = profit_factor
+        else:
+            analyzed_result["profit_factor"] = 0
+
+        # Total P&L is already calculated as final_value - initial_capital
+
+        return analyzed_result
 
     @staticmethod
     def calculate_max_drawdown(results) -> float:

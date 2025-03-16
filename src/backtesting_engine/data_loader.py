@@ -1,77 +1,84 @@
-import pandas as pd
-import yfinance as yf
-from src.data_scraper.cache import Cache
+from __future__ import annotations
+
+from src.data_scraper.data_manager import DataManager
+
 
 class DataLoader:
-    """Loads and preprocesses data for backtesting."""
-    
+    """Loads historical price data for backtesting, using cache when available."""
+
     @staticmethod
-    def load_data(ticker, period=None, start=None, end=None):
+    def load_data(ticker, period="max", interval="1d", start=None, end=None):
         """
-        Load ticker data, preferring period if provided, falling back to start/end dates.
-        
-        Args:
-            ticker: Stock ticker symbol
-            period: Time period (e.g., "max", "1y", "6mo") - takes precedence if provided
-            start: Start date (YYYY-MM-DD format) - used only if period is None
-            end: End date (YYYY-MM-DD format) - used only if period is None
-            
-        Returns:
-            pandas.DataFrame: Processed data ready for backtesting
+        Loads price data for a ticker using DataManager.
         """
-        # First try to load from cache
-        data = Cache.load_from_cache(ticker)
-        
-        if data is not None:
-            print(f"📂 Using cached data for {ticker}")
-        else:
-            print(f"🔄 Fetching new data for {ticker}")
-            
-            # Use period if provided, otherwise use start/end dates
-            if period:
-                data = yf.download(ticker, period=period)
-            else:
-                data = yf.download(ticker, start=start, end=end)
-            
-            # Save to cache for future use
-            if not data.empty:
-                Cache.save_to_cache(ticker, data)
-        
-        if data.empty:
-            raise ValueError(f"❌ No data found for ticker {ticker}")
-        
-        print(f"✅ Data Loaded: {data.shape[0]} rows, {data.columns.tolist()}")
+        print(f"🔍 Loading {ticker} data with interval {interval}...")
 
-        # 🔍 **Fix multi-index issue** if it occurs
-        if isinstance(data.columns, pd.MultiIndex):
-            data = data.droplevel(1, axis=1)  # Drop extra index level
+        # Load data with the specific requested interval
+        data = DataManager.get_stock_data(ticker, start, end, interval)
 
-        # Ensure correct column names
-        column_mapping = {
-            "Open": "open",
-            "High": "high",
-            "Low": "low",
-            "Close": "close",
-            "Volume": "volume",
-        }
-        data.rename(columns=column_mapping, inplace=True)
+        if data is None or data.empty:
+            print(
+                f"⚠️ No data available for {ticker} with {interval} interval. Trying daily data..."
+            )
 
-        # Ensure the correct order for Backtrader
-        data = data[["open", "high", "low", "close", "volume"]]
-        if not pd.api.types.is_datetime64_any_dtype(data.index):
-            try:
-                # Check if there's a "Date" string in the index
-                if "Date" in data.index:
-                    data = data.loc[data.index != "Date"]  # Remove rows with "Date" in index
-                
-                # Only convert if it's not already a datetime index
-                if not pd.api.types.is_datetime64_any_dtype(data.index):
-                    data.index = pd.to_datetime(data.index)
-            except Exception as e:
-                print(f"⚠️ Warning: Error converting index to datetime: {e}")
-                # Try to fix by dropping any non-date values
-                data = data[~data.index.astype(str).str.contains("[a-zA-Z]")]
-                data.index = pd.to_datetime(data.index)
-        data.sort_index(inplace=True)
-        
+            # Fall back to daily data if the specific interval isn't available
+            data = DataManager.get_stock_data(ticker, start, end, "1d")
+
+            if data is None or data.empty:
+                print(f"❌ No data available for {ticker}")
+                return None
+
+            # If daily data is loaded but a different interval was requested, resample
+            if interval != "1d":
+                try:
+                    # Map common intervals to pandas resample rule
+                    interval_map = {
+                        "1m": "1min",
+                        "5m": "5min",
+                        "15m": "15min",
+                        "30m": "30min",
+                        "1h": "1h",
+                        "4h": "4h",
+                        "1d": "1D",
+                        "1wk": "1W",
+                        "1mo": "1M",
+                        "3mo": "3M",
+                    }
+                    resample_rule = interval_map.get(interval, "1D")
+
+                    # Save original data length
+                    original_length = len(data)
+
+                    # Resample OHLCV data
+                    data = (
+                        data.resample(resample_rule)
+                        .agg(
+                            {
+                                "Open": "first",
+                                "High": "max",
+                                "Low": "min",
+                                "Close": "last",
+                                "Volume": "sum",
+                            }
+                        )
+                        .dropna()
+                    )
+
+                    # Check if we have enough data after resampling
+                    if len(data) > 0:
+                        print(
+                            f"✅ Resampled daily data to {interval} - got {len(data)} bars from {original_length} original bars"
+                        )
+                        return data
+                    print(f"⚠️ No data available after resampling to {interval}")
+                    # Return the original daily data instead of None
+                    print(f"⚠️ Falling back to daily data with {original_length} bars")
+                    return DataManager.get_stock_data(ticker, start, end, "1d")
+                except Exception as e:
+                    print(f"❌ Error resampling data: {e!s}")
+                    # Return the original daily data instead of None
+                    print("⚠️ Falling back to daily data due to resampling error")
+                    return DataManager.get_stock_data(ticker, start, end, "1d")
+
+        print(f"✅ Got {len(data)} bars for {ticker}")
         return data
