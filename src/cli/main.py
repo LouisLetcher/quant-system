@@ -1,12 +1,26 @@
+from __future__ import annotations
+
 import argparse
-from src.cli.commands import backtest_commands, portfolio_commands, optimizer_commands, utility_commands
+import sys
+import io
+import codecs
+
+# Set console output encoding to UTF-8
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+
+from src.cli.commands import backtest_commands, optimizer_commands, portfolio_commands, utility_commands
+
 
 def main():
-    """Main CLI entry point for the quant system."""
-    parser = argparse.ArgumentParser(description="Quant System CLI")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    parser = argparse.ArgumentParser()
     
-    # Register command groups
+    # Create subparsers for commands
+    subparsers = parser.add_subparsers(dest="command")
+    
+    # Register all commands
     backtest_commands.register_commands(subparsers)
     portfolio_commands.register_commands(subparsers)
     optimizer_commands.register_commands(subparsers)
@@ -15,8 +29,8 @@ def main():
     # Parse arguments
     args = parser.parse_args()
     
-    # Execute the appropriate command
-    if hasattr(args, 'func'):
+    # Execute the corresponding function
+    if hasattr(args, "func"):
         args.func(args)
     else:
         parser.print_help()

@@ -1,8 +1,12 @@
-import requests
+from __future__ import annotations
+
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+import requests
 from sqlalchemy.orm import Session
+
 from src.database.db_connection import get_db_session  # Hypothetical DB session import
 
 logging.basicConfig(level=logging.INFO)
@@ -13,7 +17,9 @@ class DataSender:
     """Handles sending data to various endpoints such as APIs, databases, and messaging systems."""
 
     @staticmethod
-    def send_to_api(endpoint: str, data: Dict[str, Any], headers: Optional[Dict[str, str]] = None) -> Dict:
+    def send_to_api(
+        endpoint: str, data: Dict[str, Any], headers: Optional[Dict[str, str]] = None
+    ) -> Dict:
         """Sends data to an external API endpoint."""
         headers = headers or {"Content-Type": "application/json"}
         try:
@@ -22,11 +28,13 @@ class DataSender:
             logger.info(f"✅ Successfully sent data to {endpoint}")
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"❌ API request failed: {str(e)}")
+            logger.error(f"❌ API request failed: {e!s}")
             return {"status": "error", "message": str(e)}
 
     @staticmethod
-    def save_to_database(data: Dict[str, Any], table_model, session: Optional[Session] = None):
+    def save_to_database(
+        data: Dict[str, Any], table_model, session: Optional[Session] = None
+    ):
         """Saves data to a database table using SQLAlchemy."""
         session = session or get_db_session()
         try:
@@ -37,7 +45,7 @@ class DataSender:
             return {"status": "success", "message": "Data saved successfully"}
         except Exception as e:
             session.rollback()
-            logger.error(f"❌ Database save failed: {str(e)}")
+            logger.error(f"❌ Database save failed: {e!s}")
             return {"status": "error", "message": str(e)}
         finally:
             session.close()
@@ -48,9 +56,10 @@ class DataSender:
         try:
             # Hypothetical message queue connection
             from src.messaging.queue_service import QueueService  # Hypothetical module
+
             QueueService.publish(queue_name, json.dumps(data))
             logger.info(f"✅ Data successfully sent to queue: {queue_name}")
             return {"status": "success", "message": f"Data sent to queue {queue_name}"}
         except Exception as e:
-            logger.error(f"❌ Messaging queue send failed: {str(e)}")
+            logger.error(f"❌ Messaging queue send failed: {e!s}")
             return {"status": "error", "message": str(e)}

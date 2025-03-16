@@ -1,9 +1,10 @@
-from bayes_opt import BayesianOptimization
-from src.backtesting_engine.data_loader import DataLoader
-from src.backtesting_engine.strategies.strategy_factory import StrategyFactory
+from __future__ import annotations
+
 from src.backtesting_engine.engine import BacktestEngine
 from src.backtesting_engine.result_analyzer import BacktestResultAnalyzer
-from src.optimizer.objective_function import ObjectiveFunction
+
+from bayes_opt import BayesianOptimization
+
 
 class OptimizationRunner:
     """Runs Bayesian optimization to find optimal strategy parameters."""
@@ -21,7 +22,9 @@ class OptimizationRunner:
         self.data = data
         self.param_space = param_space
 
-    def run(self, metric="sharpe", iterations=50, initial_capital=10000, commission=0.001):
+    def run(
+        self, metric="sharpe", iterations=50, initial_capital=10000, commission=0.001
+    ):
         """
         Run the optimization process.
 
@@ -38,6 +41,7 @@ class OptimizationRunner:
 
         def evaluate_params(**params):
             """Evaluate a set of parameters by running a backtest."""
+
             # Create a subclass with the specified parameters
             class OptimizedStrategy(self.strategy_class):
                 def init(self):
@@ -56,36 +60,35 @@ class OptimizationRunner:
                 OptimizedStrategy,
                 self.data,
                 cash=initial_capital,
-                commission=commission
+                commission=commission,
             )
 
             result = engine.run()
 
             # Extract the metric value
             analyzed_result = BacktestResultAnalyzer.analyze(
-                result,
-                initial_capital=initial_capital
+                result, initial_capital=initial_capital
             )
 
             if metric == "sharpe":
-                score = analyzed_result.get('sharpe_ratio', 0)
+                score = analyzed_result.get("sharpe_ratio", 0)
                 if isinstance(score, str):
                     score = float(score)
             elif metric == "return":
-                return_pct = analyzed_result.get('return_pct', '0%')
-                if isinstance(return_pct, str) and return_pct.endswith('%'):
-                    score = float(return_pct.strip('%'))
+                return_pct = analyzed_result.get("return_pct", "0%")
+                if isinstance(return_pct, str) and return_pct.endswith("%"):
+                    score = float(return_pct.strip("%"))
                 else:
                     score = float(return_pct)
             elif metric == "profit_factor":
-                score = analyzed_result.get('profit_factor', 0)
+                score = analyzed_result.get("profit_factor", 0)
                 if isinstance(score, str):
                     score = float(score)
             else:
                 score = analyzed_result.get(metric, 0)
 
             # Check if the result has trades
-            trade_count = analyzed_result.get('trades', 0)
+            trade_count = analyzed_result.get("trades", 0)
             if isinstance(trade_count, str) and trade_count.isdigit():
                 trade_count = int(trade_count)
 
@@ -93,25 +96,21 @@ class OptimizationRunner:
             if trade_count == 0:
                 score = -100  # Strong penalty for no trades
 
-            print(f"  Parameters: {params}, {metric.capitalize()}: {score}, Trades: {trade_count}")
+            print(
+                f"  Parameters: {params}, {metric.capitalize()}: {score}, Trades: {trade_count}"
+            )
             return score
 
         # Run Bayesian optimization
         optimizer = BayesianOptimization(
-            f=evaluate_params,
-            pbounds=self.param_space,
-            random_state=42,
-            verbose=1
+            f=evaluate_params, pbounds=self.param_space, random_state=42, verbose=1
         )
 
-        optimizer.maximize(
-            init_points=5,
-            n_iter=iterations
-        )
+        optimizer.maximize(init_points=5, n_iter=iterations)
 
         # Get best parameters and score
-        best_params = optimizer.max['params']
-        best_score = optimizer.max['target']
+        best_params = optimizer.max["params"]
+        best_score = optimizer.max["target"]
 
         print(f"✅ Optimization complete. Best parameters: {best_params}")
         print(f"   Best {metric} score: {best_score:.4f}")
@@ -120,7 +119,7 @@ class OptimizationRunner:
         final_params = {}
         for param_name, param_value in best_params.items():
             # Round integer parameters
-            if param_name.endswith('_period') or param_name.endswith('_length'):
+            if param_name.endswith("_period") or param_name.endswith("_length"):
                 final_params[param_name] = int(round(param_value))
             else:
                 final_params[param_name] = param_value
@@ -139,33 +138,26 @@ class OptimizationRunner:
 
         # Run final backtest
         engine = BacktestEngine(
-            FinalStrategy,
-            self.data,
-            cash=initial_capital,
-            commission=commission
+            FinalStrategy, self.data, cash=initial_capital, commission=commission
         )
 
         final_result = engine.run()
         analyzed_final = BacktestResultAnalyzer.analyze(
-            final_result,
-            initial_capital=initial_capital
+            final_result, initial_capital=initial_capital
         )
 
         # Prepare optimization results
         optimization_results = {
-            'strategy': self.strategy_class.__name__,
-            'best_params': final_params,
-            'best_score': best_score,
-            'metric': metric,
-            'iterations': iterations,
-            'final_result': analyzed_final,
-            'all_trials': [
-                {
-                    'params': trial['params'],
-                    'score': trial['target']
-                }
+            "strategy": self.strategy_class.__name__,
+            "best_params": final_params,
+            "best_score": best_score,
+            "metric": metric,
+            "iterations": iterations,
+            "final_result": analyzed_final,
+            "all_trials": [
+                {"params": trial["params"], "score": trial["target"]}
                 for trial in optimizer.res
-            ]
+            ],
         }
 
         return optimization_results

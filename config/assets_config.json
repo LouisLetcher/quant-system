@@ -3,8 +3,9 @@
         "stocks": {
             "description": "Portfolio of stocks",
             "assets": [
-                { "ticker": "AAPL", "period": "max", "initial_capital": 1000},
-                { "ticker": "TTD", "period": "max", "initial_capital": 1000}
+                { "ticker": "AAPL", "period": "max", "initial_capital": 1000, "commission": 0.002},
+                { "ticker": "TTD", "period": "max", "initial_capital": 1000, "commission": 0.002},
+                { "ticker": "AMZN", "period": "max", "initial_capital": 1000, "commission": 0.002}
             ]
         },
         "indices": {
