@@ -1,53 +1,75 @@
-# Ignore compiled Python files
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Ignore Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# Ignore environment & dependencies
-venv/
-.env
+*.py[cod]
+*$py.class
+*.so
+.Python
 *.egg-info/
+.installed.cfg
+*.egg
+.ruff_cache/
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.env
+.venv/
+env.bak/
+venv.bak/
 Pipfile
 Pipfile.lock
 
-# Ignore logs & cache
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Logs and Data
 logs/
 *.log
 *.csv
-!data/
 cache/
+!data/
+
+# Output files
+reports_output/
 backtests/results/
 
-# Exclude reports output
-reports_output/
-reports_output//**
-
-# Ignore QuantConnect Lean files
+# QuantConnect Lean files
 lean_config.json
 *.backtest.json
 *.backtest.csv
 
-# Ignore system files
-.DS_Store
-Thumbs.db
+# IDE and Editor files
+# VSCode
+.vscode/
+*.code-workspace
 
-# Ignore macOS system files
+# JetBrains
+.idea/
+*.iml
+*.iws
+
+# Testing and Type Checking
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Icon must end with two \r
 Icon
-\r
-
-# Thumbnails
 ._*
-
-# Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
 .Spotlight-V100
@@ -55,63 +77,13 @@ Icon
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
-
-# Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
 Network Trash Folder
 Temporary Items
 .apdisk
 
-# Ignore Windows system files
+# Windows
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-
-# Ignore Visual Studio Code files
-.vscode/
-*.code-workspace
-
-# Ignore IntelliJ IDEA files
-.idea/
-*.iml
-*.iws
-
-# Ignore BrainTools specific files
-# (Add any specific BrainTools files or directories here)
-
-# Ignore Python bytecode files
-*.py[cod]
-
-# Ignore virtual environment folders
-env/
-ENV/
-env.bak/
-venv.bak/
-
-# Ignore Python-specific files
-*.pyd
-*.pyo
-*.pyd
-*.pdb
-
-# Ignore coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-
-# Ignore mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Ignore Pyre type checker
-.pyre/

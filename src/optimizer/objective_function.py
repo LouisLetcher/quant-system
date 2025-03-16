@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class ObjectiveFunction:
     """Defines the function to evaluate performance."""
 
