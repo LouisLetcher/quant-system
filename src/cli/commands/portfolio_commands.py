@@ -227,11 +227,19 @@ def backtest_portfolio_optimal(args):
     try:
         print("Starting portfolio optimization")
         
-        # Setup logging if requested
+        # Setup logging if requested, but don't capture stdout/stderr
         log_file = None
         if hasattr(args, 'log') and args.log:
-            print("Setting up logging")
-            log_file = setup_command_logging(args)
+            # Initialize logger if needed
+            Logger.initialize()
+            
+            # Get command name
+            command = args.command if hasattr(args, "command") else "unknown"
+            
+            # Setup CLI logging without capturing stdout/stderr
+            log_file = Logger.setup_cli_logging(command)
+            
+            print(f"📝 Logging enabled. Output will be saved to: {log_file}")
             logger.info("Portfolio optimization started")
         
         print(f"Getting portfolio config for '{args.name}'")
@@ -282,7 +290,19 @@ def backtest_portfolio_optimal(args):
                 resample=getattr(args, 'resample', None),
             )
             
-            best_combinations[ticker] = asset_results["best_combination"]
+            # Ensure all metrics exist in the best combination
+            best_combination = asset_results["best_combination"]
+            best_combination = _ensure_all_metrics_exist(best_combination)
+            
+            # Update the asset results with the enhanced best combination
+            asset_results["best_combination"] = best_combination
+            
+            # Also ensure all metrics exist in each timeframe result
+            for strategy in asset_results["all_results"].get("strategies", []):
+                for timeframe in strategy.get("timeframes", []):
+                    _ensure_all_metrics_exist(timeframe)
+            
+            best_combinations[ticker] = best_combination
             all_results[ticker] = asset_results["all_results"]
         
         # Generate report only if not plotting individual results
@@ -695,27 +715,46 @@ def _extract_detailed_metrics(result, initial_capital):
         return val
     
     detailed_metrics = {
+        # Account metrics
         'initial_capital': initial_capital,
-        'profit_factor': safe_get('Profit Factor', 0),
-        'tv_profit_factor': safe_get('Profit Factor', 'N/A'),
-        'return': f"{safe_get('Return [%]', 0):.2f}%",
-        'return_pct': safe_get('Return [%]', 0),
-        'win_rate': safe_get('Win Rate [%]', 0),
-        'max_drawdown': f"{safe_get('Max. Drawdown [%]', 0):.2f}%",
-        'max_drawdown_pct': safe_get('Max. Drawdown [%]', 0),
-        'trades_count': safe_get('# Trades', 0),
         'equity_final': safe_get('Equity Final [$]', initial_capital),
+        'equity_peak': safe_get('Equity Peak [$]', initial_capital),
+        
+        # Return metrics
+        'return_pct': safe_get('Return [%]', 0),
+        'return': f"{safe_get('Return [%]', 0):.2f}%",
+        'return_annualized': safe_get('Return (Ann.) [%]', 0),
         'buy_hold_return': safe_get('Buy & Hold Return [%]', 0),
+        'cagr': safe_get('CAGR [%]', 0),
+        
+        # Risk metrics
         'sharpe_ratio': safe_get('Sharpe Ratio', 0),
         'sortino_ratio': safe_get('Sortino Ratio', 0),
         'calmar_ratio': safe_get('Calmar Ratio', 0),
+        'max_drawdown_pct': safe_get('Max. Drawdown [%]', 0),
+        'max_drawdown': f"{safe_get('Max. Drawdown [%]', 0):.2f}%",
+        'avg_drawdown': safe_get('Avg. Drawdown [%]', 0),
+        'avg_drawdown_duration': safe_get('Avg. Drawdown Duration', 'N/A'),
         'volatility': safe_get('Volatility (Ann.) [%]', 0),
-        'exposure_time': safe_get('Exposure Time [%]', 0),
+        'alpha': safe_get('Alpha', 0),
+        'beta': safe_get('Beta', 0),
+        
+        # Trade metrics
+        'trades_count': safe_get('# Trades', 0),
+        'win_rate': safe_get('Win Rate [%]', 0),
+        'profit_factor': safe_get('Profit Factor', 0),
+        'tv_profit_factor': safe_get('Profit Factor', 'N/A'),
+        'expectancy': safe_get('Expectancy [%]', 0),
+        'sqn': safe_get('SQN', 0),
+        'kelly_criterion': safe_get('Kelly Criterion', 0),
         'avg_trade_pct': safe_get('Avg. Trade [%]', 0),
         'best_trade_pct': safe_get('Best Trade [%]', 0),
+        'best_trade': safe_get('Best Trade [%]', 0),
         'worst_trade_pct': safe_get('Worst Trade [%]', 0),
+        'worst_trade': safe_get('Worst Trade [%]', 0),
         'avg_trade_duration': safe_get('Avg. Trade Duration', 'N/A'),
-        'sqn': safe_get('SQN', 0)
+        'max_trade_duration': safe_get('Max. Trade Duration', 'N/A'),
+        'exposure_time': safe_get('Exposure Time [%]', 0),
     }
     
     logger.debug(f"Extracted basic metrics: profit_factor={detailed_metrics['profit_factor']}, return={detailed_metrics['return_pct']}%, win_rate={detailed_metrics['win_rate']}%")
@@ -831,7 +870,65 @@ def _extract_detailed_metrics(result, initial_capital):
             logger.error(traceback.format_exc())
             detailed_metrics["equity_curve"] = []
 
-    return detailed_metrics
+    return _ensure_all_metrics_exist(detailed_metrics)
+
+def _ensure_all_metrics_exist(asset_data):
+    """
+    Ensure all required metrics exist in the asset data.
+    
+    Args:
+        asset_data: Dictionary containing asset metrics
+        
+    Returns:
+        Dictionary with all required metrics (adding defaults for missing ones)
+    """
+    required_metrics = {
+        # Return metrics
+        'return_pct': 0,
+        'return_annualized': 0,
+        'buy_hold_return': 0,
+        'cagr': 0,
+        
+        # Risk metrics
+        'sharpe_ratio': 0,
+        'sortino_ratio': 0,
+        'calmar_ratio': 0,
+        'max_drawdown_pct': 0,
+        'avg_drawdown': 0,
+        'avg_drawdown_duration': 'N/A',
+        'volatility': 0,
+        'alpha': 0,
+        'beta': 0,
+        
+        # Trade metrics
+        'trades_count': 0,
+        'win_rate': 0,
+        'profit_factor': 0,
+        'expectancy': 0,
+        'sqn': 0,
+        'kelly_criterion': 0,
+        'avg_trade_pct': 0,
+        'avg_trade': 0,
+        'best_trade_pct': 0,
+        'best_trade': 0,
+        'worst_trade_pct': 0,
+        'worst_trade': 0,
+        'avg_trade_duration': 'N/A',
+        'max_trade_duration': 'N/A',
+        'exposure_time': 0,
+        
+        # Account metrics
+        'initial_capital': 10000,
+        'equity_final': 10000,
+        'equity_peak': 10000,
+    }
+    
+    # Add default values for missing metrics
+    for metric, default_value in required_metrics.items():
+        if metric not in asset_data:
+            asset_data[metric] = default_value
+    
+    return asset_data
 
 def _generate_log_summary(portfolio_name, best_combinations, metric):
     """Generate a comprehensive summary of portfolio optimization results for logging."""

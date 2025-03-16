@@ -187,6 +187,67 @@
         .tab-content.active {
             display: block;
         }
+        /* Add this to your existing styles */
+        .chart-metrics-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .chart-container {
+            flex: 2;
+            min-width: 500px;
+            margin: 0;
+        }
+        
+        .metrics-table-container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .metrics-table th {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .metrics-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metrics-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .metrics-table th[colspan="2"] {
+            background-color: #e9ecef;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metrics-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .metrics-table tr:hover {
+            background-color: #f1f1f1;
+        }
     </style>
 </head>
 <body>
@@ -201,30 +262,30 @@
     <div class="summary-container">
         <div class="summary-box">
             <h4>Return</h4>
-            <div class="metric {% if summary.total_return > 0 %}positive{% elif summary.total_return < 0 %}negative{% else %}neutral{% endif %}">
-                {{ summary.total_return|number_format }}%
+            <div class="metric {% if summary.total_return|default(0) > 0 %}positive{% elif summary.total_return|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                {{ summary.total_return|default(0)|number_format }}%
             </div>
         </div>
         <div class="summary-box">
             <h4>Sharpe Ratio</h4>
-            <div class="metric neutral">{{ summary.sharpe_ratio|number_format }}</div>
+            <div class="metric neutral">{{ summary.sharpe_ratio|default(0)|number_format }}</div>
         </div>
         <div class="summary-box">
             <h4>Max Drawdown</h4>
-            <div class="metric negative">{{ summary.max_drawdown|number_format }}%</div>
+            <div class="metric negative">{{ summary.max_drawdown|default(0)|number_format }}%</div>
         </div>
         <div class="summary-box">
             <h4>Profit Factor</h4>
-            <div class="metric neutral">{{ summary.profit_factor|number_format }}</div>
+            <div class="metric neutral">{{ summary.profit_factor|default(0)|number_format }}</div>
         </div>
         <div class="summary-box">
             <h4>Total Trades</h4>
-            <div class="metric neutral">{{ summary.total_trades }}</div>
+            <div class="metric neutral">{{ summary.total_trades|default(0) }}</div>
         </div>
         <div class="summary-box">
             <h4>Win Rate</h4>
-            <div class="metric {% if summary.win_rate > 50 %}positive{% elif summary.win_rate < 50 %}negative{% else %}neutral{% endif %}">
-                {{ summary.win_rate|number_format }}%
+            <div class="metric {% if summary.win_rate|default(0) > 50 %}positive{% elif summary.win_rate|default(0) < 50 %}negative{% else %}neutral{% endif %}">
+                {{ summary.win_rate|default(0)|number_format }}%
             </div>
         </div>
     </div>
@@ -249,16 +310,16 @@
             {% for asset in assets %}
             <tr>
                 <td>{{ asset.ticker }}</td>
-                <td>{{ asset.strategy }}</td>
-                <td>{{ asset.interval }}</td>
-                <td class="{% if asset.return_pct > 0 %}positive{% elif asset.return_pct < 0 %}negative{% else %}neutral{% endif %}">
-                    {{ asset.return_pct|number_format }}%
+                <td>{{ asset.strategy|default('N/A') }}</td>
+                <td>{{ asset.interval|default('N/A') }}</td>
+                <td class="{% if asset.return_pct|default(0) > 0 %}positive{% elif asset.return_pct|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                    {{ asset.return_pct|default(0)|number_format }}%
                 </td>
-                <td>{{ asset.sharpe_ratio|number_format }}</td>
-                <td>{{ asset.max_drawdown|number_format }}%</td>
-                <td>{{ asset.win_rate|number_format }}%</td>
-                <td>{{ asset.trades_count }}</td>
-                <td>{{ asset.profit_factor|number_format }}</td>
+                <td>{{ asset.sharpe_ratio|default(0)|number_format }}</td>
+                <td>{{ asset.max_drawdown_pct|default(0)|number_format }}%</td>
+                <td>{{ asset.win_rate|default(0)|number_format }}%</td>
+                <td>{{ asset.trades_count|default(0) }}</td>
+                <td>{{ asset.profit_factor|default(0)|number_format }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -288,30 +349,30 @@
                 <div class="metrics-grid">
                     <div class="metric-box">
                         <div class="metric-label">Return</div>
-                        <div class="metric-value {% if asset.return_pct > 0 %}positive{% elif asset.return_pct < 0 %}negative{% else %}neutral{% endif %}">
-                            {{ asset.return_pct|number_format }}%
+                        <div class="metric-value {% if asset.return_pct|default(0) > 0 %}positive{% elif asset.return_pct|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                            {{ asset.return_pct|default(0)|number_format }}%
                         </div>
                     </div>
                     <div class="metric-box">
                         <div class="metric-label">Sharpe Ratio</div>
-                        <div class="metric-value neutral">{{ asset.sharpe_ratio|number_format }}</div>
+                        <div class="metric-value neutral">{{ asset.sharpe_ratio|default(0)|number_format }}</div>
                     </div>
                     <div class="metric-box">
                         <div class="metric-label">Max Drawdown</div>
-                        <div class="metric-value negative">{{ asset.max_drawdown|number_format }}%</div>
+                        <div class="metric-value negative">{{ asset.max_drawdown_pct|default(0)|number_format }}%</div>
                     </div>
                     <div class="metric-box">
                         <div class="metric-label">Trades</div>
-                        <div class="metric-value neutral">{{ asset.trades_count }}</div>
+                        <div class="metric-value neutral">{{ asset.trades_count|default(0) }}</div>
                     </div>
                     <div class="metric-box">
                         <div class="metric-label">Profit Factor</div>
-                        <div class="metric-value neutral">{{ asset.profit_factor|number_format }}</div>
+                        <div class="metric-value neutral">{{ asset.profit_factor|default(0)|number_format }}</div>
                     </div>
                     <div class="metric-box">
                         <div class="metric-label">Win Rate</div>
-                        <div class="metric-value {% if asset.win_rate > 50 %}positive{% elif asset.win_rate < 50 %}negative{% else %}neutral{% endif %}">
-                            {{ asset.win_rate|number_format }}%
+                        <div class="metric-value {% if asset.win_rate|default(0) > 50 %}positive{% elif asset.win_rate|default(0) < 50 %}negative{% else %}neutral{% endif %}">
+                            {{ asset.win_rate|default(0)|number_format }}%
                         </div>
                     </div>
                 </div>
@@ -323,6 +384,155 @@
                     <img class="chart-img" src="data:image/png;base64,{{ asset.equity_chart }}" alt="Equity and Drawdown Chart">
                 </div>
                 {% endif %}
+
+                <!-- Detailed best combination metric table (2 columns) -->
+                <div class="metrics-table-container" style="margin: 20px 0;">
+                    <h3>Detailed Performance Metrics</h3>
+                    <table class="metrics-table">
+                        <tr>
+                            <th colspan="2">Return Metrics</th>
+                        </tr>
+                        <tr>
+                            <td>Return</td>
+                            <td class="{% if asset.return_pct|default(0) > 0 %}positive{% elif asset.return_pct|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                {{ asset.return_pct|default(0)|number_format }}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Return (Annualized)</td>
+                            <td class="{% if asset.return_annualized|default(0) > 0 %}positive{% elif asset.return_annualized|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                {{ asset.return_annualized|default(0)|number_format }}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Buy & Hold Return</td>
+                            <td class="{% if asset.buy_hold_return|default(0) > 0 %}positive{% elif asset.buy_hold_return|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                {{ asset.buy_hold_return|default(0)|number_format }}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>CAGR</td>
+                            <td class="{% if asset.cagr|default(0) > 0 %}positive{% elif asset.cagr|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                {{ asset.cagr|default(0)|number_format }}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">Risk Metrics</th>
+                        </tr>
+                        <tr>
+                            <td>Sharpe Ratio</td>
+                            <td class="neutral">{{ asset.sharpe_ratio|default(0)|number_format }}</td>
+                        </tr>
+                        <tr>
+                            <td>Sortino Ratio</td>
+                            <td class="neutral">{{ asset.sortino_ratio|default(0)|number_format }}</td>
+                        </tr>
+                        <tr>
+                            <td>Calmar Ratio</td>
+                            <td class="neutral">{{ asset.calmar_ratio|default(0)|number_format }}</td>
+                        </tr>
+                        <tr>
+                            <td>Max Drawdown</td>
+                            <td class="negative">{{ asset.max_drawdown_pct|default(0)|number_format }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Avg Drawdown</td>
+                            <td class="negative">{{ asset.avg_drawdown|default(0)|number_format }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Avg Drawdown Duration</td>
+                            <td class="neutral">{{ asset.avg_drawdown_duration|default('N/A') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Volatility</td>
+                            <td class="neutral">{{ asset.volatility|default(0)|number_format }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Alpha</td>
+                            <td class="{% if asset.alpha|default(0) > 0 %}positive{% elif asset.alpha|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                {{ asset.alpha|default(0)|number_format }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Beta</td>
+                            <td class="neutral">{{ asset.beta|default(0)|number_format }}</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">Trade Metrics</th>
+                        </tr>
+                        <tr>
+                            <td>Total Trades</td>
+                            <td class="neutral">{{ asset.trades_count|default(0) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Win Rate</td>
+                            <td class="{% if asset.win_rate|default(0) > 50 %}positive{% elif asset.win_rate|default(0) < 50 %}negative{% else %}neutral{% endif %}">
+                                {{ asset.win_rate|default(0)|number_format }}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Profit Factor</td>
+                            <td class="neutral">{{ asset.profit_factor|default(0)|number_format }}</td>
+                        </tr>
+                        <tr>
+                            <td>Expectancy</td>
+                            <td class="{% if asset.expectancy|default(0) > 0 %}positive{% elif asset.expectancy|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                {{ asset.expectancy|default(0)|number_format }}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>SQN</td>
+                            <td class="neutral">{{ asset.sqn|default(0)|number_format }}</td>
+                        </tr>
+                        <tr>
+                            <td>Kelly Criterion</td>
+                            <td class="neutral">{{ asset.kelly_criterion|default(0)|number_format }}</td>
+                        </tr>
+                        <tr>
+                            <td>Avg Trade</td>
+                            <td class="{% if asset.avg_trade|default(0) > 0 %}positive{% elif asset.avg_trade|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                {{ asset.avg_trade|default(0)|number_format }}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Best Trade</td>
+                            <td class="positive">{{ asset.best_trade|default(0)|number_format }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Worst Trade</td>
+                            <td class="negative">{{ asset.worst_trade|default(0)|number_format }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Avg Trade Duration</td>
+                            <td class="neutral">{{ asset.avg_trade_duration|default('N/A') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Max Trade Duration</td>
+                            <td class="neutral">{{ asset.max_trade_duration|default('N/A') }}</td>
+                        </tr>
+                        <tr>
+                            <td>Exposure Time</td>
+                            <td class="neutral">{{ asset.exposure_time|default(0)|number_format }}%</td>
+                        </tr>
+                        <tr>
+                            <th colspan="2">Account Metrics</th>
+                        </tr>
+                        <tr>
+                            <td>Initial Capital</td>
+                            <td class="neutral">{{ asset.initial_capital|default(10000)|currency }}</td>
+                        </tr>
+                        <tr>
+                            <td>Final Equity</td>
+                            <td class="{% if asset.equity_final|default(10000) > asset.initial_capital|default(10000) %}positive{% elif asset.equity_final|default(10000) < asset.initial_capital|default(10000) %}negative{% else %}neutral{% endif %}">
+                                {{ asset.equity_final|default(10000)|currency }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Peak Equity</td>
+                            <td class="positive">{{ asset.equity_peak|default(10000)|currency }}</td>
+                        </tr>
+                    </table>
+                </div>
                 
                 <!-- Outer tabs for each strategy -->
                 <div class="sub-tabs-container">
@@ -356,32 +566,181 @@
                                 <div class="metrics-grid">
                                     <div class="metric-box">
                                         <div class="metric-label">Return</div>
-                                        <div class="metric-value {% if timeframe.return_pct > 0 %}positive{% elif timeframe.return_pct < 0 %}negative{% else %}neutral{% endif %}">
-                                            {{ timeframe.return_pct|number_format }}%
+                                        <div class="metric-value {% if timeframe.return_pct|default(0) > 0 %}positive{% elif timeframe.return_pct|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                            {{ timeframe.return_pct|default(0)|number_format }}%
                                         </div>
                                     </div>
                                     <div class="metric-box">
                                         <div class="metric-label">Sharpe Ratio</div>
-                                        <div class="metric-value neutral">{{ timeframe.sharpe_ratio|number_format }}</div>
+                                        <div class="metric-value neutral">{{ timeframe.sharpe_ratio|default(0)|number_format }}</div>
                                     </div>
                                     <div class="metric-box">
                                         <div class="metric-label">Max Drawdown</div>
-                                        <div class="metric-value negative">{{ timeframe.max_drawdown|number_format }}%</div>
+                                        <div class="metric-value negative">{{ timeframe.max_drawdown_pct|default(0)|number_format }}%</div>
                                     </div>
                                     <div class="metric-box">
                                         <div class="metric-label">Trades</div>
-                                        <div class="metric-value neutral">{{ timeframe.trades_count }}</div>
+                                        <div class="metric-value neutral">{{ timeframe.trades_count|default(0) }}</div>
                                     </div>
                                     <div class="metric-box">
                                         <div class="metric-label">Profit Factor</div>
-                                        <div class="metric-value neutral">{{ timeframe.profit_factor|number_format }}</div>
+                                        <div class="metric-value neutral">{{ timeframe.profit_factor|default(0)|number_format }}</div>
                                     </div>
                                     <div class="metric-box">
                                         <div class="metric-label">Win Rate</div>
-                                        <div class="metric-value {% if timeframe.win_rate > 50 %}positive{% elif timeframe.win_rate < 50 %}negative{% else %}neutral{% endif %}">
-                                            {{ timeframe.win_rate|number_format }}%
+                                        <div class="metric-value {% if timeframe.win_rate|default(0) > 50 %}positive{% elif timeframe.win_rate|default(0) < 50 %}negative{% else %}neutral{% endif %}">
+                                            {{ timeframe.win_rate|default(0)|number_format }}%
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Add detailed metrics table for timeframe -->
+                                <div class="metrics-table-container">
+                                    <h3>Detailed Performance Metrics</h3>
+                                    <table class="metrics-table">
+                                        <tr>
+                                            <th colspan="2">Return Metrics</th>
+                                        </tr>
+                                        <tr>
+                                            <td>Return</td>
+                                            <td class="{% if timeframe.return_pct|default(0) > 0 %}positive{% elif timeframe.return_pct|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.return_pct|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Return (Annualized)</td>
+                                            <td class="{% if timeframe.return_annualized|default(0) > 0 %}positive{% elif timeframe.return_annualized|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.return_annualized|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Buy & Hold Return</td>
+                                            <td class="{% if timeframe.buy_hold_return|default(0) > 0 %}positive{% elif timeframe.buy_hold_return|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.buy_hold_return|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>CAGR</td>
+                                            <td class="{% if timeframe.cagr|default(0) > 0 %}positive{% elif timeframe.cagr|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.cagr|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th colspan="2">Risk Metrics</th>
+                                        </tr>
+                                        <tr>
+                                            <td>Sharpe Ratio</td>
+                                            <td class="neutral">{{ timeframe.sharpe_ratio|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sortino Ratio</td>
+                                            <td class="neutral">{{ timeframe.sortino_ratio|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Calmar Ratio</td>
+                                            <td class="neutral">{{ timeframe.calmar_ratio|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Max Drawdown</td>
+                                            <td class="negative">{{ timeframe.max_drawdown_pct|default(0)|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Avg Drawdown</td>
+                                            <td class="negative">{{ timeframe.avg_drawdown|default(0)|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Avg Drawdown Duration</td>
+                                            <td class="neutral">{{ timeframe.avg_drawdown_duration|default('N/A') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Volatility</td>
+                                            <td class="neutral">{{ timeframe.volatility|default(0)|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Alpha</td>
+                                            <td class="{% if timeframe.alpha|default(0) > 0 %}positive{% elif timeframe.alpha|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.alpha|default(0)|number_format }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Beta</td>
+                                            <td class="neutral">{{ timeframe.beta|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th colspan="2">Trade Metrics</th>
+                                        </tr>
+                                        <tr>
+                                            <td>Total Trades</td>
+                                            <td class="neutral">{{ timeframe.trades_count|default(0) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Win Rate</td>
+                                            <td class="{% if timeframe.win_rate|default(0) > 50 %}positive{% elif timeframe.win_rate|default(0) < 50 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.win_rate|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Profit Factor</td>
+                                            <td class="neutral">{{ timeframe.profit_factor|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Expectancy</td>
+                                            <td class="{% if timeframe.expectancy|default(0) > 0 %}positive{% elif timeframe.expectancy|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.expectancy|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>SQN</td>
+                                            <td class="neutral">{{ timeframe.sqn|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Kelly Criterion</td>
+                                            <td class="neutral">{{ timeframe.kelly_criterion|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Avg Trade</td>
+                                            <td class="{% if timeframe.avg_trade|default(0) > 0 %}positive{% elif timeframe.avg_trade|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.avg_trade|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Best Trade</td>
+                                            <td class="positive">{{ timeframe.best_trade|default(0)|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Worst Trade</td>
+                                            <td class="negative">{{ timeframe.worst_trade|default(0)|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Avg Trade Duration</td>
+                                            <td class="neutral">{{ timeframe.avg_trade_duration|default('N/A') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Max Trade Duration</td>
+                                            <td class="neutral">{{ timeframe.max_trade_duration|default('N/A') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Exposure Time</td>
+                                            <td class="neutral">{{ timeframe.exposure_time|default(0)|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <th colspan="2">Account Metrics</th>
+                                        </tr>
+                                        <tr>
+                                            <td>Initial Capital</td>
+                                            <td class="neutral">{{ timeframe.initial_capital|default(10000)|currency }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Final Equity</td>
+                                            <td class="{% if timeframe.equity_final|default(10000) > timeframe.initial_capital|default(10000) %}positive{% elif timeframe.equity_final|default(10000) < timeframe.initial_capital|default(10000) %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.equity_final|default(10000)|currency }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Peak Equity</td>
+                                            <td class="positive">{{ timeframe.equity_peak|default(10000)|currency }}</td>
+                                        </tr>
+                                    </table>
                                 </div>
                                 
                                 {% if timeframe.equity_chart %}
@@ -390,6 +749,133 @@
                                     <img class="chart-img" src="data:image/png;base64,{{ timeframe.equity_chart }}" alt="Equity and Drawdown Chart">
                                 </div>
                                 {% endif %}
+
+                                <!-- Detailed combination metric table for this timeframe (2 columns)-->
+                                <div class="metrics-table-container" style="margin: 20px 0;">
+                                    <h3>Detailed Performance Metrics</h3>
+                                    <table class="metrics-table">
+                                        <tr>
+                                            <th>Return Metrics</th>
+                                            <th>Value</th>
+                                        </tr>
+                                        <tr>
+                                            <td>Return</td>
+                                            <td class="{% if timeframe.return_pct > 0 %}positive{% elif timeframe.return_pct < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.return_pct|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Return (Annualized)</td>
+                                            <td class="{% if timeframe.return_annualized|default(0) > 0 %}positive{% elif timeframe.return_annualized|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.return_annualized|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Buy & Hold Return</td>
+                                            <td class="{% if timeframe.buy_hold_return > 0 %}positive{% elif timeframe.buy_hold_return < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.buy_hold_return|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>CAGR</td>
+                                            <td class="{% if timeframe.cagr > 0 %}positive{% elif timeframe.cagr < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.cagr|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Risk Metrics</th>
+                                            <th>Value</th>
+                                        </tr>
+                                        <tr>
+                                            <td>Sharpe Ratio</td>
+                                            <td class="neutral">{{ timeframe.sharpe_ratio|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sortino Ratio</td>
+                                            <td class="neutral">{{ asset.sortino_ratio|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Calmar Ratio</td>
+                                            <td class="neutral">{{ asset.calmar_ratio|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Avg Drawdown</td>
+                                            <td class="negative">{{ asset.avg_drawdown|default(0)|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Avg Drawdown Duration</td>
+                                            <td class="neutral">{{ asset.avg_drawdown_duration|default('N/A') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Alpha</td>
+                                            <td class="{% if asset.alpha|default(0) > 0 %}positive{% elif asset.alpha|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ asset.alpha|default(0)|number_format }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Beta</td>
+                                            <td class="neutral">{{ asset.beta|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Expectancy</td>
+                                            <td class="{% if asset.expectancy|default(0) > 0 %}positive{% elif asset.expectancy|default(0) < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ asset.expectancy|default(0)|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>SQN</td>
+                                            <td class="neutral">{{ asset.sqn|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Kelly Criterion</td>
+                                            <td class="neutral">{{ asset.kelly_criterion|default(0)|number_format }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Avg Trade</td>
+                                            <td class="{% if timeframe.avg_trade_pct > 0 %}positive{% elif timeframe.avg_trade_pct < 0 %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.avg_trade_pct|number_format }}%
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Best Trade</td>
+                                            <td class="positive">{{ timeframe.best_trade_pct|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Worst Trade</td>
+                                            <td class="negative">{{ timeframe.worst_trade_pct|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Avg Trade Duration</td>
+                                            <td class="neutral">{{ timeframe.avg_trade_duration }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Max Trade Duration</td>
+                                            <td class="neutral">{{ timeframe.max_trade_duration }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Exposure Time</td>
+                                            <td class="neutral">{{ timeframe.exposure_time|number_format }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Account Metrics</th>
+                                            <th>Value</th>
+                                        </tr>
+                                        <tr>
+                                            <td>Initial Capital</td>
+                                            <td class="neutral">{{ timeframe.initial_capital|currency }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Final Equity</td>
+                                            <td class="{% if timeframe.equity_final > timeframe.initial_capital %}positive{% elif timeframe.equity_final < timeframe.initial_capital %}negative{% else %}neutral{% endif %}">
+                                                {{ timeframe.equity_final|currency }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Peak Equity</td>
+                                            <td class="positive">{{ timeframe.equity_peak|currency }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
                                 
                                 {% if timeframe.trades and timeframe.trades|length > 0 %}
                                 <h3>Trades ({{ timeframe.trades|length }})</h3>
@@ -409,16 +895,16 @@
                                     </thead>
                                     <tbody>
                                         {% for trade in timeframe.trades %}
-                                        <tr class="{% if trade.pnl > 0 %}trade-win{% elif trade.pnl < 0 %}trade-loss{% endif %}">
-                                            <td>{{ trade.entry_date }}</td>
-                                            <td>{{ trade.exit_date }}</td>
-                                            <td>{{ trade.type }}</td>
-                                            <td>{{ trade.entry_price|number_format(4) }}</td>
-                                            <td>{{ trade.exit_price|number_format(4) }}</td>
-                                            <td>{{ trade.size }}</td>
-                                            <td>{{ trade.pnl|currency }}</td>
-                                            <td>{{ trade.return_pct|number_format(2) }}%</td>
-                                            <td>{{ trade.duration }}</td>
+                                        <tr class="{% if trade.pnl|default(0) > 0 %}trade-win{% elif trade.pnl|default(0) < 0 %}trade-loss{% endif %}">
+                                            <td>{{ trade.entry_date|default('N/A') }}</td>
+                                            <td>{{ trade.exit_date|default('N/A') }}</td>
+                                            <td>{{ trade.type|default('LONG') }}</td>
+                                            <td>{{ trade.entry_price|default(0)|number_format(4) }}</td>
+                                            <td>{{ trade.exit_price|default(0)|number_format(4) }}</td>
+                                            <td>{{ trade.size|default(0) }}</td>
+                                            <td>{{ trade.pnl|default(0)|currency }}</td>
+                                            <td>{{ trade.return_pct|default(0)|number_format(2) }}%</td>
+                                            <td>{{ trade.duration|default('N/A') }}</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
@@ -426,7 +912,7 @@
                                 {% else %}
                                 <h3>Trades</h3>
                                 <p>No trades were executed during the backtest period. The strategy conditions were never met with the given parameters and data.</p>
-                                
+
                                 <div class="alert alert-warning">
                                     <p><strong>Troubleshooting suggestions:</strong></p>
                                     <ul>
