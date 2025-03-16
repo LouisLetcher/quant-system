@@ -17,7 +17,9 @@ class DataLoader:
         data = DataManager.get_stock_data(ticker, start, end, interval)
 
         if data is None or data.empty:
-            print(f"⚠️ No data available for {ticker} with {interval} interval. Trying daily data...")
+            print(
+                f"⚠️ No data available for {ticker} with {interval} interval. Trying daily data..."
+            )
 
             # Fall back to daily data if the specific interval isn't available
             data = DataManager.get_stock_data(ticker, start, end, "1d")
@@ -64,17 +66,20 @@ class DataLoader:
 
                     # Check if we have enough data after resampling
                     if len(data) > 0:
-                        print(f"✅ Resampled daily data to {interval} - got {len(data)} bars from {original_length} original bars")
+                        print(
+                            f"✅ Resampled daily data to {interval} - got {len(data)} bars from {original_length} original bars"
+                        )
                         return data
-                    else:
-                        print(f"⚠️ No data available after resampling to {interval}")
-                        # Return the original daily data instead of None
-                        print(f"⚠️ Falling back to daily data with {original_length} bars")
-                        return DataManager.get_stock_data(ticker, start, end, "1d")
+                    print(f"⚠️ No data available after resampling to {interval}")
+                    # Return the original daily data instead of None
+                    print(
+                        f"⚠️ Falling back to daily data with {original_length} bars"
+                    )
+                    return DataManager.get_stock_data(ticker, start, end, "1d")
                 except Exception as e:
                     print(f"❌ Error resampling data: {e!s}")
                     # Return the original daily data instead of None
-                    print(f"⚠️ Falling back to daily data due to resampling error")
+                    print("⚠️ Falling back to daily data due to resampling error")
                     return DataManager.get_stock_data(ticker, start, end, "1d")
 
         print(f"✅ Got {len(data)} bars for {ticker}")

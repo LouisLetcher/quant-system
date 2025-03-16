@@ -140,7 +140,7 @@ class ReportFormatter:
         """Prepare portfolio data for comprehensive HTML reporting."""
         # Import math for isnan checking
         import math
-        
+
         # Safe helper function to handle NaN values
         def safe_value(value, default=0):
             if value is None:
@@ -148,7 +148,7 @@ class ReportFormatter:
             if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
                 return default
             return value
-        
+
         report_data = {
             "portfolio_name": portfolio_results.get("portfolio", "Unknown Portfolio"),
             "description": portfolio_results.get("description", ""),
@@ -252,22 +252,32 @@ class ReportFormatter:
 
             # Create asset entry
             asset_entry = {
-                'ticker': ticker,
-                'strategy': strategy_name,
-                'interval': data.get('interval', '1d'),
-                'profit_factor': results.get('Profit Factor', data.get('profit_factor', 0)),
-                'return_pct': return_pct,
-                'equity_final': results.get('Equity Final [$]', data.get('equity_final')),
-                'buy_hold_return': results.get('Buy & Hold Return [%]', data.get('buy_hold_return', 0)),
-                'sharpe_ratio': results.get('Sharpe Ratio', data.get('sharpe_ratio', 0)),
-                'max_drawdown': results.get('Max. Drawdown [%]', data.get('max_drawdown', 0)),
-                'win_rate': win_rate,
-                'trades_count': results.get('# Trades', data.get('trades', 0)),
-                'trades': trades_list,
-                'equity_curve': equity_curve,
-                'score': score
+                "ticker": ticker,
+                "strategy": strategy_name,
+                "interval": data.get("interval", "1d"),
+                "profit_factor": results.get(
+                    "Profit Factor", data.get("profit_factor", 0)
+                ),
+                "return_pct": return_pct,
+                "equity_final": results.get(
+                    "Equity Final [$]", data.get("equity_final")
+                ),
+                "buy_hold_return": results.get(
+                    "Buy & Hold Return [%]", data.get("buy_hold_return", 0)
+                ),
+                "sharpe_ratio": results.get(
+                    "Sharpe Ratio", data.get("sharpe_ratio", 0)
+                ),
+                "max_drawdown": results.get(
+                    "Max. Drawdown [%]", data.get("max_drawdown", 0)
+                ),
+                "win_rate": win_rate,
+                "trades_count": results.get("# Trades", data.get("trades", 0)),
+                "trades": trades_list,
+                "equity_curve": equity_curve,
+                "score": score,
             }
-            
+
             # Add to assets list
             report_data["assets"].append(asset_entry)
 
@@ -287,11 +297,27 @@ class ReportFormatter:
 
             # Calculate average metrics from all assets
             avg_metrics = {
-                'sharpe_ratio': sum(safe_value(asset.get('sharpe_ratio', 0)) for asset in report_data['assets']) / len(report_data['assets']),
-                'max_drawdown': sum(ReportFormatter._convert_to_float(safe_value(asset.get('max_drawdown', 0))) for asset in report_data['assets']) / len(report_data['assets']),
-                'profit_factor': sum(ReportFormatter._convert_to_float(safe_value(asset.get('profit_factor', 0))) for asset in report_data['assets']) / len(report_data['assets'])
+                "sharpe_ratio": sum(
+                    safe_value(asset.get("sharpe_ratio", 0))
+                    for asset in report_data["assets"]
+                )
+                / len(report_data["assets"]),
+                "max_drawdown": sum(
+                    ReportFormatter._convert_to_float(
+                        safe_value(asset.get("max_drawdown", 0))
+                    )
+                    for asset in report_data["assets"]
+                )
+                / len(report_data["assets"]),
+                "profit_factor": sum(
+                    ReportFormatter._convert_to_float(
+                        safe_value(asset.get("profit_factor", 0))
+                    )
+                    for asset in report_data["assets"]
+                )
+                / len(report_data["assets"]),
             }
-            
-            report_data['summary'].update(avg_metrics)
+
+            report_data["summary"].update(avg_metrics)
 
         return report_data

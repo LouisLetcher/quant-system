@@ -33,9 +33,13 @@ class BacktestEngine:
             ticker: Stock ticker symbol or portfolio name
             is_portfolio: Whether this is a portfolio backtest
         """
-        logger.info(f"Initializing BacktestEngine for {'portfolio' if is_portfolio else ticker}")
-        logger.info(f"Strategy: {strategy_class.__name__}, Initial cash: {cash}, Commission: {commission}")
-        
+        logger.info(
+            f"Initializing BacktestEngine for {'portfolio' if is_portfolio else ticker}"
+        )
+        logger.info(
+            f"Strategy: {strategy_class.__name__}, Initial cash: {cash}, Commission: {commission}"
+        )
+
         self.is_portfolio = is_portfolio
         self.portfolio_results = {}
 
@@ -70,17 +74,23 @@ class BacktestEngine:
                         # Find matching column ignoring case - with type safety
                         found = False
                         for original_col in df.columns:
-                            col_name = original_col[0] if isinstance(original_col, tuple) else original_col
+                            col_name = (
+                                original_col[0]
+                                if isinstance(original_col, tuple)
+                                else original_col
+                            )
                             if str(col_name).lower() == col.lower():
                                 new_df[col] = df[original_col]
                                 found = True
                                 break
-                            
+
                         if not found:
-                            error_msg = f"❌ Data for {ticker} missing required column: {col}"
+                            error_msg = (
+                                f"❌ Data for {ticker} missing required column: {col}"
+                            )
                             logger.error(error_msg)
                             raise ValueError(error_msg)
-                        
+
                     # Add any additional columns if needed
                     for i, col in enumerate(level0_columns):
                         if col not in [c for c in required_columns] and col not in [
@@ -91,7 +101,9 @@ class BacktestEngine:
 
                     new_df.name = ticker
                     data[ticker] = new_df
-                    logger.debug(f"Processed {ticker} data: {len(new_df)} rows, columns: {list(new_df.columns)}")
+                    logger.debug(
+                        f"Processed {ticker} data: {len(new_df)} rows, columns: {list(new_df.columns)}"
+                    )
                 else:
                     # Original code for non-MultiIndex columns
                     required_columns = ["Open", "High", "Low", "Close", "Volume"]
@@ -123,7 +135,9 @@ class BacktestEngine:
 
                     new_df.name = ticker
                     data[ticker] = new_df
-                    logger.debug(f"Processed {ticker} data: {len(new_df)} rows, columns: {list(new_df.columns)}")
+                    logger.debug(
+                        f"Processed {ticker} data: {len(new_df)} rows, columns: {list(new_df.columns)}"
+                    )
 
             self.data = data
             self.commission = (
@@ -141,7 +155,7 @@ class BacktestEngine:
                 error_msg = "❌ Data must be a non-empty Pandas DataFrame"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
-            
+
             # Handle potential MultiIndex from yfinance
             if isinstance(data.columns, pd.MultiIndex):
                 logger.debug("Detected MultiIndex columns in single-asset data")
@@ -159,7 +173,7 @@ class BacktestEngine:
                             c_str = c[0] if len(c) > 0 else str(c)
                         else:
                             c_str = str(c)
-            
+
                         if c_str.lower() == col.lower():
                             matches.append(c)
                     if not matches:
@@ -168,31 +182,39 @@ class BacktestEngine:
                         raise ValueError(error_msg)
                     original_col = data.columns[level0_columns.index(matches[0])]
                     new_data[col] = data[original_col]
-                
+
                     # Extra verification to ensure data isn't empty after column extraction
                     if new_data[col].empty or new_data[col].isna().all():
-                        logger.warning(f"Column {col} has no valid data after extraction")
-            
+                        logger.warning(
+                            f"Column {col} has no valid data after extraction"
+                        )
+
                 # Add additional columns if needed
                 for i, col in enumerate(level0_columns):
-                    if col not in [c.lower() for c in required_columns] and col not in ["Adj Close"]:
+                    if col not in [c.lower() for c in required_columns] and col not in [
+                        "Adj Close"
+                    ]:
                         original_col = data.columns[i]
                         new_data[col] = data[original_col]
 
                 # Preserve ticker name
-                if hasattr(data, 'name'):
+                if hasattr(data, "name"):
                     new_data.name = data.name
-            
+
                 # Add a final verification step
-                if new_data.empty or new_data['Close'].isna().all():
+                if new_data.empty or new_data["Close"].isna().all():
                     logger.critical("Processed data has no valid entries")
-                    logger.debug(f"Original data shape: {data.shape}, New data shape: {new_data.shape}")
+                    logger.debug(
+                        f"Original data shape: {data.shape}, New data shape: {new_data.shape}"
+                    )
                     # Print first few rows for debugging
                     logger.debug(f"Original data head:\n{data.head()}")
                     logger.debug(f"New data head:\n{new_data.head()}")
-            
+
                 self.data = new_data
-                logger.debug(f"Processed data: {len(new_data)} rows, columns: {list(new_data.columns)}")
+                logger.debug(
+                    f"Processed data: {len(new_data)} rows, columns: {list(new_data.columns)}"
+                )
             else:
                 # Ensure DataFrame has required columns
                 required_columns = ["Open", "High", "Low", "Close", "Volume"]
@@ -225,7 +247,9 @@ class BacktestEngine:
                         new_data[col] = data[col]
 
                 self.data = new_data
-                logger.debug(f"Processed data: {len(new_data)} rows, columns: {list(new_data.columns)}")
+                logger.debug(
+                    f"Processed data: {len(new_data)} rows, columns: {list(new_data.columns)}"
+                )
 
             self.cash = cash
             self.commission = commission
@@ -307,15 +331,15 @@ class BacktestEngine:
             )
 
             return combined_result
-    
+
         # This line should be at the same indentation level as the if statement above
         print("🚀 Running Backtesting.py Engine...")
         # Add logger statement at the same indentation level
-        if hasattr(self, 'ticker') and self.ticker:
+        if hasattr(self, "ticker") and self.ticker:
             logger.info(f"Running Backtesting.py Engine for {self.ticker}...")
         else:
             logger.info("Running Backtesting.py Engine...")
-        
+
         results = self.backtest.run()
 
         if results is None:
@@ -334,11 +358,15 @@ class BacktestEngine:
         logger.info(f"Equity Final [$]: {results.get('Equity Final [$]', 'N/A')}")
         logger.info(f"Equity Peak [$]: {results.get('Equity Peak [$]', 'N/A')}")
         logger.info(f"Return [%]: {results.get('Return [%]', 'N/A')}")
-        logger.info(f"Buy & Hold Return [%]: {results.get('Buy & Hold Return [%]', 'N/A')}")
+        logger.info(
+            f"Buy & Hold Return [%]: {results.get('Buy & Hold Return [%]', 'N/A')}"
+        )
         logger.info(f"Return (Ann.) [%] : {results.get('Return (Ann.) [%]', 'N/A')}")
-        
+
         # Risk metrics
-        logger.info(f"Volatility (Ann.) [%]: {results.get('Volatility (Ann.) [%]', 'N/A')}")
+        logger.info(
+            f"Volatility (Ann.) [%]: {results.get('Volatility (Ann.) [%]', 'N/A')}"
+        )
         logger.info(f"CAGR [%]: {results.get('CAGR [%]', 'N/A')}")
         logger.info(f"Sharpe Ratio: {results.get('Sharpe Ratio', 'N/A')}")
         logger.info(f"Sortino Ratio: {results.get('Sortino Ratio', 'N/A')}")
@@ -347,7 +375,9 @@ class BacktestEngine:
         logger.info(f"Beta: {results.get('Beta', 'N/A')}")
         logger.info(f"Max. Drawdown [%]: {results.get('Max. Drawdown [%]', 'N/A')}")
         logger.info(f"Avg. Drawdown [%]: {results.get('Avg. Drawdown [%]', 'N/A')}")
-        logger.info(f"Avg. Drawdown Duration: {results.get('Avg. Drawdown Duration', 'N/A')}")
+        logger.info(
+            f"Avg. Drawdown Duration: {results.get('Avg. Drawdown Duration', 'N/A')}"
+        )
 
         # Trade metrics
         logger.info(f"# Trades: {results.get('# Trades', 'N/A')}")
@@ -366,79 +396,106 @@ class BacktestEngine:
 
         # Log additional data structures (summarized to prevent excessive output)
         if "_equity_curve" in results:
-            logger.info(f"\nEquity Curve: DataFrame with {len(results['_equity_curve'])} rows")
+            logger.info(
+                f"\nEquity Curve: DataFrame with {len(results['_equity_curve'])} rows"
+            )
             # Save equity curve to CSV for detailed analysis
-            equity_curve_log = f"logs/equity_curve_{self.ticker}_{self.strategy_class.__name__}.csv"
+            equity_curve_log = (
+                f"logs/equity_curve_{self.ticker}_{self.strategy_class.__name__}.csv"
+            )
             os.makedirs(os.path.dirname(equity_curve_log), exist_ok=True)
-            results['_equity_curve'].to_csv(equity_curve_log)
+            results["_equity_curve"].to_csv(equity_curve_log)
             logger.info(f"Equity curve saved to {equity_curve_log}")
 
         if "_trades" in results and not results["_trades"].empty:
             trades_df = results["_trades"]
             logger.info(f"\nTrades: DataFrame with {len(trades_df)} trades")
-            
+
             # Log summary statistics of trades
             if len(trades_df) > 0:
-                winning_trades = trades_df[trades_df['PnL'] > 0]
-                losing_trades = trades_df[trades_df['PnL'] < 0]
-                
-                logger.info(f"Winning trades: {len(winning_trades)} ({len(winning_trades)/len(trades_df)*100:.2f}%)")
-                logger.info(f"Losing trades: {len(losing_trades)} ({len(losing_trades)/len(trades_df)*100:.2f}%)")
-                
+                winning_trades = trades_df[trades_df["PnL"] > 0]
+                losing_trades = trades_df[trades_df["PnL"] < 0]
+
+                logger.info(
+                    f"Winning trades: {len(winning_trades)} ({len(winning_trades)/len(trades_df)*100:.2f}%)"
+                )
+                logger.info(
+                    f"Losing trades: {len(losing_trades)} ({len(losing_trades)/len(trades_df)*100:.2f}%)"
+                )
+
                 if len(winning_trades) > 0:
-                    logger.info(f"Average winning trade: ${winning_trades['PnL'].mean():.2f}")
-                    logger.info(f"Largest winning trade: ${winning_trades['PnL'].max():.2f}")
-                
+                    logger.info(
+                        f"Average winning trade: ${winning_trades['PnL'].mean():.2f}"
+                    )
+                    logger.info(
+                        f"Largest winning trade: ${winning_trades['PnL'].max():.2f}"
+                    )
+
                 if len(losing_trades) > 0:
-                    logger.info(f"Average losing trade: ${losing_trades['PnL'].mean():.2f}")
-                    logger.info(f"Largest losing trade: ${losing_trades['PnL'].min():.2f}")
-                
-                logger.info(f"\nFirst trade sample:")
+                    logger.info(
+                        f"Average losing trade: ${losing_trades['PnL'].mean():.2f}"
+                    )
+                    logger.info(
+                        f"Largest losing trade: ${losing_trades['PnL'].min():.2f}"
+                    )
+
+                logger.info("\nFirst trade sample:")
                 logger.info(trades_df.iloc[0].to_string())
-                
+
                 # Save all trades to CSV for detailed analysis
-                trades_log = f"logs/trades_{self.ticker}_{self.strategy_class.__name__}.csv"
+                trades_log = (
+                    f"logs/trades_{self.ticker}_{self.strategy_class.__name__}.csv"
+                )
                 os.makedirs(os.path.dirname(trades_log), exist_ok=True)
                 trades_df.to_csv(trades_log)
                 logger.info(f"All trades saved to {trades_log}")
-                
+
                 # Log monthly/yearly performance if data spans multiple months/years
-                if hasattr(trades_df, 'EntryTime') and len(trades_df) > 5:
+                if hasattr(trades_df, "EntryTime") and len(trades_df) > 5:
                     try:
-                        trades_df['EntryMonth'] = pd.to_datetime(trades_df['EntryTime']).dt.to_period('M')
-                        monthly_pnl = trades_df.groupby('EntryMonth')['PnL'].sum()
-                        
+                        trades_df["EntryMonth"] = pd.to_datetime(
+                            trades_df["EntryTime"]
+                        ).dt.to_period("M")
+                        monthly_pnl = trades_df.groupby("EntryMonth")["PnL"].sum()
+
                         logger.info("\nMonthly P&L:")
                         logger.info(monthly_pnl.to_string())
-                        
-                        trades_df['EntryYear'] = pd.to_datetime(trades_df['EntryTime']).dt.to_period('Y')
-                        yearly_pnl = trades_df.groupby('EntryYear')['PnL'].sum()
-                        
+
+                        trades_df["EntryYear"] = pd.to_datetime(
+                            trades_df["EntryTime"]
+                        ).dt.to_period("Y")
+                        yearly_pnl = trades_df.groupby("EntryYear")["PnL"].sum()
+
                         logger.info("\nYearly P&L:")
                         logger.info(yearly_pnl.to_string())
                     except Exception as e:
                         logger.warning(f"Could not calculate periodic P&L: {e}")
 
         # Save full results to JSON
-        results_log = f"logs/backtest_results_{self.ticker}_{self.strategy_class.__name__}.json"
+        results_log = (
+            f"logs/backtest_results_{self.ticker}_{self.strategy_class.__name__}.json"
+        )
         os.makedirs(os.path.dirname(results_log), exist_ok=True)
-        
+
         # Create a serializable version of the results
-        serializable_result = {k: v for k, v in results.items() 
-        if not k.startswith('_') or k == '_trades' or k == '_equity_curve'}
-        
+        serializable_result = {
+            k: v
+            for k, v in results.items()
+            if not k.startswith("_") or k == "_trades" or k == "_equity_curve"
+        }
+
         # Convert DataFrames to CSV strings for JSON serialization
-        if '_trades' in serializable_result:
+        if "_trades" in serializable_result:
             trades_csv = f"logs/trades_{self.ticker}_{self.strategy_class.__name__}.csv"
-            serializable_result['_trades'].to_csv(trades_csv)
-            serializable_result['_trades'] = f"Saved to {trades_csv}"
-            
-        if '_equity_curve' in serializable_result:
+            serializable_result["_trades"].to_csv(trades_csv)
+            serializable_result["_trades"] = f"Saved to {trades_csv}"
+
+        if "_equity_curve" in serializable_result:
             equity_csv = f"logs/equity_{self.ticker}_{self.strategy_class.__name__}.csv"
-            serializable_result['_equity_curve'].to_csv(equity_csv)
-            serializable_result['_equity_curve'] = f"Saved to {equity_csv}"
-        
-        with open(results_log, 'w') as f:
+            serializable_result["_equity_curve"].to_csv(equity_csv)
+            serializable_result["_equity_curve"] = f"Saved to {equity_csv}"
+
+        with open(results_log, "w") as f:
             json.dump(serializable_result, f, indent=2, default=str)
         logger.info(f"Full backtest results saved to {results_log}")
 
@@ -472,7 +529,7 @@ class BacktestEngine:
             }
             logger.info(f"Portfolio optimization metrics: {metrics}")
             return metrics
-            
+
         metrics = {
             "sharpe": self.backtest.run()["Sharpe Ratio"],
             "return": self.backtest.run()["Return [%]"],

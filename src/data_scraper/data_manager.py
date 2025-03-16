@@ -35,7 +35,7 @@ class DataManager:
             if end_date
             else pd.to_datetime(datetime.now().date())
         )
-        
+
         # Check if we have cached data
         if use_cache:
             cached_data = Cache.load_from_cache(ticker, interval)
@@ -45,12 +45,12 @@ class DataManager:
                     "1d": timedelta(days=2),
                     "1wk": timedelta(days=7),
                     "1mo": timedelta(days=30),
-                    "3mo": timedelta(days=90)
+                    "3mo": timedelta(days=90),
                 }
-                
+
                 # Get appropriate threshold or default to a reasonable value
                 threshold = recency_thresholds.get(interval, timedelta(days=7))
-                
+
                 # Check if cached data is recent enough based on interval
                 if end - cached_data.index[-1] < threshold:
                     print(f"✅ Using cached data for {ticker} ({interval})")
@@ -62,10 +62,11 @@ class DataManager:
                         cached_data = cached_data[cached_data.index <= end]
 
                     return cached_data
-                else:
-                    print(f"⚠️ Cache for {ticker} ({interval}) is outdated - last point: {cached_data.index[-1]}")
-                    
-          # If no cache or cache is outdated, fetch from API
+                print(
+                    f"⚠️ Cache for {ticker} ({interval}) is outdated - last point: {cached_data.index[-1]}"
+                )
+
+        # If no cache or cache is outdated, fetch from API
         try:
             # For period-based requests
             if start is None:
