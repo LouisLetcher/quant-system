@@ -1,0 +1,36 @@
+name: Update Changelog
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for tags and branches
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      
+      - name: Generate Changelog
+        run: |
+          # Get the current tag
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          
+          # Generate changelog
+          python scripts/generate_changelog.py --since $(git describe --tags --abbrev=0 HEAD^) --version $CURRENT_TAG
+      
+      - name: Commit and Push Changelog
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add CHANGELOG.md
+          git commit -m "Update CHANGELOG.md for $GITHUB_REF_NAME [skip ci]"
+          git push
