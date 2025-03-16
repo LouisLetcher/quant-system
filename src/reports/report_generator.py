@@ -22,6 +22,7 @@ class ReportGenerator:
         "portfolio": "multi_asset_report.html",
         "portfolio_detailed": "portfolio_detailed_report.html",
         "optimizer": "optimizer_report.html",
+        "parameter_optimization": "parameter_optimization_report.html",
     }
 
     def __init__(self):
@@ -876,3 +877,118 @@ class ReportGenerator:
             print(f"⚠️ Error generating equity charts: {e}")
 
         return report_data
+
+    def generate_parameter_optimization_report(
+        self, optimization_results: dict[str, Any], output_path: Optional[str] = None
+    ) -> str:
+        """
+        Generate a parameter optimization HTML report.
+
+        Args:
+            optimization_results: Dictionary containing optimization results
+            output_path: Path where the report will be saved (optional)
+
+        Returns:
+            Path to the generated report file
+        """
+        # Generate default output path if not provided
+        if output_path is None:
+            portfolio_name = optimization_results.get("portfolio", "unknown")
+            output_path = (
+                f"reports_output/portfolio_optimized_params_{portfolio_name}.html"
+            )
+
+        # Ensure output directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        # Load template
+        template = self.env.get_template("parameter_optimization_report.html")
+
+        # Prepare data for template
+        template_data = {
+            "portfolio_name": optimization_results.get(
+                "portfolio", "Unknown Portfolio"
+            ),
+            "description": optimization_results.get("description", ""),
+            "date_generated": optimization_results.get(
+                "date_generated", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ),
+            "metric": optimization_results.get("metric", "sharpe"),
+            "assets": [],
+        }
+
+        # Process each asset's optimization results
+        for ticker, asset_data in optimization_results.get(
+            "best_combinations", {}
+        ).items():
+            # Create asset entry for the template
+            asset_entry = {
+                "ticker": ticker,
+                "strategy": asset_data.get("strategy", "Unknown"),
+                "interval": asset_data.get("interval", "Unknown"),
+                "original_score": asset_data.get("original_score", 0),
+                "optimized_score": asset_data.get("optimized_score", 0),
+                "improvement": asset_data.get("improvement", 0),
+                "improvement_pct": asset_data.get("improvement_pct", 0),
+                "best_params": asset_data.get("best_params", {}),
+                "return_pct": asset_data.get("return_pct", 0),
+                "sharpe_ratio": asset_data.get("sharpe_ratio", 0),
+                "max_drawdown_pct": asset_data.get("max_drawdown_pct", 0),
+                "win_rate": asset_data.get("win_rate", 0),
+                "trades_count": asset_data.get("trades_count", 0),
+                "profit_factor": asset_data.get("profit_factor", 0),
+                "equity_chart": asset_data.get("equity_chart"),
+                "trades": asset_data.get("trades", []),
+                "optimization_history": self._format_optimization_history(
+                    asset_data.get("optimization_results", [])
+                ),
+            }
+
+            template_data["assets"].append(asset_entry)
+
+        # Render template
+        html_content = template.render(**template_data)
+
+        # Write to file
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+        return output_path
+
+    def _format_optimization_history(self, optimization_results):
+        """Format optimization history for display in the report."""
+        if not optimization_results:
+            return []
+
+        formatted_history = []
+        for i, result in enumerate(optimization_results):
+            if isinstance(result, dict):
+                # Extract parameters and score
+                params = result.get("params", {})
+                score = result.get("score", 0)
+
+                formatted_history.append(
+                    {"iteration": i + 1, "params": params, "score": score}
+                )
+
+        # Sort by score (descending)
+        return sorted(formatted_history, key=lambda x: x["score"], reverse=True)
+
+    def _format_optimization_history(self, optimization_results):
+        """Format optimization history for display in the report."""
+        if not optimization_results:
+            return []
+
+        formatted_history = []
+        for i, result in enumerate(optimization_results):
+            if isinstance(result, dict):
+                # Extract parameters and score
+                params = result.get("params", {})
+                score = result.get("score", 0)
+
+                formatted_history.append(
+                    {"iteration": i + 1, "params": params, "score": score}
+                )
+
+        # Sort by score (descending)
+        return sorted(formatted_history, key=lambda x: x["score"], reverse=True)

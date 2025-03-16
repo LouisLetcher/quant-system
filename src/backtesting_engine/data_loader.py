@@ -72,9 +72,7 @@ class DataLoader:
                         return data
                     print(f"⚠️ No data available after resampling to {interval}")
                     # Return the original daily data instead of None
-                    print(
-                        f"⚠️ Falling back to daily data with {original_length} bars"
-                    )
+                    print(f"⚠️ Falling back to daily data with {original_length} bars")
                     return DataManager.get_stock_data(ticker, start, end, "1d")
                 except Exception as e:
                     print(f"❌ Error resampling data: {e!s}")
