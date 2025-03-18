@@ -187,20 +187,17 @@
         .tab-content.active {
             display: block;
         }
-        /* Add this to your existing styles */
         .chart-metrics-container {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
             margin: 20px 0;
         }
-        
         .chart-container {
             flex: 2;
             min-width: 500px;
             margin: 0;
         }
-        
         .metrics-table-container {
             background-color: white;
             padding: 15px;
@@ -208,12 +205,10 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             margin: 20px 0;
         }
-        
         .metrics-table {
             width: 100%;
             border-collapse: collapse;
         }
-        
         .metrics-table th {
             text-align: left;
             padding: 8px;
@@ -222,16 +217,13 @@
             color: #2c3e50;
             font-weight: 600;
         }
-        
         .metrics-table td {
             padding: 8px;
             border-bottom: 1px solid #eee;
         }
-        
         .metrics-table tr:last-child td {
             border-bottom: none;
         }
-        
         .metrics-table th[colspan="2"] {
             background-color: #e9ecef;
             text-align: center;
@@ -240,13 +232,24 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
         .metrics-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-
         .metrics-table tr:hover {
             background-color: #f1f1f1;
+        }
+        .trade-win {
+            color: #27ae60;
+        }
+        .trade-loss {
+            color: #e74c3c;
+        }
+        .trade-open {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .trade-closed {
+            color: #7f8c8d;
         }
     </style>
 </head>
@@ -891,6 +894,7 @@
                                             <th>P&L</th>
                                             <th>Return %</th>
                                             <th>Duration</th>
+                                            <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -905,6 +909,9 @@
                                             <td>{{ trade.pnl|default(0)|currency }}</td>
                                             <td>{{ trade.return_pct|default(0)|number_format(2) }}%</td>
                                             <td>{{ trade.duration|default('N/A') }}</td>
+                                            <td class="{% if trade.status == 'OPEN' %}trade-open{% else %}trade-closed{% endif %}">
+                                                {{ trade.status|default('UNKNOWN') }}
+                                            </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
