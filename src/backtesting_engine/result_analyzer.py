@@ -535,7 +535,12 @@ class BacktestResultAnalyzer:
                     except Exception as e:
                         logger.warning(f"Could not calculate trade duration: {e}")
                         trade_dict["duration"] = "N/A"
-
+                # Add trade status field
+                if "ExitTime" in trade and not pd.isna(trade["ExitTime"]) and trade["ExitTime"] is not None:
+                    trade_dict["status"] = "CLOSED"
+                else:
+                    trade_dict["status"] = "OPEN"
+                    
                 trades_list.append(trade_dict)
 
             logger.debug(f"Extracted {len(trades_list)} trades")

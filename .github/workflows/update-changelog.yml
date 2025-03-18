@@ -24,8 +24,18 @@ jobs:
           # Get the current tag
           CURRENT_TAG=${GITHUB_REF#refs/tags/}
           
+          # Try to get the previous tag, or use a fallback for the first tag
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -z "$PREVIOUS_TAG" ]; then
+            # If this is the first tag, use the initial commit
+            SINCE_ARG="--since $(git rev-list --max-parents=0 HEAD)"
+          else
+            SINCE_ARG="--since $PREVIOUS_TAG"
+          fi
+          
           # Generate changelog
-          python scripts/generate_changelog.py --since $(git describe --tags --abbrev=0 HEAD^) --version $CURRENT_TAG
+          python scripts/generate_changelog.py $SINCE_ARG --version $CURRENT_TAG
       
       - name: Commit and Push Changelog
         run: |
