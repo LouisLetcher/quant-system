@@ -3,6 +3,7 @@ import re
 import os
 import sys
 import glob
+import argparse
 
 # Get the project root directory
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -14,6 +15,12 @@ if not os.path.exists(exports_dir):
     os.makedirs(exports_dir)
     print(f"Created exports directory at {exports_dir}")
 
+# Set up argument parser
+parser = argparse.ArgumentParser(description='Add tickers from export files to assets_config.json')
+parser.add_argument('export_file', nargs='?', help='Specific export file to process (optional)')
+parser.add_argument('--clear', action='store_true', help='Clear existing assets in the portfolio before adding new ones')
+args = parser.parse_args()
+
 # Load the existing assets_config.json
 with open(config_path, 'r') as f:
     config = json.load(f)
@@ -22,9 +29,9 @@ with open(config_path, 'r') as f:
 available_portfolios = list(config['portfolios'].keys())
 
 # Get export filename from command line argument, or process all files in exports directory
-if len(sys.argv) > 1:
+if args.export_file:
     # Process a specific file
-    export_filename = sys.argv[1]
+    export_filename = args.export_file
     export_path = os.path.join(exports_dir, export_filename)
     export_files = [export_path]
 else:
@@ -55,6 +62,11 @@ for export_path in export_files:
         print(f"Available portfolios: {', '.join(available_portfolios)}")
         print(f"Skipping file {filename}")
         continue
+    
+    # Clear existing assets if --clear flag is used
+    if args.clear:
+        config['portfolios'][portfolio_name]['assets'] = []
+        print(f"Cleared all existing assets from the {portfolio_name} portfolio.")
     
     # Extract existing tickers for this portfolio
     existing_tickers = set()
@@ -103,10 +115,6 @@ for export_path in export_files:
     print(f"Added {len(new_tickers)} new tickers to the {portfolio_name} portfolio from {filename}.")
     if new_tickers:
         print("New tickers:", new_tickers)
-    
-    # Remove the processed file
-    os.remove(export_path)
-    print(f"Removed processed file: {filename}")
 
 # Save the updated configuration
 with open(config_path, 'w') as f:
