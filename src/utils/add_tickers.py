@@ -90,11 +90,11 @@ for export_path in export_files:
         if entry.startswith('###') or not entry.strip():
             continue
         
-        # Extract ticker from exchange:ticker format
-        if ':' in entry:
-            ticker = entry.split(':')[1].strip()
-        else:
-            ticker = entry.strip()
+        # Extract ticker from exchange:ticker format and remove exchange prefix
+        ticker = entry.strip()
+        if ':' in ticker:
+            # Remove exchange prefix (everything before and including ':')
+            ticker = ticker.split(':', 1)[1].strip()
         
         # Add ticker if it's not already in the portfolio
         if ticker and ticker not in existing_tickers:
@@ -121,3 +121,5 @@ with open(config_path, 'w') as f:
     json.dump(config, f, indent=4)
 
 print("Configuration saved successfully.")
+print("All export files processed.")
+print("Please check the assets_config.json file for the updated portfolios.")
