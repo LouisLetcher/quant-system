@@ -1,6 +1,6 @@
+DE10Y-DE.BD,
+GB10Y-GB.BD,
 ^IRX,
 ^FVX,
 ^TNX,
 ^TYX,
-2YY=F,
-ZN=F,
