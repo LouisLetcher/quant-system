@@ -7452,3652 +7452,3652 @@
             "description": "Major cryptocurrencies with high TVL and market cap",
             "assets": [
                 {
-                    "ticker": "1000000BABYDOGEUSDT",
+                    "ticker": "BABYDOGE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000000BABYDOGEUSDT"
+                    "description": "BABYDOGE-USD"
                 },
                 {
-                    "ticker": "1000000CHEEMSUSDT",
+                    "ticker": "CHEEMS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000000CHEEMSUSDT"
+                    "description": "CHEEMS-USD"
                 },
                 {
-                    "ticker": "1000000MOGUSDT",
+                    "ticker": "MOG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000000MOGUSDT"
+                    "description": "MOG-USD"
                 },
                 {
-                    "ticker": "1000000PEIPEIUSDT",
+                    "ticker": "PEIPEI32233-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000000PEIPEIUSDT"
+                    "description": "PEIPEI32233-USD"
                 },
                 {
-                    "ticker": "10000COQUSDT",
+                    "ticker": "COQ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "10000COQUSDT"
+                    "description": "COQ-USD"
                 },
                 {
-                    "ticker": "10000ELONUSDT",
+                    "ticker": "ELON-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "10000ELONUSDT"
+                    "description": "ELON-USD"
                 },
                 {
-                    "ticker": "10000LADYSUSDT",
+                    "ticker": "LADYS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "10000LADYSUSDT"
+                    "description": "LADYS-USD"
                 },
                 {
-                    "ticker": "10000QUBICUSDT",
+                    "ticker": "QUBIC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "10000QUBICUSDT"
+                    "description": "QUBIC-USD"
                 },
                 {
-                    "ticker": "10000SATSUSDT",
+                    "ticker": "SR30-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "10000SATSUSDT"
+                    "description": "SR30-USD"
                 },
                 {
-                    "ticker": "10000WENUSDT",
+                    "ticker": "WEN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "10000WENUSDT"
+                    "description": "WEN-USD"
                 },
                 {
-                    "ticker": "10000WHYUSDT",
+                    "ticker": "WHY-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "10000WHYUSDT"
+                    "description": "WHY-USD"
                 },
                 {
-                    "ticker": "1000APUUSDT",
+                    "ticker": "APU28291-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000APUUSDT"
+                    "description": "APU28291-USD"
                 },
                 {
-                    "ticker": "1000BONKUSDT",
+                    "ticker": "BONK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000BONKUSDT"
+                    "description": "BONK-USD"
                 },
                 {
-                    "ticker": "1000BTTUSDT",
+                    "ticker": "BTT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000BTTUSDT"
+                    "description": "BTT-USD"
                 },
                 {
-                    "ticker": "1000CATSUSDT",
+                    "ticker": "CATS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000CATSUSDT"
+                    "description": "CATS-USD"
                 },
                 {
-                    "ticker": "1000CATUSDT",
+                    "ticker": "CAT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000CATUSDT"
+                    "description": "CAT-USD"
                 },
                 {
-                    "ticker": "1000FLOKIUSDT",
+                    "ticker": "FLOKI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000FLOKIUSDT"
+                    "description": "FLOKI-USD"
                 },
                 {
-                    "ticker": "1000LUNCUSDT",
+                    "ticker": "LUNC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000LUNCUSDT"
+                    "description": "LUNC-USD"
                 },
                 {
-                    "ticker": "1000MUMUUSDT",
+                    "ticker": "MUMU-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000MUMUUSDT"
+                    "description": "MUMU-USD"
                 },
                 {
-                    "ticker": "1000NEIROCTOUSDT",
+                    "ticker": "NEIROCTO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000NEIROCTOUSDT"
+                    "description": "NEIROCTO-USD"
                 },
                 {
-                    "ticker": "1000PEPEUSDT",
+                    "ticker": "PEPE24478-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000PEPEUSDT"
+                    "description": "PEPE24478-USD"
                 },
                 {
-                    "ticker": "1000RATSUSDT",
+                    "ticker": "RATS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000RATSUSDT"
+                    "description": "RATS-USD"
                 },
                 {
-                    "ticker": "1000TOSHIUSDT",
+                    "ticker": "TOSHI27750-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000TOSHIUSDT"
+                    "description": "TOSHI27750-USD"
                 },
                 {
-                    "ticker": "1000TURBOUSDT",
+                    "ticker": "TURBO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000TURBOUSDT"
+                    "description": "TURBO-USD"
                 },
                 {
-                    "ticker": "1000XECUSDT",
+                    "ticker": "XEC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000XECUSDT"
+                    "description": "XEC-USD"
                 },
                 {
-                    "ticker": "1000XUSDT",
+                    "ticker": "X-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1000XUSDT"
+                    "description": "X-USD"
                 },
                 {
-                    "ticker": "1INCHUSDT",
+                    "ticker": "1INCH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "1INCHUSDT"
+                    "description": "1INCH-USD"
                 },
                 {
-                    "ticker": "A8USDT",
+                    "ticker": "A8-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "A8USDT"
+                    "description": "A8-USD"
                 },
                 {
-                    "ticker": "AAVEUSDT",
+                    "ticker": "AAVE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AAVEUSDT"
+                    "description": "AAVE-USD"
                 },
                 {
-                    "ticker": "ACEUSDT",
+                    "ticker": "ACE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ACEUSDT"
+                    "description": "ACE-USD"
                 },
                 {
-                    "ticker": "ACHUSDT",
+                    "ticker": "ACH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ACHUSDT"
+                    "description": "ACH-USD"
                 },
                 {
-                    "ticker": "ACTUSDT",
+                    "ticker": "ACT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ACTUSDT"
+                    "description": "ACT-USD"
                 },
                 {
-                    "ticker": "ACXUSDT",
+                    "ticker": "ACX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ACXUSDT"
+                    "description": "ACX-USD"
                 },
                 {
-                    "ticker": "ADAUSDT",
+                    "ticker": "ADA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ADAUSDT"
+                    "description": "ADA-USD"
                 },
                 {
-                    "ticker": "AERGOUSDT",
+                    "ticker": "AERGO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AERGOUSDT"
+                    "description": "AERGO-USD"
                 },
                 {
-                    "ticker": "AEROUSDT",
+                    "ticker": "AERO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AEROUSDT"
+                    "description": "AERO-USD"
                 },
                 {
-                    "ticker": "AEVOUSDT",
+                    "ticker": "AEVO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AEVOUSDT"
+                    "description": "AEVO-USD"
                 },
                 {
-                    "ticker": "AGIUSDT",
+                    "ticker": "AGI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AGIUSDT"
+                    "description": "AGI-USD"
                 },
                 {
-                    "ticker": "AGLDUSDT",
+                    "ticker": "AGLD-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AGLDUSDT"
+                    "description": "AGLD-USD"
                 },
                 {
-                    "ticker": "AI16ZUSDT",
+                    "ticker": "AI16Z-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AI16ZUSDT"
+                    "description": "AI16Z-USD"
                 },
                 {
-                    "ticker": "AIOZUSDT",
+                    "ticker": "AIOZ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AIOZUSDT"
+                    "description": "AIOZ-USD"
                 },
                 {
-                    "ticker": "AIUSDT",
+                    "ticker": "AI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AIUSDT"
+                    "description": "AI-USD"
                 },
                 {
-                    "ticker": "AIXBTUSDT",
+                    "ticker": "AIXBT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AIXBTUSDT"
+                    "description": "AIXBT-USD"
                 },
                 {
-                    "ticker": "AKTUSDT",
+                    "ticker": "AKT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AKTUSDT"
+                    "description": "AKT-USD"
                 },
                 {
-                    "ticker": "ALCHUSDT",
+                    "ticker": "ALCH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ALCHUSDT"
+                    "description": "ALCH-USD"
                 },
                 {
-                    "ticker": "ALEOUSDT",
+                    "ticker": "ALEO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ALEOUSDT"
+                    "description": "ALEO-USD"
                 },
                 {
-                    "ticker": "ALGOUSDT",
+                    "ticker": "ALGO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ALGOUSDT"
+                    "description": "ALGO-USD"
                 },
                 {
-                    "ticker": "ALICEUSDT",
+                    "ticker": "ALICE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ALICEUSDT"
+                    "description": "ALICE-USD"
                 },
                 {
-                    "ticker": "ALPHAUSDT",
+                    "ticker": "ALPHA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ALPHAUSDT"
+                    "description": "ALPHA-USD"
                 },
                 {
-                    "ticker": "ALTUSDT",
+                    "ticker": "ALT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ALTUSDT"
+                    "description": "ALT-USD"
                 },
                 {
-                    "ticker": "ALUUSDT",
+                    "ticker": "ALU-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ALUUSDT"
+                    "description": "ALU-USD"
                 },
                 {
-                    "ticker": "ANIMEUSDT",
+                    "ticker": "ANIME-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ANIMEUSDT"
+                    "description": "ANIME-USD"
                 },
                 {
-                    "ticker": "ANKRUSDT",
+                    "ticker": "ANKR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ANKRUSDT"
+                    "description": "ANKR-USD"
                 },
                 {
-                    "ticker": "APEUSDT",
+                    "ticker": "APE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "APEUSDT"
+                    "description": "APE-USD"
                 },
                 {
-                    "ticker": "API3USDT",
+                    "ticker": "API3-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "API3USDT"
+                    "description": "API3-USD"
                 },
                 {
-                    "ticker": "APTUSDT",
+                    "ticker": "APT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "APTUSDT"
+                    "description": "APT-USD"
                 },
                 {
-                    "ticker": "ARBUSDT",
+                    "ticker": "ARB-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ARBUSDT"
+                    "description": "ARB-USD"
                 },
                 {
-                    "ticker": "ARCUSDT",
+                    "ticker": "ARC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ARCUSDT"
+                    "description": "ARC-USD"
                 },
                 {
-                    "ticker": "ARKMUSDT",
+                    "ticker": "ARKM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ARKMUSDT"
+                    "description": "ARKM-USD"
                 },
                 {
-                    "ticker": "ARKUSDT",
+                    "ticker": "ARK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ARKUSDT"
+                    "description": "ARK-USD"
                 },
                 {
-                    "ticker": "ARPAUSDT",
+                    "ticker": "ARPA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ARPAUSDT"
+                    "description": "ARPA-USD"
                 },
                 {
-                    "ticker": "ARUSDT",
+                    "ticker": "AR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ARUSDT"
+                    "description": "AR-USD"
                 },
                 {
-                    "ticker": "ASTRUSDT",
+                    "ticker": "ASTR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ASTRUSDT"
+                    "description": "ASTR-USD"
                 },
                 {
-                    "ticker": "ATAUSDT",
+                    "ticker": "ATA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ATAUSDT"
+                    "description": "ATA-USD"
                 },
                 {
-                    "ticker": "ATHUSDT",
+                    "ticker": "ATH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ATHUSDT"
+                    "description": "ATH-USD"
                 },
                 {
-                    "ticker": "ATOMUSDT",
+                    "ticker": "ATOM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ATOMUSDT"
+                    "description": "ATOM-USD"
                 },
                 {
-                    "ticker": "AUCTIONUSDT",
+                    "ticker": "AUCTION-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AUCTIONUSDT"
+                    "description": "AUCTION-USD"
                 },
                 {
-                    "ticker": "AUDIOUSDT",
+                    "ticker": "AUDIO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AUDIOUSDT"
+                    "description": "AUDIO-USD"
                 },
                 {
-                    "ticker": "AVAAIUSDT",
+                    "ticker": "AVAAI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AVAAIUSDT"
+                    "description": "AVAAI-USD"
                 },
                 {
-                    "ticker": "AVAILUSDT",
+                    "ticker": "AVAIL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AVAILUSDT"
+                    "description": "AVAIL-USD"
                 },
                 {
-                    "ticker": "AVAUSDT",
+                    "ticker": "AVA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AVAUSDT"
+                    "description": "AVA-USD"
                 },
                 {
-                    "ticker": "AVAXUSDT",
+                    "ticker": "AVAX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AVAXUSDT"
+                    "description": "AVAX-USD"
                 },
                 {
-                    "ticker": "AVLUSDT",
+                    "ticker": "AVL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AVLUSDT"
+                    "description": "AVL-USD"
                 },
                 {
-                    "ticker": "AWEUSDT",
+                    "ticker": "AWE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AWEUSDT"
+                    "description": "AWE-USD"
                 },
                 {
-                    "ticker": "AXLUSDT",
+                    "ticker": "AXL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AXLUSDT"
+                    "description": "AXL-USD"
                 },
                 {
-                    "ticker": "AXSUSDT",
+                    "ticker": "AXS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AXSUSDT"
+                    "description": "AXS-USD"
                 },
                 {
-                    "ticker": "B3USDT",
+                    "ticker": "B3-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "B3USDT"
+                    "description": "B3-USD"
                 },
                 {
-                    "ticker": "BABYUSDT",
+                    "ticker": "BABY-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BABYUSDT"
+                    "description": "BABY-USD"
                 },
                 {
-                    "ticker": "BADGERUSDT",
+                    "ticker": "BADGER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BADGERUSDT"
+                    "description": "BADGER-USD"
                 },
                 {
-                    "ticker": "BAKEUSDT",
+                    "ticker": "BAKE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BAKEUSDT"
+                    "description": "BAKE-USD"
                 },
                 {
-                    "ticker": "BALUSDT",
+                    "ticker": "BAL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BALUSDT"
+                    "description": "BAL-USD"
                 },
                 {
-                    "ticker": "BANANAS31USDT",
+                    "ticker": "BANANAS31-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BANANAS31USDT"
+                    "description": "BANANAS31-USD"
                 },
                 {
-                    "ticker": "BANANAUSDT",
+                    "ticker": "BANANA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BANANAUSDT"
+                    "description": "BANANA-USD"
                 },
                 {
-                    "ticker": "BANDUSDT",
+                    "ticker": "BAND-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BANDUSDT"
+                    "description": "BAND-USD"
                 },
                 {
-                    "ticker": "BANKUSDT",
+                    "ticker": "BANK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BANKUSDT"
+                    "description": "BANK-USD"
                 },
                 {
-                    "ticker": "BANUSDT",
+                    "ticker": "BAN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BANUSDT"
+                    "description": "BAN-USD"
                 },
                 {
-                    "ticker": "BATUSDT",
+                    "ticker": "BAT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BATUSDT"
+                    "description": "BAT-USD"
                 },
                 {
-                    "ticker": "BBUSDT",
+                    "ticker": "BB-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BBUSDT"
+                    "description": "BB-USD"
                 },
                 {
-                    "ticker": "BCHUSDT",
+                    "ticker": "BCH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BCHUSDT"
+                    "description": "BCH-USD"
                 },
                 {
-                    "ticker": "BEAMUSDT",
+                    "ticker": "BEAM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BEAMUSDT"
+                    "description": "BEAM-USD"
                 },
                 {
-                    "ticker": "BELUSDT",
+                    "ticker": "BEL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BELUSDT"
+                    "description": "BEL-USD"
                 },
                 {
-                    "ticker": "BERAUSDT",
+                    "ticker": "BERA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BERAUSDT"
+                    "description": "BERA-USD"
                 },
                 {
-                    "ticker": "BICOUSDT",
+                    "ticker": "BICO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BICOUSDT"
+                    "description": "BICO-USD"
                 },
                 {
-                    "ticker": "BIGTIMEUSDT",
+                    "ticker": "BIGTIME-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BIGTIMEUSDT"
+                    "description": "BIGTIME-USD"
                 },
                 {
-                    "ticker": "BIOUSDT",
+                    "ticker": "BIO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BIOUSDT"
+                    "description": "BIO-USD"
                 },
                 {
-                    "ticker": "BLASTUSDT",
+                    "ticker": "BLAST-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BLASTUSDT"
+                    "description": "BLAST-USD"
                 },
                 {
-                    "ticker": "BLURUSDT",
+                    "ticker": "BLUR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BLURUSDT"
+                    "description": "BLUR-USD"
                 },
                 {
-                    "ticker": "BMTUSDT",
+                    "ticker": "BMT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BMTUSDT"
+                    "description": "BMT-USD"
                 },
                 {
-                    "ticker": "BNBUSDT",
+                    "ticker": "BNB-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BNBUSDT"
+                    "description": "BNB-USD"
                 },
                 {
-                    "ticker": "BNTUSDT",
+                    "ticker": "BNT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BNTUSDT"
+                    "description": "BNT-USD"
                 },
                 {
-                    "ticker": "BOBAUSDT",
+                    "ticker": "BOBA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BOBAUSDT"
+                    "description": "BOBA-USD"
                 },
                 {
-                    "ticker": "BOMEUSDT",
+                    "ticker": "BOME-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BOMEUSDT"
+                    "description": "BOME-USD"
                 },
                 {
-                    "ticker": "BRETTUSDT",
+                    "ticker": "BRETT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BRETTUSDT"
+                    "description": "BRETT-USD"
                 },
                 {
-                    "ticker": "BROCCOLIUSDT",
+                    "ticker": "BROCCOLI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BROCCOLIUSDT"
+                    "description": "BROCCOLI-USD"
                 },
                 {
-                    "ticker": "BRUSDT",
+                    "ticker": "BR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BRUSDT"
+                    "description": "BR-USD"
                 },
                 {
-                    "ticker": "BSVUSDT",
+                    "ticker": "BSV-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BSVUSDT"
+                    "description": "BSV-USD"
                 },
                 {
-                    "ticker": "BSWUSDT",
+                    "ticker": "BSW-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BSWUSDT"
+                    "description": "BSW-USD"
                 },
                 {
-                    "ticker": "BTCUSDT",
+                    "ticker": "BTC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BTCUSDT"
+                    "description": "BTC-USD"
                 },
                 {
-                    "ticker": "BUSDT",
+                    "ticker": "B-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "BUSDT"
+                    "description": "B-USD"
                 },
                 {
-                    "ticker": "C98USDT",
+                    "ticker": "C98-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "C98USDT"
+                    "description": "C98-USD"
                 },
                 {
-                    "ticker": "CAKEUSDT",
+                    "ticker": "CAKE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CAKEUSDT"
+                    "description": "CAKE-USD"
                 },
                 {
-                    "ticker": "CARVUSDT",
+                    "ticker": "CARV-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CARVUSDT"
+                    "description": "CARV-USD"
                 },
                 {
-                    "ticker": "CATIUSDT",
+                    "ticker": "CATI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CATIUSDT"
+                    "description": "CATI-USD"
                 },
                 {
-                    "ticker": "CELOUSDT",
+                    "ticker": "CELO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CELOUSDT"
+                    "description": "CELO-USD"
                 },
                 {
-                    "ticker": "CELRUSDT",
+                    "ticker": "CELR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CELRUSDT"
+                    "description": "CELR-USD"
                 },
                 {
-                    "ticker": "CETUSUSDT",
+                    "ticker": "CETUS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CETUSUSDT"
+                    "description": "CETUS-USD"
                 },
                 {
-                    "ticker": "CFXUSDT",
+                    "ticker": "CFX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CFXUSDT"
+                    "description": "CFX-USD"
                 },
                 {
-                    "ticker": "CGPTUSDT",
+                    "ticker": "CGPT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CGPTUSDT"
+                    "description": "CGPT-USD"
                 },
                 {
-                    "ticker": "CHESSUSDT",
+                    "ticker": "CHESS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CHESSUSDT"
+                    "description": "CHESS-USD"
                 },
                 {
-                    "ticker": "CHILLGUYUSDT",
+                    "ticker": "CHILLGUY-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CHILLGUYUSDT"
+                    "description": "CHILLGUY-USD"
                 },
                 {
-                    "ticker": "CHRUSDT",
+                    "ticker": "CHR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CHRUSDT"
+                    "description": "CHR-USD"
                 },
                 {
-                    "ticker": "CHZUSDT",
+                    "ticker": "CHZ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CHZUSDT"
+                    "description": "CHZ-USD"
                 },
                 {
-                    "ticker": "CKBUSDT",
+                    "ticker": "CKB-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CKBUSDT"
+                    "description": "CKB-USD"
                 },
                 {
-                    "ticker": "CLANKERUSDT",
+                    "ticker": "CLANKER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CLANKERUSDT"
+                    "description": "CLANKER-USD"
                 },
                 {
-                    "ticker": "CLOUDUSDT",
+                    "ticker": "CLOUD-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CLOUDUSDT"
+                    "description": "CLOUD-USD"
                 },
                 {
-                    "ticker": "COMPUSDT",
+                    "ticker": "COMP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "COMPUSDT"
+                    "description": "COMP-USD"
                 },
                 {
-                    "ticker": "COOKIEUSDT",
+                    "ticker": "COOKIE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "COOKIEUSDT"
+                    "description": "COOKIE-USD"
                 },
                 {
-                    "ticker": "COOKUSDT",
+                    "ticker": "COOK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "COOKUSDT"
+                    "description": "COOK-USD"
                 },
                 {
-                    "ticker": "COREUSDT",
+                    "ticker": "CORE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "COREUSDT"
+                    "description": "CORE-USD"
                 },
                 {
-                    "ticker": "COSUSDT",
+                    "ticker": "COS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "COSUSDT"
+                    "description": "COS-USD"
                 },
                 {
-                    "ticker": "COTIUSDT",
+                    "ticker": "COTI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "COTIUSDT"
+                    "description": "COTI-USD"
                 },
                 {
-                    "ticker": "COWUSDT",
+                    "ticker": "COW-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "COWUSDT"
+                    "description": "COW-USD"
                 },
                 {
-                    "ticker": "CPOOLUSDT",
+                    "ticker": "CPOOL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CPOOLUSDT"
+                    "description": "CPOOL-USD"
                 },
                 {
-                    "ticker": "CROUSDT",
+                    "ticker": "CRO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CROUSDT"
+                    "description": "CRO-USD"
                 },
                 {
-                    "ticker": "CRVUSDT",
+                    "ticker": "CRV-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CRVUSDT"
+                    "description": "CRV-USD"
                 },
                 {
-                    "ticker": "CTCUSDT",
+                    "ticker": "CTC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CTCUSDT"
+                    "description": "CTC-USD"
                 },
                 {
-                    "ticker": "CTKUSDT",
+                    "ticker": "CTK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CTKUSDT"
+                    "description": "CTK-USD"
                 },
                 {
-                    "ticker": "CTSIUSDT",
+                    "ticker": "CTSI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CTSIUSDT"
+                    "description": "CTSI-USD"
                 },
                 {
-                    "ticker": "CVCUSDT",
+                    "ticker": "CVC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CVCUSDT"
+                    "description": "CVC-USD"
                 },
                 {
-                    "ticker": "CVXUSDT",
+                    "ticker": "CVX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CVXUSDT"
+                    "description": "CVX-USD"
                 },
                 {
-                    "ticker": "CYBERUSDT",
+                    "ticker": "CYBER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "CYBERUSDT"
+                    "description": "CYBER-USD"
                 },
                 {
-                    "ticker": "DARKUSDT",
+                    "ticker": "DARK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DARKUSDT"
+                    "description": "DARK-USD"
                 },
                 {
-                    "ticker": "DASHUSDT",
+                    "ticker": "DASH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DASHUSDT"
+                    "description": "DASH-USD"
                 },
                 {
-                    "ticker": "DATAUSDT",
+                    "ticker": "DATA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DATAUSDT"
+                    "description": "DATA-USD"
                 },
                 {
-                    "ticker": "DBRUSDT",
+                    "ticker": "DBR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DBRUSDT"
+                    "description": "DBR-USD"
                 },
                 {
-                    "ticker": "DEEPUSDT",
+                    "ticker": "DEEP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DEEPUSDT"
+                    "description": "DEEP-USD"
                 },
                 {
-                    "ticker": "DEGENUSDT",
+                    "ticker": "DEGEN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DEGENUSDT"
+                    "description": "DEGEN-USD"
                 },
                 {
-                    "ticker": "DENTUSDT",
+                    "ticker": "DENT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DENTUSDT"
+                    "description": "DENT-USD"
                 },
                 {
-                    "ticker": "DEXEUSDT",
+                    "ticker": "DEXE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DEXEUSDT"
+                    "description": "DEXE-USD"
                 },
                 {
-                    "ticker": "DGBUSDT",
+                    "ticker": "DGB-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DGBUSDT"
+                    "description": "DGB-USD"
                 },
                 {
-                    "ticker": "DODOUSDT",
+                    "ticker": "DODO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DODOUSDT"
+                    "description": "DODO-USD"
                 },
                 {
-                    "ticker": "DOGEUSDT",
+                    "ticker": "DOGE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DOGEUSDT"
+                    "description": "DOGE-USD"
                 },
                 {
-                    "ticker": "DOGSUSDT",
+                    "ticker": "DOGS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DOGSUSDT"
+                    "description": "DOGS-USD"
                 },
                 {
-                    "ticker": "DOGUSDT",
+                    "ticker": "DOG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DOGUSDT"
+                    "description": "DOG-USD"
                 },
                 {
-                    "ticker": "DOODUSDT",
+                    "ticker": "DOOD-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DOODUSDT"
+                    "description": "DOOD-USD"
                 },
                 {
-                    "ticker": "DOTUSDT",
+                    "ticker": "DOT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DOTUSDT"
+                    "description": "DOT-USD"
                 },
                 {
-                    "ticker": "DRIFTUSDT",
+                    "ticker": "DRIFT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DRIFTUSDT"
+                    "description": "DRIFT-USD"
                 },
                 {
-                    "ticker": "DUCKUSDT",
+                    "ticker": "DUCK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DUCKUSDT"
+                    "description": "DUCK-USD"
                 },
                 {
-                    "ticker": "DUSKUSDT",
+                    "ticker": "DUSK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DUSKUSDT"
+                    "description": "DUSK-USD"
                 },
                 {
-                    "ticker": "DYDXUSDT",
+                    "ticker": "DYDX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DYDXUSDT"
+                    "description": "DYDX-USD"
                 },
                 {
-                    "ticker": "DYMUSDT",
+                    "ticker": "DYM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "DYMUSDT"
+                    "description": "DYM-USD"
                 },
                 {
-                    "ticker": "EDUUSDT",
+                    "ticker": "EDU-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "EDUUSDT"
+                    "description": "EDU-USD"
                 },
                 {
-                    "ticker": "EGLDUSDT",
+                    "ticker": "EGLD-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "EGLDUSDT"
+                    "description": "EGLD-USD"
                 },
                 {
-                    "ticker": "EIGENUSDT",
+                    "ticker": "EIGEN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "EIGENUSDT"
+                    "description": "EIGEN-USD"
                 },
                 {
-                    "ticker": "ELXUSDT",
+                    "ticker": "ELX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ELXUSDT"
+                    "description": "ELX-USD"
                 },
                 {
-                    "ticker": "ENAUSDT",
+                    "ticker": "ENA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ENAUSDT"
+                    "description": "ENA-USD"
                 },
                 {
-                    "ticker": "ENJUSDT",
+                    "ticker": "ENJ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ENJUSDT"
+                    "description": "ENJ-USD"
                 },
                 {
-                    "ticker": "ENSUSDT",
+                    "ticker": "ENS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ENSUSDT"
+                    "description": "ENS-USD"
                 },
                 {
-                    "ticker": "EPICUSDT",
+                    "ticker": "EPIC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "EPICUSDT"
+                    "description": "EPIC-USD"
                 },
                 {
-                    "ticker": "EPTUSDT",
+                    "ticker": "EPT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "EPTUSDT"
+                    "description": "EPT-USD"
                 },
                 {
-                    "ticker": "ETCUSDT",
+                    "ticker": "ETC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ETCUSDT"
+                    "description": "ETC-USD"
                 },
                 {
-                    "ticker": "ETHBTCUSDT",
+                    "ticker": "ETHBTC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ETHBTCUSDT"
+                    "description": "ETHBTC-USD"
                 },
                 {
-                    "ticker": "ETHFIUSDT",
+                    "ticker": "ETHFI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ETHFIUSDT"
+                    "description": "ETHFI-USD"
                 },
                 {
-                    "ticker": "ETHUSDT",
+                    "ticker": "ETH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ETHUSDT"
+                    "description": "ETH-USD"
                 },
                 {
-                    "ticker": "ETHWUSDT",
+                    "ticker": "ETHW-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ETHWUSDT"
+                    "description": "ETHW-USD"
                 },
                 {
-                    "ticker": "FARTCOINUSDT",
+                    "ticker": "FARTCOIN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FARTCOINUSDT"
+                    "description": "FARTCOIN-USD"
                 },
                 {
-                    "ticker": "FBUSDT",
+                    "ticker": "FB-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FBUSDT"
+                    "description": "FB-USD"
                 },
                 {
-                    "ticker": "FHEUSDT",
+                    "ticker": "FHE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FHEUSDT"
+                    "description": "FHE-USD"
                 },
                 {
-                    "ticker": "FIDAUSDT",
+                    "ticker": "FIDA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FIDAUSDT"
+                    "description": "FIDA-USD"
                 },
                 {
-                    "ticker": "FILUSDT",
+                    "ticker": "FIL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FILUSDT"
+                    "description": "FIL-USD"
                 },
                 {
-                    "ticker": "FIOUSDT",
+                    "ticker": "FIO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FIOUSDT"
+                    "description": "FIO-USD"
                 },
                 {
-                    "ticker": "FLMUSDT",
+                    "ticker": "FLM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FLMUSDT"
+                    "description": "FLM-USD"
                 },
                 {
-                    "ticker": "FLOCKUSDT",
+                    "ticker": "FLOCK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FLOCKUSDT"
+                    "description": "FLOCK-USD"
                 },
                 {
-                    "ticker": "FLOWUSDT",
+                    "ticker": "FLOW-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FLOWUSDT"
+                    "description": "FLOW-USD"
                 },
                 {
-                    "ticker": "FLRUSDT",
+                    "ticker": "FLR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FLRUSDT"
+                    "description": "FLR-USD"
                 },
                 {
-                    "ticker": "FLUXUSDT",
+                    "ticker": "FLUX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FLUXUSDT"
+                    "description": "FLUX-USD"
                 },
                 {
-                    "ticker": "FORMUSDT",
+                    "ticker": "FORM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FORMUSDT"
+                    "description": "FORM-USD"
                 },
                 {
-                    "ticker": "FORTHUSDT",
+                    "ticker": "FORTH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FORTHUSDT"
+                    "description": "FORTH-USD"
                 },
                 {
-                    "ticker": "FTNUSDT",
+                    "ticker": "FTN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FTNUSDT"
+                    "description": "FTN-USD"
                 },
                 {
-                    "ticker": "FUELUSDT",
+                    "ticker": "FUEL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FUELUSDT"
+                    "description": "FUEL-USD"
                 },
                 {
-                    "ticker": "FUSDT",
+                    "ticker": "F-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FUSDT"
+                    "description": "F-USD"
                 },
                 {
-                    "ticker": "FWOGUSDT",
+                    "ticker": "FWOG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FWOGUSDT"
+                    "description": "FWOG-USD"
                 },
                 {
-                    "ticker": "FXSUSDT",
+                    "ticker": "FXS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "FXSUSDT"
+                    "description": "FXS-USD"
                 },
                 {
-                    "ticker": "GALAUSDT",
+                    "ticker": "GALA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GALAUSDT"
+                    "description": "GALA-USD"
                 },
                 {
-                    "ticker": "GASUSDT",
+                    "ticker": "GAS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GASUSDT"
+                    "description": "GAS-USD"
                 },
                 {
-                    "ticker": "GIGAUSDT",
+                    "ticker": "GIGA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GIGAUSDT"
+                    "description": "GIGA-USD"
                 },
                 {
-                    "ticker": "GLMRUSDT",
+                    "ticker": "GLMR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GLMRUSDT"
+                    "description": "GLMR-USD"
                 },
                 {
-                    "ticker": "GLMUSDT",
+                    "ticker": "GLM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GLMUSDT"
+                    "description": "GLM-USD"
                 },
                 {
-                    "ticker": "GMTUSDT",
+                    "ticker": "GMT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GMTUSDT"
+                    "description": "GMT-USD"
                 },
                 {
-                    "ticker": "GMXUSDT",
+                    "ticker": "GMX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GMXUSDT"
+                    "description": "GMX-USD"
                 }
             ]
         },
         "crypto_batch2": {
             "assets": [
                 {
-                    "ticker": "GNOUSDT",
+                    "ticker": "GNO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GNOUSDT"
+                    "description": "GNO-USD"
                 },
                 {
-                    "ticker": "GOATUSDT",
+                    "ticker": "GOAT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GOATUSDT"
+                    "description": "GOAT-USD"
                 },
                 {
-                    "ticker": "GODSUSDT",
+                    "ticker": "GODS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GODSUSDT"
+                    "description": "GODS-USD"
                 },
                 {
-                    "ticker": "GOMININGUSDT",
+                    "ticker": "GOMINING-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GOMININGUSDT"
+                    "description": "GOMINING-USD"
                 },
                 {
-                    "ticker": "GORKUSDT",
+                    "ticker": "GORK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GORKUSDT"
+                    "description": "GORK-USD"
                 },
                 {
-                    "ticker": "GPSUSDT",
+                    "ticker": "GPS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GPSUSDT"
+                    "description": "GPS-USD"
                 },
                 {
-                    "ticker": "GRASSUSDT",
+                    "ticker": "GRASS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GRASSUSDT"
+                    "description": "GRASS-USD"
                 },
                 {
-                    "ticker": "GRIFFAINUSDT",
+                    "ticker": "GRIFFAIN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GRIFFAINUSDT"
+                    "description": "GRIFFAIN-USD"
                 },
                 {
-                    "ticker": "GRTUSDT",
+                    "ticker": "GRT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GRTUSDT"
+                    "description": "GRT-USD"
                 },
                 {
-                    "ticker": "GTCUSDT",
+                    "ticker": "GTC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GTCUSDT"
+                    "description": "GTC-USD"
                 },
                 {
-                    "ticker": "GUNUSDT",
+                    "ticker": "GUN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GUNUSDT"
+                    "description": "GUN-USD"
                 },
                 {
-                    "ticker": "GUSDT",
+                    "ticker": "G-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "GUSDT"
+                    "description": "G-USD"
                 },
                 {
-                    "ticker": "HAEDALUSDT",
+                    "ticker": "HAEDAL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HAEDALUSDT"
+                    "description": "HAEDAL-USD"
                 },
                 {
-                    "ticker": "HBARUSDT",
+                    "ticker": "HBAR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HBARUSDT"
+                    "description": "HBAR-USD"
                 },
                 {
-                    "ticker": "HEIUSDT",
+                    "ticker": "HEI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HEIUSDT"
+                    "description": "HEI-USD"
                 },
                 {
-                    "ticker": "HFTUSDT",
+                    "ticker": "HFT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HFTUSDT"
+                    "description": "HFT-USD"
                 },
                 {
-                    "ticker": "HIFIUSDT",
+                    "ticker": "HIFI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HIFIUSDT"
+                    "description": "HIFI-USD"
                 },
                 {
-                    "ticker": "HIGHUSDT",
+                    "ticker": "HIGH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HIGHUSDT"
+                    "description": "HIGH-USD"
                 },
                 {
-                    "ticker": "HIPPOUSDT",
+                    "ticker": "HIPPO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HIPPOUSDT"
+                    "description": "HIPPO-USD"
                 },
                 {
-                    "ticker": "HIVEUSDT",
+                    "ticker": "HIVE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HIVEUSDT"
+                    "description": "HIVE-USD"
                 },
                 {
-                    "ticker": "HMSTRUSDT",
+                    "ticker": "HMSTR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HMSTRUSDT"
+                    "description": "HMSTR-USD"
                 },
                 {
-                    "ticker": "HNTUSDT",
+                    "ticker": "HNT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HNTUSDT"
+                    "description": "HNT-USD"
                 },
                 {
-                    "ticker": "HOOKUSDT",
+                    "ticker": "HOOK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HOOKUSDT"
+                    "description": "HOOK-USD"
                 },
                 {
-                    "ticker": "HOTUSDT",
+                    "ticker": "HOT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HOTUSDT"
+                    "description": "HOT-USD"
                 },
                 {
-                    "ticker": "HPOS10IUSDT",
+                    "ticker": "HPOS10I-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HPOS10IUSDT"
+                    "description": "HPOS10I-USD"
                 },
                 {
-                    "ticker": "HYPERUSDT",
+                    "ticker": "HYPER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HYPERUSDT"
+                    "description": "HYPER-USD"
                 },
                 {
-                    "ticker": "HYPEUSDT",
+                    "ticker": "HYPE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "HYPEUSDT"
+                    "description": "HYPE-USD"
                 },
                 {
-                    "ticker": "ICPUSDT",
+                    "ticker": "ICP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ICPUSDT"
+                    "description": "ICP-USD"
                 },
                 {
-                    "ticker": "ICXUSDT",
+                    "ticker": "ICX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ICXUSDT"
+                    "description": "ICX-USD"
                 },
                 {
-                    "ticker": "IDEXUSDT",
+                    "ticker": "IDEX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "IDEXUSDT"
+                    "description": "IDEX-USD"
                 },
                 {
-                    "ticker": "IDUSDT",
+                    "ticker": "ID-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "IDUSDT"
+                    "description": "ID-USD"
                 },
                 {
-                    "ticker": "ILVUSDT",
+                    "ticker": "ILV-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ILVUSDT"
+                    "description": "ILV-USD"
                 },
                 {
-                    "ticker": "IMXUSDT",
+                    "ticker": "IMX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "IMXUSDT"
+                    "description": "IMX-USD"
                 },
                 {
-                    "ticker": "INITUSDT",
+                    "ticker": "INIT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "INITUSDT"
+                    "description": "INIT-USD"
                 },
                 {
-                    "ticker": "INJUSDT",
+                    "ticker": "INJ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "INJUSDT"
+                    "description": "INJ-USD"
                 },
                 {
-                    "ticker": "IOSTUSDT",
+                    "ticker": "IOST-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "IOSTUSDT"
+                    "description": "IOST-USD"
                 },
                 {
-                    "ticker": "IOTAUSDT",
+                    "ticker": "IOTA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "IOTAUSDT"
+                    "description": "IOTA-USD"
                 },
                 {
-                    "ticker": "IOTXUSDT",
+                    "ticker": "IOTX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "IOTXUSDT"
+                    "description": "IOTX-USD"
                 },
                 {
-                    "ticker": "IOUSDT",
+                    "ticker": "IO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "IOUSDT"
+                    "description": "IO-USD"
                 },
                 {
-                    "ticker": "IPUSDT",
+                    "ticker": "IP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "IPUSDT"
+                    "description": "IP-USD"
                 },
                 {
-                    "ticker": "JASMYUSDT",
+                    "ticker": "JASMY-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "JASMYUSDT"
+                    "description": "JASMY-USD"
                 },
                 {
-                    "ticker": "JELLYJELLYUSDT",
+                    "ticker": "JELLYJELLY-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "JELLYJELLYUSDT"
+                    "description": "JELLYJELLY-USD"
                 },
                 {
-                    "ticker": "JOEUSDT",
+                    "ticker": "JOE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "JOEUSDT"
+                    "description": "JOE-USD"
                 },
                 {
-                    "ticker": "JSTUSDT",
+                    "ticker": "JST-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "JSTUSDT"
+                    "description": "JST-USD"
                 },
                 {
-                    "ticker": "JTOUSDT",
+                    "ticker": "JTO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "JTOUSDT"
+                    "description": "JTO-USD"
                 },
                 {
-                    "ticker": "JUPUSDT",
+                    "ticker": "JUP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "JUPUSDT"
+                    "description": "JUP-USD"
                 },
                 {
-                    "ticker": "JUSDT",
+                    "ticker": "J-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "JUSDT"
+                    "description": "J-USD"
                 },
                 {
-                    "ticker": "KAIAUSDT",
+                    "ticker": "KAIA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KAIAUSDT"
+                    "description": "KAIA-USD"
                 },
                 {
-                    "ticker": "KAITOUSDT",
+                    "ticker": "KAITO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KAITOUSDT"
+                    "description": "KAITO-USD"
                 },
                 {
-                    "ticker": "KASUSDT",
+                    "ticker": "KAS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KASUSDT"
+                    "description": "KAS-USD"
                 },
                 {
-                    "ticker": "KAVAUSDT",
+                    "ticker": "KAVA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KAVAUSDT"
+                    "description": "KAVA-USD"
                 },
                 {
-                    "ticker": "KDAUSDT",
+                    "ticker": "KDA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KDAUSDT"
+                    "description": "KDA-USD"
                 },
                 {
-                    "ticker": "KERNELUSDT",
+                    "ticker": "KERNEL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KERNELUSDT"
+                    "description": "KERNEL-USD"
                 },
                 {
-                    "ticker": "KMNOUSDT",
+                    "ticker": "KMNO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KMNOUSDT"
+                    "description": "KMNO-USD"
                 },
                 {
-                    "ticker": "KNCUSDT",
+                    "ticker": "KNC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KNCUSDT"
+                    "description": "KNC-USD"
                 },
                 {
-                    "ticker": "KOMAUSDT",
+                    "ticker": "KOMA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KOMAUSDT"
+                    "description": "KOMA-USD"
                 },
                 {
-                    "ticker": "KSMUSDT",
+                    "ticker": "KSM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "KSMUSDT"
+                    "description": "KSM-USD"
                 },
                 {
-                    "ticker": "L3USDT",
+                    "ticker": "L3-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "L3USDT"
+                    "description": "L3-USD"
                 },
                 {
-                    "ticker": "LAUNCHCOINUSDT",
+                    "ticker": "LAUNCHCOIN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LAUNCHCOINUSDT"
+                    "description": "LAUNCHCOIN-USD"
                 },
                 {
-                    "ticker": "LDOUSDT",
+                    "ticker": "LDO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LDOUSDT"
+                    "description": "LDO-USD"
                 },
                 {
-                    "ticker": "LEVERUSDT",
+                    "ticker": "LEVER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LEVERUSDT"
+                    "description": "LEVER-USD"
                 },
                 {
-                    "ticker": "LINKUSDT",
+                    "ticker": "LINK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LINKUSDT"
+                    "description": "LINK-USD"
                 },
                 {
-                    "ticker": "LISTAUSDT",
+                    "ticker": "LISTA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LISTAUSDT"
+                    "description": "LISTA-USD"
                 },
                 {
-                    "ticker": "LOOKSUSDT",
+                    "ticker": "LOOKS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LOOKSUSDT"
+                    "description": "LOOKS-USD"
                 },
                 {
-                    "ticker": "LPTUSDT",
+                    "ticker": "LPT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LPTUSDT"
+                    "description": "LPT-USD"
                 },
                 {
-                    "ticker": "LQTYUSDT",
+                    "ticker": "LQTY-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LQTYUSDT"
+                    "description": "LQTY-USD"
                 },
                 {
-                    "ticker": "LRCUSDT",
+                    "ticker": "LRC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LRCUSDT"
+                    "description": "LRC-USD"
                 },
                 {
-                    "ticker": "LSKUSDT",
+                    "ticker": "LSK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LSKUSDT"
+                    "description": "LSK-USD"
                 },
                 {
-                    "ticker": "LTCUSDT",
+                    "ticker": "LTC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LTCUSDT"
+                    "description": "LTC-USD"
                 },
                 {
-                    "ticker": "LUMIAUSDT",
+                    "ticker": "LUMIA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LUMIAUSDT"
+                    "description": "LUMIA-USD"
                 },
                 {
-                    "ticker": "LUNA2USDT",
+                    "ticker": "LUNA2-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "LUNA2USDT"
+                    "description": "LUNA2-USD"
                 },
                 {
-                    "ticker": "MAGICUSDT",
+                    "ticker": "MAGIC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MAGICUSDT"
+                    "description": "MAGIC-USD"
                 },
                 {
-                    "ticker": "MAJORUSDT",
+                    "ticker": "MAJOR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MAJORUSDT"
+                    "description": "MAJOR-USD"
                 },
                 {
-                    "ticker": "MANAUSDT",
+                    "ticker": "MANA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MANAUSDT"
+                    "description": "MANA-USD"
                 },
                 {
-                    "ticker": "MANTAUSDT",
+                    "ticker": "MANTA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MANTAUSDT"
+                    "description": "MANTA-USD"
                 },
                 {
-                    "ticker": "MASAUSDT",
+                    "ticker": "MASA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MASAUSDT"
+                    "description": "MASA-USD"
                 },
                 {
-                    "ticker": "MASKUSDT",
+                    "ticker": "MASK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MASKUSDT"
+                    "description": "MASK-USD"
                 },
                 {
-                    "ticker": "MAVIAUSDT",
+                    "ticker": "MAVIA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MAVIAUSDT"
+                    "description": "MAVIA-USD"
                 },
                 {
-                    "ticker": "MAVUSDT",
+                    "ticker": "MAV-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MAVUSDT"
+                    "description": "MAV-USD"
                 },
                 {
-                    "ticker": "MBLUSDT",
+                    "ticker": "MBL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MBLUSDT"
+                    "description": "MBL-USD"
                 },
                 {
-                    "ticker": "MBOXUSDT",
+                    "ticker": "MBOX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MBOXUSDT"
+                    "description": "MBOX-USD"
                 },
                 {
-                    "ticker": "MDTUSDT",
+                    "ticker": "MDT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MDTUSDT"
+                    "description": "MDT-USD"
                 },
                 {
-                    "ticker": "MELANIAUSDT",
+                    "ticker": "MELANIA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MELANIAUSDT"
+                    "description": "MELANIA-USD"
                 },
                 {
-                    "ticker": "MEMEUSDT",
+                    "ticker": "MEME-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MEMEUSDT"
+                    "description": "MEME-USD"
                 },
                 {
-                    "ticker": "MERLUSDT",
+                    "ticker": "MERL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MERLUSDT"
+                    "description": "MERL-USD"
                 },
                 {
-                    "ticker": "METISUSDT",
+                    "ticker": "METIS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "METISUSDT"
+                    "description": "METIS-USD"
                 },
                 {
-                    "ticker": "MEUSDT",
+                    "ticker": "ME-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MEUSDT"
+                    "description": "ME-USD"
                 },
                 {
-                    "ticker": "MEWUSDT",
+                    "ticker": "MEW-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MEWUSDT"
+                    "description": "MEW-USD"
                 },
                 {
-                    "ticker": "MICHIUSDT",
+                    "ticker": "MICHI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MICHIUSDT"
+                    "description": "MICHI-USD"
                 },
                 {
-                    "ticker": "MILKUSDT",
+                    "ticker": "MILK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MILKUSDT"
+                    "description": "MILK-USD"
                 },
                 {
-                    "ticker": "MINAUSDT",
+                    "ticker": "MINA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MINAUSDT"
+                    "description": "MINA-USD"
                 },
                 {
-                    "ticker": "MKRUSDT",
+                    "ticker": "MKR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MKRUSDT"
+                    "description": "MKR-USD"
                 },
                 {
-                    "ticker": "MLNUSDT",
+                    "ticker": "MLN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MLNUSDT"
+                    "description": "MLN-USD"
                 },
                 {
-                    "ticker": "MNTUSDT",
+                    "ticker": "MNT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MNTUSDT"
+                    "description": "MNT-USD"
                 },
                 {
-                    "ticker": "MOBILEUSDT",
+                    "ticker": "MOBILE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MOBILEUSDT"
+                    "description": "MOBILE-USD"
                 },
                 {
-                    "ticker": "MOCAUSDT",
+                    "ticker": "MOCA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MOCAUSDT"
+                    "description": "MOCA-USD"
                 },
                 {
-                    "ticker": "MOODENGUSDT",
+                    "ticker": "MOODENG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MOODENGUSDT"
+                    "description": "MOODENG-USD"
                 },
                 {
-                    "ticker": "MORPHOUSDT",
+                    "ticker": "MORPHO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MORPHOUSDT"
+                    "description": "MORPHO-USD"
                 },
                 {
-                    "ticker": "MOVEUSDT",
+                    "ticker": "MOVE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MOVEUSDT"
+                    "description": "MOVE-USD"
                 },
                 {
-                    "ticker": "MOVRUSDT",
+                    "ticker": "MOVR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MOVRUSDT"
+                    "description": "MOVR-USD"
                 },
                 {
-                    "ticker": "MTLUSDT",
+                    "ticker": "MTL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MTLUSDT"
+                    "description": "MTL-USD"
                 },
                 {
-                    "ticker": "MUBARAKUSDT",
+                    "ticker": "MUBARAK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MUBARAKUSDT"
+                    "description": "MUBARAK-USD"
                 },
                 {
-                    "ticker": "MVLUSDT",
+                    "ticker": "MVL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MVLUSDT"
+                    "description": "MVL-USD"
                 },
                 {
-                    "ticker": "MYRIAUSDT",
+                    "ticker": "MYRIA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MYRIAUSDT"
+                    "description": "MYRIA-USD"
                 },
                 {
-                    "ticker": "MYROUSDT",
+                    "ticker": "MYRO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "MYROUSDT"
+                    "description": "MYRO-USD"
                 },
                 {
-                    "ticker": "NCUSDT",
+                    "ticker": "NC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NCUSDT"
+                    "description": "NC-USD"
                 },
                 {
-                    "ticker": "NEARUSDT",
+                    "ticker": "NEAR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NEARUSDT"
+                    "description": "NEAR-USD"
                 },
                 {
-                    "ticker": "NEIROETHUSDT",
+                    "ticker": "NEIROETH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NEIROETHUSDT"
+                    "description": "NEIROETH-USD"
                 },
                 {
-                    "ticker": "NEOUSDT",
+                    "ticker": "NEO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NEOUSDT"
+                    "description": "NEO-USD"
                 },
                 {
-                    "ticker": "NFPUSDT",
+                    "ticker": "NFP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NFPUSDT"
+                    "description": "NFP-USD"
                 },
                 {
-                    "ticker": "NILUSDT",
+                    "ticker": "NIL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NILUSDT"
+                    "description": "NIL-USD"
                 },
                 {
-                    "ticker": "NKNUSDT",
+                    "ticker": "NKN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NKNUSDT"
+                    "description": "NKN-USD"
                 },
                 {
-                    "ticker": "NMRUSDT",
+                    "ticker": "NMR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NMRUSDT"
+                    "description": "NMR-USD"
                 },
                 {
-                    "ticker": "NOTUSDT",
+                    "ticker": "NOT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NOTUSDT"
+                    "description": "NOT-USD"
                 },
                 {
-                    "ticker": "NSUSDT",
+                    "ticker": "NS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NSUSDT"
+                    "description": "NS-USD"
                 },
                 {
-                    "ticker": "NTRNUSDT",
+                    "ticker": "NTRN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NTRNUSDT"
+                    "description": "NTRN-USD"
                 },
                 {
-                    "ticker": "NXPCUSDT",
+                    "ticker": "NXPC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "NXPCUSDT"
+                    "description": "NXPC-USD"
                 },
                 {
-                    "ticker": "OBOLUSDT",
+                    "ticker": "OBOL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OBOLUSDT"
+                    "description": "OBOL-USD"
                 },
                 {
-                    "ticker": "OBTUSDT",
+                    "ticker": "OBT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OBTUSDT"
+                    "description": "OBT-USD"
                 },
                 {
-                    "ticker": "OGNUSDT",
+                    "ticker": "OGN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OGNUSDT"
+                    "description": "OGN-USD"
                 },
                 {
-                    "ticker": "OGUSDT",
+                    "ticker": "OG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OGUSDT"
+                    "description": "OG-USD"
                 },
                 {
-                    "ticker": "OLUSDT",
+                    "ticker": "OL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OLUSDT"
+                    "description": "OL-USD"
                 },
                 {
-                    "ticker": "OMGUSDT",
+                    "ticker": "OMG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OMGUSDT"
+                    "description": "OMG-USD"
                 },
                 {
-                    "ticker": "OMNIUSDT",
+                    "ticker": "OMNI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OMNIUSDT"
+                    "description": "OMNI-USD"
                 },
                 {
-                    "ticker": "OMUSDT",
+                    "ticker": "OM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OMUSDT"
+                    "description": "OM-USD"
                 },
                 {
-                    "ticker": "ONDOUSDT",
+                    "ticker": "ONDO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ONDOUSDT"
+                    "description": "ONDO-USD"
                 },
                 {
-                    "ticker": "ONEUSDT",
+                    "ticker": "ONE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ONEUSDT"
+                    "description": "ONE-USD"
                 },
                 {
-                    "ticker": "ONGUSDT",
+                    "ticker": "ONG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ONGUSDT"
+                    "description": "ONG-USD"
                 },
                 {
-                    "ticker": "ONTUSDT",
+                    "ticker": "ONT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ONTUSDT"
+                    "description": "ONT-USD"
                 },
                 {
-                    "ticker": "OPUSDT",
+                    "ticker": "OP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OPUSDT"
+                    "description": "OP-USD"
                 },
                 {
-                    "ticker": "ORBSUSDT",
+                    "ticker": "ORBS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ORBSUSDT"
+                    "description": "ORBS-USD"
                 },
                 {
-                    "ticker": "ORCAUSDT",
+                    "ticker": "ORCA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ORCAUSDT"
+                    "description": "ORCA-USD"
                 },
                 {
-                    "ticker": "ORDERUSDT",
+                    "ticker": "ORDER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ORDERUSDT"
+                    "description": "ORDER-USD"
                 },
                 {
-                    "ticker": "ORDIUSDT",
+                    "ticker": "ORDI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ORDIUSDT"
+                    "description": "ORDI-USD"
                 },
                 {
-                    "ticker": "OSMOUSDT",
+                    "ticker": "OSMO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OSMOUSDT"
+                    "description": "OSMO-USD"
                 },
                 {
-                    "ticker": "OXTUSDT",
+                    "ticker": "OXT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "OXTUSDT"
+                    "description": "OXT-USD"
                 },
                 {
-                    "ticker": "PARTIUSDT",
+                    "ticker": "PARTI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PARTIUSDT"
+                    "description": "PARTI-USD"
                 },
                 {
-                    "ticker": "PAXGUSDT",
+                    "ticker": "PAXG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PAXGUSDT"
+                    "description": "PAXG-USD"
                 },
                 {
-                    "ticker": "PEAQUSDT",
+                    "ticker": "PEAQ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PEAQUSDT"
+                    "description": "PEAQ-USD"
                 },
                 {
-                    "ticker": "PENDLEUSDT",
+                    "ticker": "PENDLE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PENDLEUSDT"
+                    "description": "PENDLE-USD"
                 },
                 {
-                    "ticker": "PENGUUSDT",
+                    "ticker": "PENGU-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PENGUUSDT"
+                    "description": "PENGU-USD"
                 },
                 {
-                    "ticker": "PEOPLEUSDT",
+                    "ticker": "PEOPLE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PEOPLEUSDT"
+                    "description": "PEOPLE-USD"
                 },
                 {
-                    "ticker": "PERPUSDT",
+                    "ticker": "PERP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PERPUSDT"
+                    "description": "PERP-USD"
                 },
                 {
-                    "ticker": "PHAUSDT",
+                    "ticker": "PHA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PHAUSDT"
+                    "description": "PHA-USD"
                 },
                 {
-                    "ticker": "PHBUSDT",
+                    "ticker": "PHB-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PHBUSDT"
+                    "description": "PHB-USD"
                 },
                 {
-                    "ticker": "PIPPINUSDT",
+                    "ticker": "PIPPIN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PIPPINUSDT"
+                    "description": "PIPPIN-USD"
                 },
                 {
-                    "ticker": "PIXELUSDT",
+                    "ticker": "PIXEL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PIXELUSDT"
+                    "description": "PIXEL-USD"
                 },
                 {
-                    "ticker": "PLUMEUSDT",
+                    "ticker": "PLUME-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PLUMEUSDT"
+                    "description": "PLUME-USD"
                 },
                 {
-                    "ticker": "PNUTUSDT",
+                    "ticker": "PNUT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PNUTUSDT"
+                    "description": "PNUT-USD"
                 },
                 {
-                    "ticker": "POLUSDT",
+                    "ticker": "POL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "POLUSDT"
+                    "description": "POL-USD"
                 },
                 {
-                    "ticker": "POLYXUSDT",
+                    "ticker": "POLYX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "POLYXUSDT"
+                    "description": "POLYX-USD"
                 },
                 {
-                    "ticker": "PONKEUSDT",
+                    "ticker": "PONKE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PONKEUSDT"
+                    "description": "PONKE-USD"
                 },
                 {
-                    "ticker": "POPCATUSDT",
+                    "ticker": "POPCAT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "POPCATUSDT"
+                    "description": "POPCAT-USD"
                 },
                 {
-                    "ticker": "PORTALUSDT",
+                    "ticker": "PORTAL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PORTALUSDT"
+                    "description": "PORTAL-USD"
                 },
                 {
-                    "ticker": "POWRUSDT",
+                    "ticker": "POWR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "POWRUSDT"
+                    "description": "POWR-USD"
                 },
                 {
-                    "ticker": "PRAIUSDT",
+                    "ticker": "PRAI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PRAIUSDT"
+                    "description": "PRAI-USD"
                 },
                 {
-                    "ticker": "PRCLUSDT",
+                    "ticker": "PRCL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PRCLUSDT"
+                    "description": "PRCL-USD"
                 },
                 {
-                    "ticker": "PRIMEUSDT",
+                    "ticker": "PRIME-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PRIMEUSDT"
+                    "description": "PRIME-USD"
                 },
                 {
-                    "ticker": "PROMPTUSDT",
+                    "ticker": "PROMPT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PROMPTUSDT"
+                    "description": "PROMPT-USD"
                 },
                 {
-                    "ticker": "PROMUSDT",
+                    "ticker": "PROM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PROMUSDT"
+                    "description": "PROM-USD"
                 },
                 {
-                    "ticker": "PUFFERUSDT",
+                    "ticker": "PUFFER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PUFFERUSDT"
+                    "description": "PUFFER-USD"
                 },
                 {
-                    "ticker": "PUMPUSDT",
+                    "ticker": "PUMP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PUMPUSDT"
+                    "description": "PUMP-USD"
                 },
                 {
-                    "ticker": "PUNDIXUSDT",
+                    "ticker": "PUNDIX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PUNDIXUSDT"
+                    "description": "PUNDIX-USD"
                 },
                 {
-                    "ticker": "PYRUSDT",
+                    "ticker": "PYR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PYRUSDT"
+                    "description": "PYR-USD"
                 },
                 {
-                    "ticker": "PYTHUSDT",
+                    "ticker": "PYTH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "PYTHUSDT"
+                    "description": "PYTH-USD"
                 },
                 {
-                    "ticker": "QIUSDT",
+                    "ticker": "QI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "QIUSDT"
+                    "description": "QI-USD"
                 },
                 {
-                    "ticker": "QNTUSDT",
+                    "ticker": "QNT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "QNTUSDT"
+                    "description": "QNT-USD"
                 },
                 {
-                    "ticker": "QTUMUSDT",
+                    "ticker": "QTUM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "QTUMUSDT"
+                    "description": "QTUM-USD"
                 },
                 {
-                    "ticker": "QUICKUSDT",
+                    "ticker": "QUICK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "QUICKUSDT"
+                    "description": "QUICK-USD"
                 },
                 {
-                    "ticker": "RADUSDT",
+                    "ticker": "RAD-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RADUSDT"
+                    "description": "RAD-USD"
                 },
                 {
-                    "ticker": "RAREUSDT",
+                    "ticker": "RARE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RAREUSDT"
+                    "description": "RARE-USD"
                 },
                 {
-                    "ticker": "RAYDIUMUSDT",
+                    "ticker": "RAYDIUM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RAYDIUMUSDT"
+                    "description": "RAYDIUM-USD"
                 },
                 {
-                    "ticker": "RDNTUSDT",
+                    "ticker": "RDNT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RDNTUSDT"
+                    "description": "RDNT-USD"
                 },
                 {
-                    "ticker": "REDUSDT",
+                    "ticker": "RED-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "REDUSDT"
+                    "description": "RED-USD"
                 },
                 {
-                    "ticker": "RENDERUSDT",
+                    "ticker": "RENDER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RENDERUSDT"
+                    "description": "RENDER-USD"
                 },
                 {
-                    "ticker": "REQUSDT",
+                    "ticker": "REQ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "REQUSDT"
+                    "description": "REQ-USD"
                 },
                 {
-                    "ticker": "REXUSDT",
+                    "ticker": "REX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "REXUSDT"
+                    "description": "REX-USD"
                 },
                 {
-                    "ticker": "REZUSDT",
+                    "ticker": "REZ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "REZUSDT"
+                    "description": "REZ-USD"
                 },
                 {
-                    "ticker": "RFCUSDT",
+                    "ticker": "RFC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RFCUSDT"
+                    "description": "RFC-USD"
                 },
                 {
-                    "ticker": "RIFUSDT",
+                    "ticker": "RIF-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RIFUSDT"
+                    "description": "RIF-USD"
                 },
                 {
-                    "ticker": "RLCUSDT",
+                    "ticker": "RLC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RLCUSDT"
+                    "description": "RLC-USD"
                 },
                 {
-                    "ticker": "ROAMUSDT",
+                    "ticker": "ROAM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ROAMUSDT"
+                    "description": "ROAM-USD"
                 },
                 {
-                    "ticker": "RONINUSDT",
+                    "ticker": "RONIN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RONINUSDT"
+                    "description": "RONIN-USD"
                 },
                 {
-                    "ticker": "ROSEUSDT",
+                    "ticker": "ROSE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ROSEUSDT"
+                    "description": "ROSE-USD"
                 },
                 {
-                    "ticker": "RPLUSDT",
+                    "ticker": "RPL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RPLUSDT"
+                    "description": "RPL-USD"
                 },
                 {
-                    "ticker": "RSRUSDT",
+                    "ticker": "RSR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RSRUSDT"
+                    "description": "RSR-USD"
                 },
                 {
-                    "ticker": "RSS3USDT",
+                    "ticker": "RSS3-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RSS3USDT"
+                    "description": "RSS3-USD"
                 },
                 {
-                    "ticker": "RUNEUSDT",
+                    "ticker": "RUNE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RUNEUSDT"
+                    "description": "RUNE-USD"
                 },
                 {
-                    "ticker": "RVNUSDT",
+                    "ticker": "RVN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "RVNUSDT"
+                    "description": "RVN-USD"
                 },
                 {
-                    "ticker": "SAFEUSDT",
+                    "ticker": "SAFE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SAFEUSDT"
+                    "description": "SAFE-USD"
                 },
                 {
-                    "ticker": "SAGAUSDT",
+                    "ticker": "SAGA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SAGAUSDT"
+                    "description": "SAGA-USD"
                 },
                 {
-                    "ticker": "SANDUSDT",
+                    "ticker": "SAND-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SANDUSDT"
+                    "description": "SAND-USD"
                 },
                 {
-                    "ticker": "SAROSUSDT",
+                    "ticker": "SAROS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SAROSUSDT"
+                    "description": "SAROS-USD"
                 },
                 {
-                    "ticker": "SCAUSDT",
+                    "ticker": "SCA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SCAUSDT"
+                    "description": "SCA-USD"
                 },
                 {
-                    "ticker": "SCRTUSDT",
+                    "ticker": "SCRT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SCRTUSDT"
+                    "description": "SCRT-USD"
                 },
                 {
-                    "ticker": "SCRUSDT",
+                    "ticker": "SCR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SCRUSDT"
+                    "description": "SCR-USD"
                 },
                 {
-                    "ticker": "SCUSDT",
+                    "ticker": "SC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SCUSDT"
+                    "description": "SC-USD"
                 },
                 {
-                    "ticker": "SDUSDT",
+                    "ticker": "SD-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SDUSDT"
+                    "description": "SD-USD"
                 },
                 {
-                    "ticker": "SEIUSDT",
+                    "ticker": "SEI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SEIUSDT"
+                    "description": "SEI-USD"
                 },
                 {
-                    "ticker": "SENDUSDT",
+                    "ticker": "SEND-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SENDUSDT"
+                    "description": "SEND-USD"
                 }
             ]
         },
         "crypto_batch3": {
             "assets": [
                 {
-                    "ticker": "SERAPHUSDT",
+                    "ticker": "SERAPH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SERAPHUSDT"
+                    "description": "SERAPH-USD"
                 },
                 {
-                    "ticker": "SFPUSDT",
+                    "ticker": "SFP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SFPUSDT"
+                    "description": "SFP-USD"
                 },
                 {
-                    "ticker": "SHELLUSDT",
+                    "ticker": "SHELL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SHELLUSDT"
+                    "description": "SHELL-USD"
                 },
                 {
-                    "ticker": "SHIB1000USDT",
+                    "ticker": "SHIB1000-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SHIB1000USDT"
+                    "description": "SHIB1000-USD"
                 },
                 {
-                    "ticker": "SIGNUSDT",
+                    "ticker": "SIGN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SIGNUSDT"
+                    "description": "SIGN-USD"
                 },
                 {
-                    "ticker": "SIRENUSDT",
+                    "ticker": "SIREN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SIRENUSDT"
+                    "description": "SIREN-USD"
                 },
                 {
-                    "ticker": "SKLUSDT",
+                    "ticker": "SKL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SKLUSDT"
+                    "description": "SKL-USD"
                 },
                 {
-                    "ticker": "SKYAIUSDT",
+                    "ticker": "SKYAI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SKYAIUSDT"
+                    "description": "SKYAI-USD"
                 },
                 {
-                    "ticker": "SLERFUSDT",
+                    "ticker": "SLERF-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SLERFUSDT"
+                    "description": "SLERF-USD"
                 },
                 {
-                    "ticker": "SLFUSDT",
+                    "ticker": "SLF-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SLFUSDT"
+                    "description": "SLF-USD"
                 },
                 {
-                    "ticker": "SLPUSDT",
+                    "ticker": "SLP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SLPUSDT"
+                    "description": "SLP-USD"
                 },
                 {
-                    "ticker": "SNTUSDT",
+                    "ticker": "SNT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SNTUSDT"
+                    "description": "SNT-USD"
                 },
                 {
-                    "ticker": "SNXUSDT",
+                    "ticker": "SNX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SNXUSDT"
+                    "description": "SNX-USD"
                 },
                 {
-                    "ticker": "SOLAYERUSDT",
+                    "ticker": "SOLAYER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SOLAYERUSDT"
+                    "description": "SOLAYER-USD"
                 },
                 {
-                    "ticker": "SOLOUSDT",
+                    "ticker": "SOLO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SOLOUSDT"
+                    "description": "SOLO-USD"
                 },
                 {
-                    "ticker": "SOLUSDT",
+                    "ticker": "SOL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SOLUSDT"
+                    "description": "SOL-USD"
                 },
                 {
-                    "ticker": "SOLVUSDT",
+                    "ticker": "SOLV-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SOLVUSDT"
+                    "description": "SOLV-USD"
                 },
                 {
-                    "ticker": "SONICUSDT",
+                    "ticker": "SONIC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SONICUSDT"
+                    "description": "SONIC-USD"
                 },
                 {
-                    "ticker": "SOONUSDT",
+                    "ticker": "SOON-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SOONUSDT"
+                    "description": "SOON-USD"
                 },
                 {
-                    "ticker": "SPECUSDT",
+                    "ticker": "SPEC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SPECUSDT"
+                    "description": "SPEC-USD"
                 },
                 {
-                    "ticker": "SPELLUSDT",
+                    "ticker": "SPELL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SPELLUSDT"
+                    "description": "SPELL-USD"
                 },
                 {
-                    "ticker": "SPXUSDT",
+                    "ticker": "SPX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SPXUSDT"
+                    "description": "SPX-USD"
                 },
                 {
-                    "ticker": "SSVUSDT",
+                    "ticker": "SSV-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SSVUSDT"
+                    "description": "SSV-USD"
                 },
                 {
-                    "ticker": "STEEMUSDT",
+                    "ticker": "STEEM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "STEEMUSDT"
+                    "description": "STEEM-USD"
                 },
                 {
-                    "ticker": "STGUSDT",
+                    "ticker": "STG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "STGUSDT"
+                    "description": "STG-USD"
                 },
                 {
-                    "ticker": "STORJUSDT",
+                    "ticker": "STORJ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "STORJUSDT"
+                    "description": "STORJ-USD"
                 },
                 {
-                    "ticker": "STOUSDT",
+                    "ticker": "STO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "STOUSDT"
+                    "description": "STO-USD"
                 },
                 {
-                    "ticker": "STRKUSDT",
+                    "ticker": "STRK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "STRKUSDT"
+                    "description": "STRK-USD"
                 },
                 {
-                    "ticker": "STXUSDT",
+                    "ticker": "STX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "STXUSDT"
+                    "description": "STX-USD"
                 },
                 {
-                    "ticker": "SUIUSDT",
+                    "ticker": "SUI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SUIUSDT"
+                    "description": "SUI-USD"
                 },
                 {
-                    "ticker": "SUNDOGUSDT",
+                    "ticker": "SUNDOG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SUNDOGUSDT"
+                    "description": "SUNDOG-USD"
                 },
                 {
-                    "ticker": "SUNUSDT",
+                    "ticker": "SUN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SUNUSDT"
+                    "description": "SUN-USD"
                 },
                 {
-                    "ticker": "SUPERUSDT",
+                    "ticker": "SUPER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SUPERUSDT"
+                    "description": "SUPER-USD"
                 },
                 {
-                    "ticker": "SUSDT",
+                    "ticker": "S-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SUSDT"
+                    "description": "S-USD"
                 },
                 {
-                    "ticker": "SUSHIUSDT",
+                    "ticker": "SUSHI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SUSHIUSDT"
+                    "description": "SUSHI-USD"
                 },
                 {
-                    "ticker": "SWARMSUSDT",
+                    "ticker": "SWARMS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SWARMSUSDT"
+                    "description": "SWARMS-USD"
                 },
                 {
-                    "ticker": "SWEATUSDT",
+                    "ticker": "SWEAT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SWEATUSDT"
+                    "description": "SWEAT-USD"
                 },
                 {
-                    "ticker": "SWELLUSDT",
+                    "ticker": "SWELL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SWELLUSDT"
+                    "description": "SWELL-USD"
                 },
                 {
-                    "ticker": "SXPUSDT",
+                    "ticker": "SXP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SXPUSDT"
+                    "description": "SXP-USD"
                 },
                 {
-                    "ticker": "SXTUSDT",
+                    "ticker": "SXT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SXTUSDT"
+                    "description": "SXT-USD"
                 },
                 {
-                    "ticker": "SYNUSDT",
+                    "ticker": "SYN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SYNUSDT"
+                    "description": "SYN-USD"
                 },
                 {
-                    "ticker": "SYRUPUSDT",
+                    "ticker": "SYRUP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SYRUPUSDT"
+                    "description": "SYRUP-USD"
                 },
                 {
-                    "ticker": "SYSUSDT",
+                    "ticker": "SYS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "SYSUSDT"
+                    "description": "SYS-USD"
                 },
                 {
-                    "ticker": "TAIKOUSDT",
+                    "ticker": "TAIKO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TAIKOUSDT"
+                    "description": "TAIKO-USD"
                 },
                 {
-                    "ticker": "TAIUSDT",
+                    "ticker": "TAI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TAIUSDT"
+                    "description": "TAI-USD"
                 },
                 {
-                    "ticker": "TAOUSDT",
+                    "ticker": "TAO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TAOUSDT"
+                    "description": "TAO-USD"
                 },
                 {
-                    "ticker": "THETAUSDT",
+                    "ticker": "THETA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "THETAUSDT"
+                    "description": "THETA-USD"
                 },
                 {
-                    "ticker": "THEUSDT",
+                    "ticker": "THE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "THEUSDT"
+                    "description": "THE-USD"
                 },
                 {
-                    "ticker": "TIAUSDT",
+                    "ticker": "TIA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TIAUSDT"
+                    "description": "TIA-USD"
                 },
                 {
-                    "ticker": "TLMUSDT",
+                    "ticker": "TLM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TLMUSDT"
+                    "description": "TLM-USD"
                 },
                 {
-                    "ticker": "TNSRUSDT",
+                    "ticker": "TNSR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TNSRUSDT"
+                    "description": "TNSR-USD"
                 },
                 {
-                    "ticker": "TOKENUSDT",
+                    "ticker": "TOKEN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TOKENUSDT"
+                    "description": "TOKEN-USD"
                 },
                 {
-                    "ticker": "TONUSDT",
+                    "ticker": "TON-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TONUSDT"
+                    "description": "TON-USD"
                 },
                 {
-                    "ticker": "TRBUSDT",
+                    "ticker": "TRB-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TRBUSDT"
+                    "description": "TRB-USD"
                 },
                 {
-                    "ticker": "TRUMPUSDT",
+                    "ticker": "TRUMP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TRUMPUSDT"
+                    "description": "TRUMP-USD"
                 },
                 {
-                    "ticker": "TRUUSDT",
+                    "ticker": "TRU-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TRUUSDT"
+                    "description": "TRU-USD"
                 },
                 {
-                    "ticker": "TRXUSDT",
+                    "ticker": "TRX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TRXUSDT"
+                    "description": "TRX-USD"
                 },
                 {
-                    "ticker": "TSTBSCUSDT",
+                    "ticker": "TSTBSC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TSTBSCUSDT"
+                    "description": "TSTBSC-USD"
                 },
                 {
-                    "ticker": "TUSDT",
+                    "ticker": "T-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TUSDT"
+                    "description": "T-USD"
                 },
                 {
-                    "ticker": "TUTUSDT",
+                    "ticker": "TUT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TUTUSDT"
+                    "description": "TUT-USD"
                 },
                 {
-                    "ticker": "TWTUSDT",
+                    "ticker": "TWT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "TWTUSDT"
+                    "description": "TWT-USD"
                 },
                 {
-                    "ticker": "UMAUSDT",
+                    "ticker": "UMA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "UMAUSDT"
+                    "description": "UMA-USD"
                 },
                 {
-                    "ticker": "UNIUSDT",
+                    "ticker": "UNI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "UNIUSDT"
+                    "description": "UNI-USD"
                 },
                 {
-                    "ticker": "USDCUSDT",
+                    "ticker": "USDC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "USDCUSDT"
+                    "description": "USDC-USD"
                 },
                 {
-                    "ticker": "USDEUSDT",
+                    "ticker": "USDE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "USDEUSDT"
+                    "description": "USDE-USD"
                 },
                 {
-                    "ticker": "USTCUSDT",
+                    "ticker": "USTC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "USTCUSDT"
+                    "description": "USTC-USD"
                 },
                 {
-                    "ticker": "USUALUSDT",
+                    "ticker": "USUAL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "USUALUSDT"
+                    "description": "USUAL-USD"
                 },
                 {
-                    "ticker": "UXLINKUSDT",
+                    "ticker": "UXLINK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "UXLINKUSDT"
+                    "description": "UXLINK-USD"
                 },
                 {
-                    "ticker": "VANAUSDT",
+                    "ticker": "VANA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VANAUSDT"
+                    "description": "VANA-USD"
                 },
                 {
-                    "ticker": "VANRYUSDT",
+                    "ticker": "VANRY-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VANRYUSDT"
+                    "description": "VANRY-USD"
                 },
                 {
-                    "ticker": "VELODROMEUSDT",
+                    "ticker": "VELODROME-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VELODROMEUSDT"
+                    "description": "VELODROME-USD"
                 },
                 {
-                    "ticker": "VELOUSDT",
+                    "ticker": "VELO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VELOUSDT"
+                    "description": "VELO-USD"
                 },
                 {
-                    "ticker": "VETUSDT",
+                    "ticker": "VET-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VETUSDT"
+                    "description": "VET-USD"
                 },
                 {
-                    "ticker": "VICUSDT",
+                    "ticker": "VIC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VICUSDT"
+                    "description": "VIC-USD"
                 },
                 {
-                    "ticker": "VINEUSDT",
+                    "ticker": "VINE-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VINEUSDT"
+                    "description": "VINE-USD"
                 },
                 {
-                    "ticker": "VIRTUALUSDT",
+                    "ticker": "VIRTUAL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VIRTUALUSDT"
+                    "description": "VIRTUAL-USD"
                 },
                 {
-                    "ticker": "VOXELUSDT",
+                    "ticker": "VOXEL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VOXELUSDT"
+                    "description": "VOXEL-USD"
                 },
                 {
-                    "ticker": "VRUSDT",
+                    "ticker": "VR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VRUSDT"
+                    "description": "VR-USD"
                 },
                 {
-                    "ticker": "VTHOUSDT",
+                    "ticker": "VTHO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VTHOUSDT"
+                    "description": "VTHO-USD"
                 },
                 {
-                    "ticker": "VVVUSDT",
+                    "ticker": "VVV-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "VVVUSDT"
+                    "description": "VVV-USD"
                 },
                 {
-                    "ticker": "WALUSDT",
+                    "ticker": "WAL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "WALUSDT"
+                    "description": "WAL-USD"
                 },
                 {
-                    "ticker": "WAVESUSDT",
+                    "ticker": "WAVES-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "WAVESUSDT"
+                    "description": "WAVES-USD"
                 },
                 {
-                    "ticker": "WAXPUSDT",
+                    "ticker": "WAXP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "WAXPUSDT"
+                    "description": "WAXP-USD"
                 },
                 {
-                    "ticker": "WCTUSDT",
+                    "ticker": "WCT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "WCTUSDT"
+                    "description": "WCT-USD"
                 },
                 {
-                    "ticker": "WIFUSDT",
+                    "ticker": "WIF-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "WIFUSDT"
+                    "description": "WIF-USD"
                 },
                 {
-                    "ticker": "WLDUSDT",
+                    "ticker": "WLD-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "WLDUSDT"
+                    "description": "WLD-USD"
                 },
                 {
-                    "ticker": "WOOUSDT",
+                    "ticker": "WOO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "WOOUSDT"
+                    "description": "WOO-USD"
                 },
                 {
-                    "ticker": "WUSDT",
+                    "ticker": "W-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "WUSDT"
+                    "description": "W-USD"
                 },
                 {
-                    "ticker": "XAIUSDT",
+                    "ticker": "XAI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XAIUSDT"
+                    "description": "XAI-USD"
                 },
                 {
-                    "ticker": "XAUTUSDT",
+                    "ticker": "XAUT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XAUTUSDT"
+                    "description": "XAUT-USD"
                 },
                 {
-                    "ticker": "XCHUSDT",
+                    "ticker": "XCH-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XCHUSDT"
+                    "description": "XCH-USD"
                 },
                 {
-                    "ticker": "XCNUSDT",
+                    "ticker": "XCN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XCNUSDT"
+                    "description": "XCN-USD"
                 },
                 {
-                    "ticker": "XDCUSDT",
+                    "ticker": "XDC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XDCUSDT"
+                    "description": "XDC-USD"
                 },
                 {
-                    "ticker": "XEMUSDT",
+                    "ticker": "XEM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XEMUSDT"
+                    "description": "XEM-USD"
                 },
                 {
-                    "ticker": "XIONUSDT",
+                    "ticker": "XION-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XIONUSDT"
+                    "description": "XION-USD"
                 },
                 {
-                    "ticker": "XLMUSDT",
+                    "ticker": "XLM-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XLMUSDT"
+                    "description": "XLM-USD"
                 },
                 {
-                    "ticker": "XMRUSDT",
+                    "ticker": "XMR-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XMRUSDT"
+                    "description": "XMR-USD"
                 },
                 {
-                    "ticker": "XNOUSDT",
+                    "ticker": "XNO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XNOUSDT"
+                    "description": "XNO-USD"
                 },
                 {
-                    "ticker": "XRDUSDT",
+                    "ticker": "XRD-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XRDUSDT"
+                    "description": "XRD-USD"
                 },
                 {
-                    "ticker": "XRPUSDT",
+                    "ticker": "XRP-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XRPUSDT"
+                    "description": "XRP-USD"
                 },
                 {
-                    "ticker": "XTERUSDT",
+                    "ticker": "XTER-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XTERUSDT"
+                    "description": "XTER-USD"
                 },
                 {
-                    "ticker": "XTZUSDT",
+                    "ticker": "XTZ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XTZUSDT"
+                    "description": "XTZ-USD"
                 },
                 {
-                    "ticker": "XVGUSDT",
+                    "ticker": "XVG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XVGUSDT"
+                    "description": "XVG-USD"
                 },
                 {
-                    "ticker": "XVSUSDT",
+                    "ticker": "XVS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "XVSUSDT"
+                    "description": "XVS-USD"
                 },
                 {
-                    "ticker": "YFIUSDT",
+                    "ticker": "YFI-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "YFIUSDT"
+                    "description": "YFI-USD"
                 },
                 {
-                    "ticker": "YGGUSDT",
+                    "ticker": "YGG-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "YGGUSDT"
+                    "description": "YGG-USD"
                 },
                 {
-                    "ticker": "ZBCNUSDT",
+                    "ticker": "ZBCN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZBCNUSDT"
+                    "description": "ZBCN-USD"
                 },
                 {
-                    "ticker": "ZECUSDT",
+                    "ticker": "ZEC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZECUSDT"
+                    "description": "ZEC-USD"
                 },
                 {
-                    "ticker": "ZENTUSDT",
+                    "ticker": "ZENT-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZENTUSDT"
+                    "description": "ZENT-USD"
                 },
                 {
-                    "ticker": "ZENUSDT",
+                    "ticker": "ZEN-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZENUSDT"
+                    "description": "ZEN-USD"
                 },
                 {
-                    "ticker": "ZEREBROUSDT",
+                    "ticker": "ZEREBRO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZEREBROUSDT"
+                    "description": "ZEREBRO-USD"
                 },
                 {
-                    "ticker": "ZETAUSDT",
+                    "ticker": "ZETA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZETAUSDT"
+                    "description": "ZETA-USD"
                 },
                 {
-                    "ticker": "ZEUSUSDT",
+                    "ticker": "ZEUS-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZEUSUSDT"
+                    "description": "ZEUS-USD"
                 },
                 {
-                    "ticker": "ZILUSDT",
+                    "ticker": "ZIL-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZILUSDT"
+                    "description": "ZIL-USD"
                 },
                 {
-                    "ticker": "ZKJUSDT",
+                    "ticker": "ZKJ-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZKJUSDT"
+                    "description": "ZKJ-USD"
                 },
                 {
-                    "ticker": "ZKUSDT",
+                    "ticker": "ZK-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZKUSDT"
+                    "description": "ZK-USD"
                 },
                 {
-                    "ticker": "ZORAUSDT",
+                    "ticker": "ZORA-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZORAUSDT"
+                    "description": "ZORA-USD"
                 },
                 {
-                    "ticker": "ZRCUSDT",
+                    "ticker": "ZRC-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZRCUSDT"
+                    "description": "ZRC-USD"
                 },
                 {
-                    "ticker": "ZROUSDT",
+                    "ticker": "ZRO-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZROUSDT"
+                    "description": "ZRO-USD"
                 },
                 {
-                    "ticker": "ZRXUSDT",
+                    "ticker": "ZRX-USD",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "ZRXUSDT"
+                    "description": "ZRX-USD"
                 }
             ]
         },
@@ -11105,18 +11105,32 @@
             "description": "Major forex currency pairs",
             "assets": [
                 {
+                    "ticker": "AUDUSD=X",
+                    "period": "max",
+                    "initial_capital": 1000,
+                    "commission": 0.002,
+                    "description": "AUDUSD=X"
+                },
+                {
+                    "ticker": "CADUSD=X",
+                    "period": "max",
+                    "initial_capital": 1000,
+                    "commission": 0.002,
+                    "description": "CADUSD=X"
+                },
+                {
+                    "ticker": "CHFUSD=X",
+                    "period": "max",
+                    "initial_capital": 1000,
+                    "commission": 0.002,
+                    "description": "CHFUSD=X"
+                },
+                {
                     "ticker": "EURUSD=X",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
                     "description": "EURUSD=X"
-                },
-                {
-                    "ticker": "JPY=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "JPY=X"
                 },
                 {
                     "ticker": "GBPUSD=X",
@@ -11126,11 +11140,18 @@
                     "description": "GBPUSD=X"
                 },
                 {
-                    "ticker": "AUDUSD=X",
+                    "ticker": "HKDUSD=X",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "AUDUSD=X"
+                    "description": "HKDUSD=X"
+                },
+                {
+                    "ticker": "JPYUSD=X",
+                    "period": "max",
+                    "initial_capital": 1000,
+                    "commission": 0.002,
+                    "description": "JPYUSD=X"
                 },
                 {
                     "ticker": "NZDUSD=X",
@@ -11140,123 +11161,11 @@
                     "description": "NZDUSD=X"
                 },
                 {
-                    "ticker": "EURJPY=X",
+                    "ticker": "SGDUSD=X",
                     "period": "max",
                     "initial_capital": 1000,
                     "commission": 0.002,
-                    "description": "EURJPY=X"
-                },
-                {
-                    "ticker": "GBPJPY=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "GBPJPY=X"
-                },
-                {
-                    "ticker": "EURGBP=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "EURGBP=X"
-                },
-                {
-                    "ticker": "EURCAD=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "EURCAD=X"
-                },
-                {
-                    "ticker": "EURSEK=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "EURSEK=X"
-                },
-                {
-                    "ticker": "EURCHF=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "EURCHF=X"
-                },
-                {
-                    "ticker": "EURHUF=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "EURHUF=X"
-                },
-                {
-                    "ticker": "HKD=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "HKD=X"
-                },
-                {
-                    "ticker": "SGD=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "SGD=X"
-                },
-                {
-                    "ticker": "INR=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "INR=X"
-                },
-                {
-                    "ticker": "MXN=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "MXN=X"
-                },
-                {
-                    "ticker": "PHP=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "PHP=X"
-                },
-                {
-                    "ticker": "IDR=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "IDR=X"
-                },
-                {
-                    "ticker": "THB=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "THB=X"
-                },
-                {
-                    "ticker": "MYR=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "MYR=X"
-                },
-                {
-                    "ticker": "ZAR=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "ZAR=X"
-                },
-                {
-                    "ticker": "RUB=X",
-                    "period": "max",
-                    "initial_capital": 1000,
-                    "commission": 0.002,
-                    "description": "RUB=X"
+                    "description": "SGDUSD=X"
                 }
             ]
         },
