@@ -297,7 +297,8 @@ class ReportGenerator:
         if output_path is None:
             ticker = backtest_results.get("asset", "unknown")
             strategy = backtest_results.get("strategy", "unknown")
-            output_path = f"reports_output/backtest_{strategy}_{ticker}.html"
+            interval = backtest_results.get("interval", "unknown")
+            output_path = f"reports_output/backtest_{strategy}_{ticker}_{interval}.html"
 
         # Generate the report
         return self.generate_report(
@@ -320,7 +321,8 @@ class ReportGenerator:
         # Generate default output path if not provided
         if output_path is None:
             ticker = comparison_data.get("asset", "unknown")
-            output_path = f"reports_output/all_strategies_{ticker}.html"
+            interval = comparison_data.get("interval", "unknown")
+            output_path = f"reports_output/all_strategies_{ticker}_{interval}.html"
 
         # Generate the report
         return self.generate_report(
@@ -411,7 +413,8 @@ class ReportGenerator:
         # Generate default output path if not provided
         if output_path is None:
             portfolio_name = portfolio_results.get("portfolio", "unknown")
-            output_path = f"reports_output/portfolio_{portfolio_name}.html"
+            interval = portfolio_results.get("interval", "unknown")
+            output_path = f"reports_output/portfolio_{portfolio_name}_{interval}.html"
 
         # Create asset_list for template if not present
         if (
@@ -472,7 +475,8 @@ class ReportGenerator:
         if output_path is None:
             strategy = optimizer_results.get("strategy", "unknown")
             ticker = optimizer_results.get("ticker", "unknown")
-            output_path = f"reports_output/optimizer_{strategy}_{ticker}.html"
+            interval = optimizer_results.get("interval", "unknown")
+            output_path = f"reports_output/optimizer_{strategy}_{ticker}_{interval}.html"
 
         # Generate the report
         return self.generate_report(
@@ -494,7 +498,8 @@ class ReportGenerator:
             # Generate default output path if not provided
             if output_path is None:
                 portfolio_name = portfolio_results.get("portfolio", "unknown")
-                output_path = f"reports_output/portfolio_{portfolio_name}_detailed.html"
+                interval = portfolio_results.get("interval", "unknown")
+                output_path = f"reports_output/portfolio_{portfolio_name}_{interval}_detailed.html"
 
             # Ensure directory exists
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -894,8 +899,9 @@ class ReportGenerator:
         # Generate default output path if not provided
         if output_path is None:
             portfolio_name = optimization_results.get("portfolio", "unknown")
+            interval = optimization_results.get("interval", "unknown")
             output_path = (
-                f"reports_output/portfolio_optimized_params_{portfolio_name}.html"
+                f"reports_output/portfolio_optimized_params_{portfolio_name}_{interval}.html"
             )
 
         # Ensure output directory exists
