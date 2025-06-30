@@ -2542,5 +2542,5 @@ yfinance = ">=0.2.57"
 
 [metadata]
 lock-version = "2.1"
-python-versions = "^3.12"
-content-hash = "f48ad199f2012242337d9e8bcd1b00e21bd85b41b9e656bdc5f463806d48a224"
+python-versions = ">=3.12,<4.0"
+content-hash = "b92ecb970791853ef9db0b1a89299107dbf82f4746f4e2c25874170728eeb8e1"
