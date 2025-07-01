@@ -125,13 +125,18 @@ def extract_score(result, metric):
     """Extract the performance score based on the specified metric."""
     if metric == "profit_factor":
         score = result.get("Profit Factor", result.get("profit_factor", 0))
-    elif metric == "sharpe":
+    elif metric == "sharpe" or metric == "sharpe_ratio":
         score = result.get("Sharpe Ratio", result.get("sharpe_ratio", 0))
-    elif metric == "return":
+    elif metric == "sortino" or metric == "sortino_ratio":
+        score = result.get("Sortino Ratio", result.get("sortino_ratio", 0))
+    elif metric == "return" or metric == "total_return":
         if isinstance(result.get("Return [%]", 0), (int, float)):
             score = result.get("Return [%]", 0)
         else:
             score = result.get("return_pct", 0)
+    elif metric == "max_drawdown":
+        # For max drawdown, we want lower values, so return negative
+        score = -abs(result.get("Max Drawdown [%]", result.get("max_drawdown", 0)))
     else:
         score = result.get(metric, 0)
 

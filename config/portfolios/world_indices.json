@@ -1,0 +1,23 @@
+{
+    "world_indices": {
+        "name": "World Indices Portfolio",
+        "description": "Major global stock market indices for diversified exposure",
+        "symbols": [
+            "SPY", "VTI", "QQQ", "IWM",
+            "EFA", "VEA", "EEM", "VWO"
+        ],
+        "risk_profile": "moderate",
+        "target_return": 0.10,
+        "benchmark": "SPY",
+        "allocation_method": "equal_weight",
+        "rebalance_frequency": "quarterly",
+        "max_position_size": 0.05,
+        "min_position_size": 0.01,
+        "metadata": {
+            "created_date": "2025-01-07",
+            "asset_classes": ["equity_indices", "international", "emerging_markets"],
+            "regions": ["north_america", "europe", "asia_pacific", "emerging_markets"],
+            "currency_exposure": ["USD", "EUR", "JPY", "GBP", "CNY"]
+        }
+    }
+}

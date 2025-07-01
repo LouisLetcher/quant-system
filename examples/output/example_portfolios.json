@@ -1,0 +1,23 @@
+{
+  "tech_growth": {
+    "symbols": [
+      "AAPL",
+      "MSFT",
+      "GOOGL",
+      "AMZN"
+    ],
+    "strategies": [
+      "rsi",
+      "macd"
+    ]
+  },
+  "crypto_futures": {
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT"
+    ],
+    "strategies": [
+      "rsi"
+    ]
+  }
+}

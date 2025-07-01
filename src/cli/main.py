@@ -3,8 +3,13 @@ from __future__ import annotations
 import argparse
 import codecs
 import sys
+import warnings
 
-from src.cli.commands import backtest_commands, optimizer_commands, portfolio_commands, utility_commands
+# Suppress warnings for cleaner output
+warnings.filterwarnings('ignore')
+
+# Import unified CLI
+from src.cli.unified_cli import main as unified_main
 
 # Set console output encoding to UTF-8
 if sys.stdout.encoding != "utf-8":
@@ -14,25 +19,20 @@ if sys.stderr.encoding != "utf-8":
 
 
 def main():
-    parser = argparse.ArgumentParser()
-
-    # Create subparsers for commands
-    subparsers = parser.add_subparsers(dest="command")
-
-    # Register all commands
-    backtest_commands.register_commands(subparsers)
-    portfolio_commands.register_commands(subparsers)
-    optimizer_commands.register_commands(subparsers)
-    utility_commands.register_commands(subparsers)
-
-    # Parse arguments
-    args = parser.parse_args()
-
-    # Execute the corresponding function
-    if hasattr(args, "func"):
-        args.func(args)
-    else:
-        parser.print_help()
+    """
+    Main entry point - now uses the unified CLI system.
+    
+    The old command structure has been replaced with a unified architecture
+    that eliminates code duplication and provides better functionality.
+    """
+    print("🚀 Quant Trading System - Unified Architecture")
+    print("For legacy commands, use the individual command modules.")
+    print("For new unified commands, use: python -m src.cli.unified_cli")
+    print("\nRunning unified CLI...")
+    print("=" * 50)
+    
+    # Redirect to unified CLI
+    unified_main()
 
 
 if __name__ == "__main__":
