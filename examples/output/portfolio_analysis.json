@@ -1,0 +1,251 @@
+{
+  "analysis_date": "2025-07-01T16:51:50.058318",
+  "portfolios_analyzed": 4,
+  "portfolio_summaries": {
+    "Conservative Growth": {
+      "name": "Conservative Growth",
+      "total_assets": 4,
+      "total_strategies": 0,
+      "best_performer": "N/A",
+      "worst_performer": "N/A",
+      "avg_return": 0,
+      "avg_sharpe": 0,
+      "max_drawdown": 0,
+      "risk_score": 0,
+      "return_score": 0,
+      "overall_score": 0,
+      "investment_priority": 1,
+      "recommended_allocation": 0,
+      "risk_category": "High Risk"
+    },
+    "Aggressive Tech": {
+      "name": "Aggressive Tech",
+      "total_assets": 8,
+      "total_strategies": 0,
+      "best_performer": "N/A",
+      "worst_performer": "N/A",
+      "avg_return": 0,
+      "avg_sharpe": 0,
+      "max_drawdown": 0,
+      "risk_score": 0,
+      "return_score": 0,
+      "overall_score": 0,
+      "investment_priority": 2,
+      "recommended_allocation": 0,
+      "risk_category": "High Risk"
+    },
+    "Crypto Futures": {
+      "name": "Crypto Futures",
+      "total_assets": 2,
+      "total_strategies": 0,
+      "best_performer": "N/A",
+      "worst_performer": "N/A",
+      "avg_return": 0,
+      "avg_sharpe": 0,
+      "max_drawdown": 0,
+      "risk_score": 0,
+      "return_score": 0,
+      "overall_score": 0,
+      "investment_priority": 3,
+      "recommended_allocation": 0,
+      "risk_category": "High Risk"
+    },
+    "Diversified Income": {
+      "name": "Diversified Income",
+      "total_assets": 4,
+      "total_strategies": 0,
+      "best_performer": "N/A",
+      "worst_performer": "N/A",
+      "avg_return": 0,
+      "avg_sharpe": 0,
+      "max_drawdown": 0,
+      "risk_score": 0,
+      "return_score": 0,
+      "overall_score": 0,
+      "investment_priority": 4,
+      "recommended_allocation": 0,
+      "risk_category": "High Risk"
+    }
+  },
+  "detailed_analysis": {
+    "Conservative Growth": {},
+    "Aggressive Tech": {},
+    "Crypto Futures": {},
+    "Diversified Income": {}
+  },
+  "ranked_portfolios": [
+    [
+      "Conservative Growth",
+      "PortfolioSummary(name='Conservative Growth', total_assets=4, total_strategies=0, best_performer='N/A', worst_performer='N/A', avg_return=0, avg_sharpe=0, max_drawdown=0, risk_score=0, return_score=0, overall_score=0, investment_priority=1, recommended_allocation=0, risk_category='High Risk')"
+    ],
+    [
+      "Aggressive Tech",
+      "PortfolioSummary(name='Aggressive Tech', total_assets=8, total_strategies=0, best_performer='N/A', worst_performer='N/A', avg_return=0, avg_sharpe=0, max_drawdown=0, risk_score=0, return_score=0, overall_score=0, investment_priority=2, recommended_allocation=0, risk_category='High Risk')"
+    ],
+    [
+      "Crypto Futures",
+      "PortfolioSummary(name='Crypto Futures', total_assets=2, total_strategies=0, best_performer='N/A', worst_performer='N/A', avg_return=0, avg_sharpe=0, max_drawdown=0, risk_score=0, return_score=0, overall_score=0, investment_priority=3, recommended_allocation=0, risk_category='High Risk')"
+    ],
+    [
+      "Diversified Income",
+      "PortfolioSummary(name='Diversified Income', total_assets=4, total_strategies=0, best_performer='N/A', worst_performer='N/A', avg_return=0, avg_sharpe=0, max_drawdown=0, risk_score=0, return_score=0, overall_score=0, investment_priority=4, recommended_allocation=0, risk_category='High Risk')"
+    ]
+  ],
+  "investment_recommendations": [
+    {
+      "portfolio_name": "Conservative Growth",
+      "priority_rank": 1,
+      "recommended_allocation_pct": 25.0,
+      "expected_annual_return": 0,
+      "expected_volatility": 20.0,
+      "max_drawdown_risk": 0,
+      "confidence_score": 0.0,
+      "risk_category": "High Risk",
+      "investment_rationale": "Higher risk option that may be suitable for aggressive investors seeking potential upside.",
+      "key_strengths": [
+        "Low drawdown risk"
+      ],
+      "key_risks": [
+        "Poor risk-adjusted returns",
+        "Limited diversification"
+      ],
+      "minimum_investment_period": "12-24 months"
+    },
+    {
+      "portfolio_name": "Aggressive Tech",
+      "priority_rank": 2,
+      "recommended_allocation_pct": 25.0,
+      "expected_annual_return": 0,
+      "expected_volatility": 20.0,
+      "max_drawdown_risk": 0,
+      "confidence_score": 0.0,
+      "risk_category": "High Risk",
+      "investment_rationale": "Higher risk option that may be suitable for aggressive investors seeking potential upside.",
+      "key_strengths": [
+        "Low drawdown risk"
+      ],
+      "key_risks": [
+        "Poor risk-adjusted returns"
+      ],
+      "minimum_investment_period": "12-24 months"
+    },
+    {
+      "portfolio_name": "Crypto Futures",
+      "priority_rank": 3,
+      "recommended_allocation_pct": 25.0,
+      "expected_annual_return": 0,
+      "expected_volatility": 20.0,
+      "max_drawdown_risk": 0,
+      "confidence_score": 0.0,
+      "risk_category": "High Risk",
+      "investment_rationale": "Higher risk option that may be suitable for aggressive investors seeking potential upside.",
+      "key_strengths": [
+        "Low drawdown risk"
+      ],
+      "key_risks": [
+        "Poor risk-adjusted returns",
+        "Limited diversification"
+      ],
+      "minimum_investment_period": "12-24 months"
+    },
+    {
+      "portfolio_name": "Diversified Income",
+      "priority_rank": 4,
+      "recommended_allocation_pct": 25.0,
+      "expected_annual_return": 0,
+      "expected_volatility": 20.0,
+      "max_drawdown_risk": 0,
+      "confidence_score": 0.0,
+      "risk_category": "High Risk",
+      "investment_rationale": "Higher risk option that may be suitable for aggressive investors seeking potential upside.",
+      "key_strengths": [
+        "Low drawdown risk"
+      ],
+      "key_risks": [
+        "Poor risk-adjusted returns",
+        "Limited diversification"
+      ],
+      "minimum_investment_period": "12-24 months"
+    }
+  ],
+  "market_analysis": {
+    "market_sentiment": "Neutral",
+    "average_market_return": 0.0,
+    "market_volatility": 0.0,
+    "risk_adjusted_performance": 0.0,
+    "top_performing_category": "Conservative Growth",
+    "most_consistent_category": "Conservative Growth",
+    "recommendations": [
+      "Monitor market conditions",
+      "Consider defensive strategies if needed"
+    ]
+  },
+  "risk_analysis": {
+    "by_category": {
+      "High Risk": {
+        "count": 4,
+        "avg_return": 0.0,
+        "avg_risk_score": 0.0,
+        "recommended_allocation": 30,
+        "portfolios": [
+          "Conservative Growth",
+          "Aggressive Tech",
+          "Crypto Futures",
+          "Diversified Income"
+        ]
+      }
+    },
+    "overall_risk_level": "High",
+    "diversification_score": 36,
+    "risk_recommendations": [
+      "Maintain diversification",
+      "Monitor correlation changes",
+      "Review risk limits regularly"
+    ]
+  },
+  "diversification_analysis": {
+    "total_unique_symbols": 14,
+    "total_unique_strategies": 4,
+    "portfolio_overlaps": {
+      "Conservative Growth_vs_Aggressive Tech": {
+        "symbol_overlap": 0,
+        "total_symbols": 8,
+        "overlap_percentage": 0.0
+      },
+      "Conservative Growth_vs_Crypto Futures": {
+        "symbol_overlap": 0,
+        "total_symbols": 6,
+        "overlap_percentage": 0.0
+      },
+      "Conservative Growth_vs_Diversified Income": {
+        "symbol_overlap": 0,
+        "total_symbols": 8,
+        "overlap_percentage": 0.0
+      },
+      "Aggressive Tech_vs_Crypto Futures": {
+        "symbol_overlap": 0,
+        "total_symbols": 6,
+        "overlap_percentage": 0.0
+      },
+      "Aggressive Tech_vs_Diversified Income": {
+        "symbol_overlap": 0,
+        "total_symbols": 8,
+        "overlap_percentage": 0.0
+      },
+      "Crypto Futures_vs_Diversified Income": {
+        "symbol_overlap": 0,
+        "total_symbols": 6,
+        "overlap_percentage": 0.0
+      }
+    },
+    "diversification_opportunities": [
+      "Consider adding international exposure",
+      "Evaluate sector concentration"
+    ],
+    "recommended_portfolio_mix": {
+      "Primary": 60,
+      "Secondary": 25,
+      "Satellite": 15
+    }
+  }
+}

@@ -31,8 +31,9 @@ cache/
 !data/
 
 # Output files
-reports_output/
+# reports_output/ - Now tracking quarterly reports
 backtests/results/
+exports/
 
 # QuantConnect Lean files
 lean_config.json
