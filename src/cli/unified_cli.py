@@ -539,8 +539,17 @@ def handle_portfolio_test_all(args):
     if hasattr(args, 'end_date') and args.end_date:
         end_date = datetime.strptime(args.end_date, '%Y-%m-%d')
     
-    # All available strategies and timeframes
-    all_strategies = ['rsi', 'macd', 'bollinger_bands', 'sma_crossover']
+    # Get all available strategies dynamically
+    try:
+        from src.backtesting_engine.strategies.strategy_factory import StrategyFactory
+        strategy_factory = StrategyFactory()
+        all_strategies = strategy_factory.get_available_strategies()
+        print(f"🔍 Found {len(all_strategies)} available strategies")
+    except Exception as e:
+        logger.warning(f"Could not load strategy factory: {e}")
+        # Fallback to basic strategies
+        all_strategies = ['rsi', 'macd', 'bollinger_bands', 'sma_crossover']
+        print(f"🔍 Using fallback strategies: {len(all_strategies)} strategies")
     
     # Determine timeframes to test
     if args.test_timeframes:
@@ -635,7 +644,8 @@ def handle_portfolio_test_all(args):
     print(f"💾 Report size optimized with compression")
     
     if args.open_browser:
-        webbrowser.open(f'file://{report_path}')
+        import os
+        webbrowser.open(f'file://{os.path.abspath(report_path)}')
         print(f"📱 Detailed report opened in browser")
 
 

@@ -1,0 +1,61 @@
+{
+  "forex": {
+    "name": "Forex Portfolio",
+    "description": "Major forex pairs trading portfolio",
+    "asset_type": "forex",
+    "symbols": [
+      "EURUSD=X",
+      "GBPUSD=X", 
+      "USDJPY=X",
+      "USDCHF=X",
+      "AUDUSD=X",
+      "USDCAD=X",
+      "NZDUSD=X",
+      "EURJPY=X",
+      "GBPJPY=X",
+      "EURGBP=X",
+      "AUDJPY=X",
+      "EURAUD=X",
+      "EURCHF=X",
+      "AUDNZD=X",
+      "GBPAUD=X",
+      "GBPCAD=X"
+    ],
+    "data_sources": {
+      "primary": ["polygon", "alpha_vantage", "twelve_data"],
+      "fallback": ["finnhub", "yahoo_finance"],
+      "excluded": ["bybit"]
+    },
+    "initial_capital": 10000,
+    "commission": 0.00005,
+    "slippage": 0.00001,
+    "max_position_size": 0.1,
+    "risk_per_trade": 0.02,
+    "stop_loss": 0.01,
+    "take_profit": 0.02,
+    "currency": "USD",
+    "leverage": 100,
+    "intervals": ["1d", "4h", "1h", "15min"],
+    "risk_profile": "aggressive",
+    "target_return": 0.15,
+    "benchmark": "EURUSD=X",
+    "allocation_method": "equal_weight",
+    "rebalance_frequency": "monthly",
+    "metadata": {
+      "created_date": "2025-01-07",
+      "asset_classes": ["forex"],
+      "regions": ["global"],
+      "currency_exposure": ["USD", "EUR", "GBP", "JPY", "CHF", "AUD", "CAD", "NZD"],
+      "best_data_coverage": "2000-present",
+      "recommended_timeframes": ["1d", "4h", "1h", "15min"],
+      "data_quality": "excellent",
+      "market_hours": "24/5",
+      "spread_typical": "0.1-3 pips"
+    },
+    "optimization": {
+      "metric": "sharpe_ratio",
+      "lookback_period": 252,
+      "walk_forward": false
+    }
+  }
+}

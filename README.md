@@ -6,28 +6,51 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Architecture: Unified](https://img.shields.io/badge/Architecture-Unified-green.svg)](#-architecture-overview)
 
-A professional-grade quantitative trading system with advanced backtesting, multi-source data integration, crypto futures support, and intelligent portfolio management with investment prioritization.
+A comprehensive quantitative trading system with 32+ strategies, 6+ data sources, and intelligent multi-asset portfolio analysis. Features automatic symbol transformation, quarterly report organization, and dynamic strategy discovery.
 
-## ✨ Key Features
+## 🌟 Latest Updates
 
-### 🏗️ **Unified Architecture**
-- **Zero Code Duplication**: Clean, maintainable codebase following best practices
-- **Single Responsibility**: Each component has one clear purpose
-- **Dependency Injection**: Flexible, testable design
-- **Professional Standards**: Production-ready architecture
+### ✅ **32+ Trading Strategies**
+All strategies dynamically discovered and tested automatically across all portfolios!
 
-### 📊 **Multi-Source Data Management**
-- **Yahoo Finance**: Primary source for stocks, forex, commodities
-- **Bybit API**: Primary source for crypto futures trading
-- **Alpha Vantage**: Secondary source with API fallback
-- **Intelligent Routing**: Automatic source selection by asset type
-- **Advanced Caching**: SQLite-based metadata with 10x performance boost
+### ✅ **6+ Premium Data Sources** 
+- **Polygon.io**, **Alpha Vantage**, **Twelve Data**, **Tiingo**, **Finnhub**, **Bybit**
+- **Automatic Symbol Transformation** per data source
+- **Smart Fallback System** with error recovery
 
-### 💼 **Portfolio Investment Prioritization**
-- **Risk-Adjusted Scoring**: Multi-factor analysis (Sharpe, drawdown, volatility)
-- **Investment Rankings**: Automated portfolio prioritization
-- **Capital Allocation**: Smart distribution based on risk tolerance
-- **Implementation Planning**: Timeline and risk management strategies
+### ✅ **Fixed Interactive Charts**
+- **Plotly Integration** with error handling
+- **Safe JavaScript Variables** for symbols with special characters
+- **CDN Fallback Protection** for offline scenarios
+
+### ✅ **Quarterly Report Organization**
+- **Automatic Organization** by year/quarter structure
+- **Single Report Per Quarter** per portfolio
+- **Git Tracking** of organized reports
+
+## ✨ Core Features
+
+### 🌐 **Multi-Source Data Management**
+- **6+ Premium Sources**: Polygon, Alpha Vantage, Twelve Data, Tiingo, Finnhub, Bybit
+- **Symbol Transformation**: Smart format conversion (EURUSD=X ↔ EUR/USD ↔ EURUSD)
+- **Intelligent Routing**: Asset type detection for optimal source selection
+- **Advanced Caching**: SQLite-based with TTL and compression
+
+### 🎯 **Complete Strategy Suite (32+ Strategies)**
+- **Trend Following**: Index Trend, Moving Average systems, Confident Trend
+- **Mean Reversion**: RSI, Bollinger Bands, Simple Mean Reversion  
+- **Momentum**: MACD, MFI, Larry Williams %R
+- **Breakout**: Donchian Channels, Turtle Trading, Weekly Breakout
+- **Pattern Recognition**: Bullish Engulfing, Inside Day, Kings Counting
+- **Calendar Effects**: Turnaround Monday/Tuesday, Russell Rebalancing
+- **And 20+ more strategies automatically discovered!**
+
+### 📊 **5 Pre-Built Asset Portfolios**
+- **💱 Forex Portfolio**: 16 major pairs with optimized forex data sources
+- **₿ Crypto Portfolio**: 10 major cryptocurrencies with Bybit integration
+- **🌍 World Indices**: 8 global ETFs with broad market exposure
+- **🥇 Commodities**: 12 commodity ETFs including metals, energy, agriculture
+- **🏛️ Bonds Portfolio**: 12 bond ETFs with government and corporate exposure
 - **Comprehensive Analysis**: 50+ performance metrics
 
 ### ⚡ **High-Performance Backtesting**
@@ -66,26 +89,48 @@ poetry install
 poetry shell
 ```
 
-### 2. Basic Usage
+### 2. Quick Start - Most Used Commands
+
+#### 🚀 **Test Forex Portfolio (16 pairs, 32+ strategies)**
 ```bash
-# Download data for multiple assets
-python -m src.cli.unified_cli data download \
-    --symbols AAPL MSFT BTCUSDT \
-    --start-date 2023-01-01 \
-    --end-date 2023-12-31
+poetry run python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/forex.json \
+  --metric sharpe_ratio \
+  --period max \
+  --test-timeframes \
+  --open-browser
+```
 
-# Run batch backtests
-python -m src.cli.unified_cli backtest batch \
-    --symbols AAPL MSFT GOOGL \
-    --strategies rsi macd bollinger_bands \
-    --start-date 2023-01-01 \
-    --end-date 2023-12-31
+#### ₿ **Test Crypto Portfolio (10 coins, 32+ strategies)**
+```bash
+poetry run python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/crypto.json \
+  --metric sortino_ratio \
+  --period max \
+  --test-timeframes \
+  --open-browser
+```
 
-# Compare portfolios and get investment recommendations
-python -m src.cli.unified_cli portfolio compare \
-    --portfolios examples/portfolios.json \
-    --start-date 2023-01-01 \
-    --end-date 2023-12-31
+#### 🌍 **Test World Indices Portfolio (8 ETFs, 32+ strategies)**
+```bash
+poetry run python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/world_indices.json \
+  --metric profit_factor \
+  --period max \
+  --test-timeframes \
+  --open-browser
+```
+
+#### 📊 **Organize and Manage Reports**
+```bash
+# Organize existing reports into quarterly structure
+poetry run python -m src.cli.unified_cli reports organize
+
+# List quarterly reports
+poetry run python -m src.cli.unified_cli reports list
+
+# Get latest report for portfolio
+poetry run python -m src.cli.unified_cli reports latest "Forex Portfolio"
 ```
 
 ### 3. Crypto Futures Trading
@@ -397,13 +442,60 @@ python -m src.cli.unified_cli cache clear --type data --older-than 30
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Links
+## 📚 Complete Documentation
 
-- **Documentation**: [docs/](docs/)
-- **Examples**: [examples/](examples/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/quant-system/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/quant-system/discussions)
+### **🚀 Quick Reference**
+- **[Complete CLI Guide](docs/COMPLETE_CLI_GUIDE.md)** - All CLI commands, options, and examples
+- **[Data Sources Guide](docs/DATA_SOURCES_GUIDE.md)** - Multi-source data configuration
+- **[Symbol Transformation Guide](docs/SYMBOL_TRANSFORMATION_GUIDE.md)** - Symbol format conversion
+
+### **🔧 Technical Guides**
+- **[Testing Guide](docs/TESTING_GUIDE.md)** - Comprehensive testing documentation
+- **[Docker Guide](docs/DOCKER_GUIDE.md)** - Container deployment instructions
+- **[Production Ready Guide](docs/PRODUCTION_READY.md)** - Production deployment guide
+
+### **📊 Analysis Features**
+- **32+ Trading Strategies** - Automatically discovered and tested
+- **5 Asset Class Portfolios** - Forex, Crypto, Stocks, Commodities, Bonds
+- **6+ Premium Data Sources** - Polygon, Alpha Vantage, Twelve Data, Tiingo, Finnhub, Bybit
+- **Interactive Reports** - Plotly charts with quarterly organization
+- **Performance Metrics** - Sharpe, Sortino, Profit Factor, Max Drawdown
+
+### **⚡ Key Commands Summary**
+
+```bash
+# Test all 32+ strategies on forex portfolio
+poetry run python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/forex.json --metric sharpe_ratio --period max --test-timeframes --open-browser
+
+# Test crypto portfolio with Sortino ratio
+poetry run python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/crypto.json --metric sortino_ratio --period max --test-timeframes --open-browser
+
+# Organize quarterly reports  
+poetry run python -m src.cli.unified_cli reports organize
+
+# View all available strategies and data sources
+poetry run python -m src.cli.unified_cli data sources
+```
+
+### **🌟 Latest Results**
+
+**Forex Portfolio (16 pairs, 32 strategies tested)**:
+1. **Weekly Breakout** (1.67 Sharpe) 
+2. **Inside Day** (1.64 Sharpe)
+3. **Stan Weinstein Stage 2** (1.64 Sharpe)
+4. **Linear Regression** (1.60 Sharpe)
+5. **Moving Average Crossover** (1.57 Sharpe)
+
+**All strategies tested with full historical data (2015-present) and proper benchmark comparisons!**
 
 ---
 
 **Built with ❤️ for quantitative traders and investors worldwide.**
+
+## 🔗 Repository Links
+
+- **Issues**: [GitHub Issues](https://github.com/LouisLetcher/quant-system/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/LouisLetcher/quant-system/discussions)
+- **Latest Release**: [Releases](https://github.com/LouisLetcher/quant-system/releases)
