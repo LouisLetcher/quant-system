@@ -48,6 +48,10 @@ class DataSource(ABC):
         self.session = self._create_session()
         self.logger = logging.getLogger(f"{__name__}.{config.name}")
     
+    def transform_symbol(self, symbol: str, asset_type: str = None) -> str:
+        """Transform symbol to fit this data source's format."""
+        return symbol  # Default: no transformation
+    
     def _create_session(self) -> requests.Session:
         """Create HTTP session with retry strategy."""
         session = requests.Session()
@@ -151,6 +155,26 @@ class YahooFinanceSource(DataSource):
         )
         super().__init__(config)
     
+    def transform_symbol(self, symbol: str, asset_type: str = None) -> str:
+        """Transform symbol for Yahoo Finance format."""
+        # Yahoo Finance forex format
+        if asset_type == "forex" or "=" in symbol:
+            return symbol  # Already in correct format (EURUSD=X)
+        
+        # Handle forex pairs without =X
+        forex_pairs = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "USDCAD", 
+                      "NZDUSD", "EURJPY", "GBPJPY", "EURGBP", "AUDJPY", "EURAUD", 
+                      "EURCHF", "AUDNZD", "GBPAUD", "GBPCAD"]
+        if symbol in forex_pairs:
+            return f"{symbol}=X"
+        
+        # Crypto format - Yahoo uses dash format
+        if asset_type == "crypto" or any(crypto in symbol.upper() for crypto in ["BTC", "ETH", "ADA", "SOL"]):
+            if "USD" in symbol and "-" not in symbol:
+                return symbol.replace("USD", "-USD")
+        
+        return symbol
+    
     def fetch_data(self, symbol: str, start_date: str, end_date: str, 
                    interval: str = "1d", **kwargs) -> Optional[pd.DataFrame]:
         """Fetch data from Yahoo Finance."""
@@ -158,8 +182,12 @@ class YahooFinanceSource(DataSource):
         
         self._rate_limit()
         
+        # Transform symbol to Yahoo Finance format
+        asset_type = kwargs.get('asset_type')
+        transformed_symbol = self.transform_symbol(symbol, asset_type)
+        
         try:
-            ticker = yf.Ticker(symbol)
+            ticker = yf.Ticker(transformed_symbol)
             data = ticker.history(start=start_date, end=end_date, interval=interval)
             
             if data.empty:
@@ -506,20 +534,38 @@ class UnifiedDataManager:
     
     def _initialize_sources(self):
         """Initialize available data sources."""
-        # Yahoo Finance (always available)
+        import os
+        
+        # Yahoo Finance (always available - fallback)
         self.add_source(YahooFinanceSource())
         
-        # Bybit for crypto (if in crypto mode)
+        # Enhanced Alpha Vantage (good for stocks/forex/crypto)
+        av_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+        if av_key:
+            try:
+                self.add_source(EnhancedAlphaVantageSource())
+            except Exception as e:
+                self.logger.warning(f"Could not add Enhanced Alpha Vantage: {e}")
+                # Fallback to existing implementation
+                try:
+                    self.add_source(AlphaVantageSource(av_key))
+                except:
+                    pass
+        
+        # Twelve Data (excellent coverage)
+        twelve_key = os.getenv('TWELVE_DATA_API_KEY')
+        if twelve_key:
+            try:
+                self.add_source(TwelveDataSource())
+            except Exception as e:
+                self.logger.warning(f"Could not add Twelve Data: {e}")
+        
+        # Bybit for crypto futures (specialized)
         bybit_key = os.getenv('BYBIT_API_KEY')
         bybit_secret = os.getenv('BYBIT_API_SECRET')
         testnet = os.getenv('BYBIT_TESTNET', 'false').lower() == 'true'
         
         self.add_source(BybitSource(bybit_key, bybit_secret, testnet))
-        
-        # Alpha Vantage (if API key available)
-        av_key = os.getenv('ALPHA_VANTAGE_API_KEY')
-        if av_key:
-            self.add_source(AlphaVantageSource(av_key))
     
     def add_source(self, source: DataSource):
         """Add a data source."""
@@ -558,6 +604,8 @@ class UnifiedDataManager:
         # Try each source in priority order
         for source in suitable_sources:
             try:
+                # Pass asset_type to enable symbol transformation
+                kwargs['asset_type'] = asset_type
                 data = source.fetch_data(symbol, start_date, end_date, interval, **kwargs)
                 if data is not None and not data.empty:
                     # Cache the data
@@ -720,6 +768,282 @@ class UnifiedDataManager:
                 'max_symbols_per_request': source.config.max_symbols_per_request
             }
         return status
+
+
+# Additional Data Sources
+
+class EnhancedAlphaVantageSource(DataSource):
+    """Enhanced Alpha Vantage data source - excellent for stocks, forex, crypto."""
+    
+    def __init__(self):
+        config = DataSourceConfig(
+            name="alpha_vantage_enhanced",
+            priority=2,
+            rate_limit=5.0,  # 5 calls per minute for free tier
+            max_retries=3,
+            timeout=30.0,
+            supports_batch=False,
+            asset_types=["stock", "forex", "crypto", "commodity"]
+        )
+        super().__init__(config)
+        self.api_key = os.getenv('ALPHA_VANTAGE_API_KEY', 'demo')
+        self.base_url = "https://www.alphavantage.co/query"
+    
+    def transform_symbol(self, symbol: str, asset_type: str = None) -> str:
+        """Transform symbol for Alpha Vantage format."""
+        # Alpha Vantage forex format (no =X suffix)
+        if "=X" in symbol:
+            return symbol.replace("=X", "")
+        
+        # Alpha Vantage crypto format (no dash)
+        if "-USD" in symbol:
+            return symbol.replace("-USD", "USD")
+        
+        return symbol
+    
+    def fetch_data(self, symbol: str, start_date: datetime, end_date: datetime, 
+                   interval: str = "1d", **kwargs) -> Optional[pd.DataFrame]:
+        """Fetch data from Alpha Vantage."""
+        try:
+            self._rate_limit()
+            
+            # Transform symbol to Alpha Vantage format
+            asset_type = kwargs.get('asset_type')
+            transformed_symbol = self.transform_symbol(symbol, asset_type)
+            
+            # Map intervals
+            av_interval = self._map_interval(interval)
+            function = self._get_function(transformed_symbol, interval)
+            
+            params = {
+                'function': function,
+                'symbol': transformed_symbol,
+                'apikey': self.api_key,
+                'outputsize': 'full',
+                'datatype': 'json'
+            }
+            
+            if interval in ['1min', '5min', '15min', '30min', '60min']:
+                params['interval'] = av_interval
+            
+            response = self.session.get(self.base_url, params=params, timeout=self.config.timeout)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Check for API errors
+            if 'Error Message' in data:
+                self.logger.error(f"Alpha Vantage error: {data['Error Message']}")
+                return None
+            
+            if 'Note' in data:
+                self.logger.warning(f"Alpha Vantage rate limit: {data['Note']}")
+                return None
+            
+            # Parse data
+            time_series_key = self._get_time_series_key(data)
+            if not time_series_key:
+                return None
+            
+            df = self._parse_time_series(data[time_series_key])
+            if df is not None:
+                df = self._filter_date_range(df, start_date, end_date)
+            
+            return df
+            
+        except Exception as e:
+            self.logger.error(f"Error fetching {symbol} from Alpha Vantage: {e}")
+            return None
+    
+    def _map_interval(self, interval: str) -> str:
+        """Map internal intervals to Alpha Vantage intervals."""
+        mapping = {
+            '1min': '1min',
+            '5min': '5min',
+            '15min': '15min',
+            '30min': '30min',
+            '1h': '60min',
+            '1d': 'daily'
+        }
+        return mapping.get(interval, 'daily')
+    
+    def _get_function(self, symbol: str, interval: str) -> str:
+        """Get appropriate Alpha Vantage function."""
+        if '/' in symbol:  # Forex
+            if interval == '1d':
+                return 'FX_DAILY'
+            else:
+                return 'FX_INTRADAY'
+        elif any(crypto in symbol.upper() for crypto in ['BTC', 'ETH', 'LTC', 'XRP']):
+            if interval == '1d':
+                return 'DIGITAL_CURRENCY_DAILY'
+            else:
+                return 'CRYPTO_INTRADAY'
+        else:  # Stocks
+            if interval == '1d':
+                return 'TIME_SERIES_DAILY'
+            else:
+                return 'TIME_SERIES_INTRADAY'
+    
+    def _get_time_series_key(self, data: dict) -> Optional[str]:
+        """Find the time series key in the response."""
+        for key in data.keys():
+            if 'Time Series' in key:
+                return key
+        return None
+    
+    def _parse_time_series(self, time_series: dict) -> Optional[pd.DataFrame]:
+        """Parse time series data into DataFrame."""
+        try:
+            df = pd.DataFrame.from_dict(time_series, orient='index')
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+            
+            # Standardize column names
+            column_mapping = {}
+            for col in df.columns:
+                if 'open' in col.lower():
+                    column_mapping[col] = 'Open'
+                elif 'high' in col.lower():
+                    column_mapping[col] = 'High'
+                elif 'low' in col.lower():
+                    column_mapping[col] = 'Low'
+                elif 'close' in col.lower():
+                    column_mapping[col] = 'Close'
+                elif 'volume' in col.lower():
+                    column_mapping[col] = 'Volume'
+            
+            df = df.rename(columns=column_mapping)
+            
+            # Convert to numeric
+            for col in ['Open', 'High', 'Low', 'Close', 'Volume']:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            return df
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing Alpha Vantage data: {e}")
+            return None
+
+
+class TwelveDataSource(DataSource):
+    """Twelve Data source - excellent coverage for stocks, forex, crypto, indices."""
+    
+    def __init__(self):
+        config = DataSourceConfig(
+            name="twelve_data",
+            priority=2,
+            rate_limit=1.0,  # 8 requests per minute for free tier
+            max_retries=3,
+            timeout=30.0,
+            supports_batch=True,
+            max_symbols_per_request=8,
+            asset_types=["stock", "forex", "crypto", "index", "etf"]
+        )
+        super().__init__(config)
+        self.api_key = os.getenv('TWELVE_DATA_API_KEY', 'demo')
+        self.base_url = "https://api.twelvedata.com"
+    
+    def transform_symbol(self, symbol: str, asset_type: str = None) -> str:
+        """Transform symbol for Twelve Data format."""
+        # Twelve Data forex format (use slash format)
+        if "=X" in symbol:
+            base_symbol = symbol.replace("=X", "")
+            if len(base_symbol) == 6:  # EURUSD -> EUR/USD
+                return f"{base_symbol[:3]}/{base_symbol[3:]}"
+        
+        # Twelve Data crypto format (no dash)
+        if "-USD" in symbol:
+            return symbol.replace("-USD", "USD")
+        
+        return symbol
+    
+    def fetch_data(self, symbol: str, start_date: datetime, end_date: datetime,
+                   interval: str = "1d", **kwargs) -> Optional[pd.DataFrame]:
+        """Fetch data from Twelve Data."""
+        try:
+            self._rate_limit()
+            
+            # Transform symbol to Twelve Data format
+            asset_type = kwargs.get('asset_type')
+            transformed_symbol = self.transform_symbol(symbol, asset_type)
+            
+            params = {
+                'symbol': transformed_symbol,
+                'interval': self._map_interval(interval),
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d'),
+                'apikey': self.api_key,
+                'format': 'JSON',
+                'outputsize': 5000
+            }
+            
+            url = f"{self.base_url}/time_series"
+            response = self.session.get(url, params=params, timeout=self.config.timeout)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if 'code' in data and data['code'] != 200:
+                self.logger.error(f"Twelve Data error: {data.get('message', 'Unknown error')}")
+                return None
+            
+            if 'values' not in data:
+                self.logger.warning(f"No data returned for {symbol}")
+                return None
+            
+            return self._parse_twelve_data(data['values'])
+            
+        except Exception as e:
+            self.logger.error(f"Error fetching {symbol} from Twelve Data: {e}")
+            return None
+    
+    def _map_interval(self, interval: str) -> str:
+        """Map internal intervals to Twelve Data intervals."""
+        mapping = {
+            '1min': '1min',
+            '5min': '5min',
+            '15min': '15min',
+            '30min': '30min',
+            '1h': '1h',
+            '4h': '4h',
+            '1d': '1day',
+            '1wk': '1week'
+        }
+        return mapping.get(interval, '1day')
+    
+    def _parse_twelve_data(self, values: list) -> Optional[pd.DataFrame]:
+        """Parse Twelve Data values into DataFrame."""
+        try:
+            df = pd.DataFrame(values)
+            df['datetime'] = pd.to_datetime(df['datetime'])
+            df = df.set_index('datetime')
+            
+            # Convert to numeric and rename columns
+            for col in ['open', 'high', 'low', 'close', 'volume']:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            df = df.rename(columns={
+                'open': 'Open',
+                'high': 'High',
+                'low': 'Low',
+                'close': 'Close',
+                'volume': 'Volume'
+            })
+            
+            # Select standard columns
+            columns = ['Open', 'High', 'Low', 'Close']
+            if 'Volume' in df.columns:
+                columns.append('Volume')
+            
+            df = df[columns]
+            return df.sort_index()
+            
+        except Exception as e:
+            self.logger.error(f"Error parsing Twelve Data: {e}")
+            return None
 
 
 # Import required modules

@@ -241,7 +241,7 @@ class DetailedPortfolioReporter:
             
             if order_type == 'buy':
                 max_quantity = int(current_equity * 0.3 / price)  # Max 30% of equity
-                quantity = np.random.randint(1, max(1, max_quantity))
+                quantity = np.random.randint(1, max(2, max_quantity + 1))  # Ensure high > low
                 cost = quantity * price
                 fees = cost * 0.001  # 0.1% fees
                 current_equity -= (cost + fees)
@@ -330,7 +330,7 @@ class DetailedPortfolioReporter:
 <head>
     <meta charset="UTF-8">
     <title>Portfolio Analysis: {portfolio_config['name']}</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js" onerror="console.error('Failed to load Plotly from CDN'); document.querySelectorAll('.chart-container').forEach(el => el.innerHTML = '<div style=\\'text-align:center;padding:50px;color:#666;\\'>Chart loading failed. Please check your internet connection.</div>')"></script>
     <style>
         body {{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f5f5f5;}}
         .container {{max-width: 1400px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;}}
@@ -600,11 +600,24 @@ class DetailedPortfolioReporter:
         
         // Generate charts for each asset
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if Plotly is available
+            if (typeof Plotly === 'undefined') {
+                console.error('Plotly not loaded');
+                document.querySelectorAll('.chart-container').forEach(el => {
+                    el.innerHTML = '<div style="text-align:center;padding:50px;color:#666;">Charts unavailable - Plotly library not loaded</div>';
+                });
+                return;
+            }
+            
+            try {
 """
 
         # Add chart data and rendering for each asset
         for symbol, asset_info in assets_data.items():
             data = asset_info['data']
+            
+            # Create safe JavaScript variable name
+            safe_symbol = symbol.replace('=', '_').replace('-', '_').replace('/', '_').replace('.', '_')
             
             # Prepare chart data
             equity_dates = [point['date'] for point in data['equity_curve']]
@@ -613,7 +626,7 @@ class DetailedPortfolioReporter:
             
             html += f"""
             // Chart for {symbol}
-            const equityTrace_{symbol} = {{
+            const equityTrace_{safe_symbol} = {{
                 x: {json.dumps(equity_dates)},
                 y: {json.dumps(equity_values)},
                 type: 'scatter',
@@ -622,16 +635,16 @@ class DetailedPortfolioReporter:
                 line: {{color: '#007bff', width: 2}}
             }};
             
-            const benchmarkTrace_{symbol} = {{
+            const benchmarkTrace_{safe_symbol} = {{
                 x: {json.dumps(equity_dates)},
                 y: {json.dumps(benchmark_values)},
                 type: 'scatter',
                 mode: 'lines',
-                name: 'Benchmark (SPY)',
+                name: 'Benchmark',
                 line: {{color: '#6c757d', width: 2, dash: 'dash'}}
             }};
             
-            const layout_{symbol} = {{
+            const layout_{safe_symbol} = {{
                 title: '{symbol} - Equity Curve vs Benchmark',
                 xaxis: {{title: 'Date'}},
                 yaxis: {{title: 'Portfolio Value ($)'}},
@@ -639,10 +652,16 @@ class DetailedPortfolioReporter:
                 margin: {{l: 60, r: 30, t: 60, b: 60}}
             }};
             
-            Plotly.newPlot('chart-{symbol}', [equityTrace_{symbol}, benchmarkTrace_{symbol}], layout_{symbol}, {{responsive: true}});
+            Plotly.newPlot('chart-{symbol}', [equityTrace_{safe_symbol}, benchmarkTrace_{safe_symbol}], layout_{safe_symbol}, {{responsive: true}});
 """
 
         html += """
+            } catch (error) {
+                console.error('Error generating charts:', error);
+                document.querySelectorAll('.chart-container').forEach(el => {
+                    el.innerHTML = '<div style="text-align:center;padding:50px;color:#666;">Chart generation failed: ' + error.message + '</div>';
+                });
+            }
         });
     </script>
 </body>

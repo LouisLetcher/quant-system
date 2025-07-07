@@ -1,0 +1,55 @@
+{
+  "crypto": {
+    "name": "Crypto Portfolio",
+    "description": "Major cryptocurrency trading portfolio",
+    "asset_type": "crypto",
+    "symbols": [
+      "BTC-USD",
+      "ETH-USD",
+      "ADA-USD",
+      "SOL-USD",
+      "DOT-USD",
+      "MATIC-USD",
+      "AVAX-USD",
+      "LINK-USD",
+      "ATOM-USD",
+      "ALGO-USD"
+    ],
+    "data_sources": {
+      "primary": ["bybit", "polygon", "twelve_data"],
+      "fallback": ["alpha_vantage", "tiingo", "yahoo_finance"],
+      "excluded": ["finnhub"]
+    },
+    "initial_capital": 10000,
+    "commission": 0.001,
+    "slippage": 0.002,
+    "max_position_size": 0.15,
+    "risk_per_trade": 0.03,
+    "stop_loss": 0.05,
+    "take_profit": 0.10,
+    "currency": "USD",
+    "leverage": 10,
+    "intervals": ["1d", "4h", "1h", "15min", "5min"],
+    "risk_profile": "high",
+    "target_return": 0.30,
+    "benchmark": "BTC-USD",
+    "allocation_method": "market_cap_weighted",
+    "rebalance_frequency": "weekly",
+    "metadata": {
+      "created_date": "2025-01-07",
+      "asset_classes": ["cryptocurrency"],
+      "regions": ["global"],
+      "currency_exposure": ["USD", "BTC", "ETH"],
+      "best_data_coverage": "2017-present",
+      "recommended_timeframes": ["1d", "4h", "1h", "15min"],
+      "data_quality": "excellent",
+      "market_hours": "24/7",
+      "volatility": "very_high"
+    },
+    "optimization": {
+      "metric": "sortino_ratio",
+      "lookback_period": 180,
+      "walk_forward": true
+    }
+  }
+}

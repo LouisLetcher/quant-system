@@ -1,0 +1,57 @@
+{
+  "commodities": {
+    "name": "Commodities Portfolio",
+    "description": "Diversified commodities exposure including precious metals, energy, and agriculture",
+    "asset_type": "commodity",
+    "symbols": [
+      "GLD",
+      "SLV",
+      "USO",
+      "UNG",
+      "DBA",
+      "DBC",
+      "PDBC",
+      "IAU",
+      "PALL",
+      "CORN",
+      "WEAT",
+      "SOYB"
+    ],
+    "data_sources": {
+      "primary": ["polygon", "alpha_vantage", "twelve_data"],
+      "fallback": ["yahoo_finance", "tiingo", "pandas_datareader"],
+      "excluded": ["bybit"]
+    },
+    "initial_capital": 10000,
+    "commission": 0.002,
+    "slippage": 0.001,
+    "max_position_size": 0.12,
+    "risk_per_trade": 0.025,
+    "stop_loss": 0.03,
+    "take_profit": 0.06,
+    "currency": "USD",
+    "leverage": 1,
+    "intervals": ["1d", "1h", "4h"],
+    "risk_profile": "moderate_aggressive",
+    "target_return": 0.12,
+    "benchmark": "DBC",
+    "allocation_method": "equal_weight",
+    "rebalance_frequency": "monthly",
+    "metadata": {
+      "created_date": "2025-01-07",
+      "asset_classes": ["commodities", "precious_metals", "energy", "agriculture"],
+      "regions": ["global"],
+      "currency_exposure": ["USD"],
+      "best_data_coverage": "2006-present",
+      "recommended_timeframes": ["1d", "4h", "1h"],
+      "data_quality": "good",
+      "market_hours": "varies by commodity",
+      "inflation_hedge": true
+    },
+    "optimization": {
+      "metric": "sharpe_ratio",
+      "lookback_period": 252,
+      "walk_forward": false
+    }
+  }
+}
