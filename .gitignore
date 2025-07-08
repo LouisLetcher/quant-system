@@ -60,6 +60,8 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pytest_cache/
+.cache/
 .mypy_cache/
 .dmypy.json
 dmypy.json

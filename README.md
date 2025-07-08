@@ -1,501 +1,374 @@
-# 🚀 Quant Trading System - Unified Architecture
+# 🚀 Quantitative Analysis System
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
-[![Poetry](https://img.shields.io/badge/Poetry-Package%20Manager-1E293B)](https://python-poetry.org/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Architecture: Unified](https://img.shields.io/badge/Architecture-Unified-green.svg)](#-architecture-overview)
+A comprehensive, production-ready quantitative analysis system with multi-asset support, advanced portfolio optimization, and extensive backtesting capabilities.
 
-A comprehensive quantitative trading system with 32+ strategies, 6+ data sources, and intelligent multi-asset portfolio analysis. Features automatic symbol transformation, quarterly report organization, and dynamic strategy discovery.
+## ✨ Features
 
-## 🌟 Latest Updates
+### 📊 **Multi-Asset Trading Support**
+- **Stocks**: Individual stocks, ETFs, indices (5 specialized TraderFox portfolios)
+- **Forex**: 72+ major, minor, and exotic currency pairs
+- **Crypto**: 220+ Bybit perpetual futures with real-time data
+- **Commodities**: 46+ CFD/rolling futures contracts  
+- **Bonds**: 30+ government and corporate bond ETFs
+- **Indices**: 114+ global country and sector ETFs
 
-### ✅ **32+ Trading Strategies**
-All strategies dynamically discovered and tested automatically across all portfolios!
+### 🌐 **Multiple Data Sources**
+- **Yahoo Finance** (Free, no API key required)
+- **Alpha Vantage** (Stock/Forex/Crypto data)
+- **Twelve Data** (Multi-asset financial data)
+- **Polygon.io** (Real-time market data)
+- **Tiingo** (Stock and ETF data)
+- **Finnhub** (Market data)
+- **Bybit** (Crypto derivatives)
+- **Pandas DataReader** (Economic data)
 
-### ✅ **6+ Premium Data Sources** 
-- **Polygon.io**, **Alpha Vantage**, **Twelve Data**, **Tiingo**, **Finnhub**, **Bybit**
-- **Automatic Symbol Transformation** per data source
-- **Smart Fallback System** with error recovery
+### 🧠 **Advanced Portfolio Management**
+- **5 Specialized TraderFox Portfolios**:
+  - German DAX/MDAX stocks (130 symbols)
+  - US Technology sector (275 symbols)
+  - US Healthcare/Biotech (450 symbols)
+  - US Financials (185 symbols)
+  - European blue chips (95 symbols)
 
-### ✅ **Fixed Interactive Charts**
-- **Plotly Integration** with error handling
-- **Safe JavaScript Variables** for symbols with special characters
-- **CDN Fallback Protection** for offline scenarios
+### ⚡ **Unified CLI System**
+All functionality accessible through a single command interface:
 
-### ✅ **Quarterly Report Organization**
-- **Automatic Organization** by year/quarter structure
-- **Single Report Per Quarter** per portfolio
-- **Git Tracking** of organized reports
+```bash
+# Portfolio Testing
+poetry run python -m src.cli.unified_cli portfolio test-all --portfolio config/portfolios/crypto.json --metric sharpe_ratio --period max --test-timeframes --open-browser
 
-## ✨ Core Features
+# Data Management
+poetry run python -m src.cli.unified_cli data download --symbols BTC-USD,ETH-USD --start-date 2023-01-01 --source bybit
 
-### 🌐 **Multi-Source Data Management**
-- **6+ Premium Sources**: Polygon, Alpha Vantage, Twelve Data, Tiingo, Finnhub, Bybit
-- **Symbol Transformation**: Smart format conversion (EURUSD=X ↔ EUR/USD ↔ EURUSD)
-- **Intelligent Routing**: Asset type detection for optimal source selection
-- **Advanced Caching**: SQLite-based with TTL and compression
+# Cache Management
+poetry run python -m src.cli.unified_cli cache stats
+poetry run python -m src.cli.unified_cli cache clear
 
-### 🎯 **Complete Strategy Suite (32+ Strategies)**
-- **Trend Following**: Index Trend, Moving Average systems, Confident Trend
-- **Mean Reversion**: RSI, Bollinger Bands, Simple Mean Reversion  
-- **Momentum**: MACD, MFI, Larry Williams %R
-- **Breakout**: Donchian Channels, Turtle Trading, Weekly Breakout
-- **Pattern Recognition**: Bullish Engulfing, Inside Day, Kings Counting
-- **Calendar Effects**: Turnaround Monday/Tuesday, Russell Rebalancing
-- **And 20+ more strategies automatically discovered!**
+# Report Generation
+poetry run python -m src.cli.unified_cli reports organize
+```
 
-### 📊 **5 Pre-Built Asset Portfolios**
-- **💱 Forex Portfolio**: 16 major pairs with optimized forex data sources
-- **₿ Crypto Portfolio**: 10 major cryptocurrencies with Bybit integration
-- **🌍 World Indices**: 8 global ETFs with broad market exposure
-- **🥇 Commodities**: 12 commodity ETFs including metals, energy, agriculture
-- **🏛️ Bonds Portfolio**: 12 bond ETFs with government and corporate exposure
-- **Comprehensive Analysis**: 50+ performance metrics
+### 🔄 **Smart Symbol Transformation**
+Automatic symbol format conversion between data sources:
+- Yahoo Finance: `EURUSD=X`
+- Twelve Data: `EUR/USD`
+- Bybit: `BTCUSDT`
+- Polygon: `BTC-USD`
 
-### ⚡ **High-Performance Backtesting**
-- **Parallel Processing**: 4-8x faster with multi-core support
-- **Memory Optimization**: Handle thousands of assets efficiently
-- **Incremental Updates**: Only process new data
-- **Batch Operations**: Efficient multi-strategy testing
-- **Smart Caching**: Avoid redundant calculations
+### 📈 **Interactive Reporting**
+- **HTML Portfolio Reports** with Plotly charts
+- **Performance Analytics** with risk metrics
+- **Comparison Analysis** across strategies and timeframes
+- **Auto-opening browser** for immediate visualization
 
-### 🪙 **Crypto Futures Trading**
-- **Bybit Integration**: Professional-grade futures trading support
-- **Leverage Support**: Up to 100x leverage for crypto futures
-- **Real-time Data**: Sub-second latency for live trading
-- **Risk Management**: Built-in position sizing and stop-losses
-- **Multiple Timeframes**: From 1-minute to monthly data
-
-### 🎯 **Advanced Analytics**
-- **50+ Risk Metrics**: Comprehensive performance analysis
-- **Portfolio Optimization**: Modern portfolio theory implementation
-- **Strategy Comparison**: Side-by-side performance analysis
-- **Interactive Reports**: HTML reports with Plotly visualizations
-- **Investment Recommendations**: AI-driven portfolio suggestions
+### 🐳 **Docker Support**
+Complete containerization with docker-compose:
+- Production deployment
+- Development environment
+- Testing environment
+- Jupyter Lab for analysis
+- API service
+- Database (PostgreSQL)
+- Caching (Redis)
+- Monitoring (Prometheus + Grafana)
 
 ## 🚀 Quick Start
 
-### 1. Installation
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/quant-system.git
-cd quant-system
+### Prerequisites
+- Python 3.12+
+- Poetry
+- Docker (optional)
 
-# Install dependencies
-poetry install
+### Installation
 
-# Activate environment
-poetry shell
-```
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/your-username/quant-system.git
+   cd quant-system
+   ```
 
-### 2. Quick Start - Most Used Commands
+2. **Install dependencies**:
+   ```bash
+   poetry install
+   ```
 
-#### 🚀 **Test Forex Portfolio (16 pairs, 32+ strategies)**
+3. **Set up environment variables**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys
+   ```
+
+4. **Test the system**:
+   ```bash
+   poetry run python -m src.cli.unified_cli cache stats
+   ```
+
+### Example Usage
+
+**Test a cryptocurrency portfolio:**
 ```bash
 poetry run python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/portfolios/forex.json \
+  --portfolio config/portfolios/crypto.json \
   --metric sharpe_ratio \
   --period max \
   --test-timeframes \
   --open-browser
 ```
 
-#### ₿ **Test Crypto Portfolio (10 coins, 32+ strategies)**
+**Download forex data:**
+```bash
+poetry run python -m src.cli.unified_cli data download \
+  --symbols EURUSD=X,GBPUSD=X \
+  --start-date 2023-01-01 \
+  --end-date 2024-01-01 \
+  --source twelve_data
+```
+
+**Analyze German DAX stocks:**
 ```bash
 poetry run python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/portfolios/crypto.json \
+  --portfolio config/portfolios/stocks_traderfox_dax.json \
   --metric sortino_ratio \
-  --period max \
-  --test-timeframes \
-  --open-browser
+  --period 1y \
+  --test-timeframes
 ```
 
-#### 🌍 **Test World Indices Portfolio (8 ETFs, 32+ strategies)**
-```bash
-poetry run python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/portfolios/world_indices.json \
-  --metric profit_factor \
-  --period max \
-  --test-timeframes \
-  --open-browser
-```
-
-#### 📊 **Organize and Manage Reports**
-```bash
-# Organize existing reports into quarterly structure
-poetry run python -m src.cli.unified_cli reports organize
-
-# List quarterly reports
-poetry run python -m src.cli.unified_cli reports list
-
-# Get latest report for portfolio
-poetry run python -m src.cli.unified_cli reports latest "Forex Portfolio"
-```
-
-### 3. Crypto Futures Trading
-```bash
-# Set up Bybit API (optional, uses demo data otherwise)
-export BYBIT_API_KEY="your_api_key"
-export BYBIT_API_SECRET="your_api_secret"
-
-# Download crypto futures data
-python -m src.cli.unified_cli data download \
-    --symbols BTCUSDT ETHUSDT BNBUSDT \
-    --futures \
-    --start-date 2023-01-01 \
-    --end-date 2023-12-31
-
-# Backtest crypto futures strategies
-python -m src.cli.unified_cli backtest single \
-    --symbol BTCUSDT \
-    --strategy rsi \
-    --futures \
-    --start-date 2023-01-01 \
-    --end-date 2023-12-31
-```
-
-### 4. Portfolio Investment Planning
-```bash
-# Generate investment plan with capital allocation
-python -m src.cli.unified_cli portfolio plan \
-    --portfolios portfolio_results.json \
-    --capital 100000 \
-    --risk-tolerance moderate \
-    --output investment_plan.json
-```
-
-## 📊 Performance Benchmarks
-
-| Feature | Before Restructuring | After Restructuring | Improvement |
-|---------|---------------------|---------------------|-------------|
-| **Data Fetching** | 5-15 seconds | 0.5-2 seconds | **10x faster** |
-| **Backtesting** | Sequential | Parallel | **4-8x faster** |
-| **Memory Usage** | High overhead | Optimized | **50% reduction** |
-| **Code Duplication** | ~1,500 lines | Minimal | **60% reduction** |
-| **Cache Hit Rate** | 0% (no caching) | 80%+ | **New feature** |
-
-## 🏗️ Architecture Overview
+## 📂 Project Structure
 
 ```
-src/core/                    # Unified Core Components
-├── data_manager.py         # Multi-source data with Bybit integration
-├── cache_manager.py        # SQLite-based advanced caching
-├── backtest_engine.py      # Parallel backtesting engine
-├── result_analyzer.py      # Comprehensive metrics calculator
-└── portfolio_manager.py    # Investment prioritization system
-
-src/cli/                     # Command Line Interface
-├── unified_cli.py          # Main CLI with all functionality
-└── main.py                 # Entry point (redirects to unified CLI)
-
-examples/                    # Usage Examples
-├── comprehensive_example.py # Complete system demonstration
-└── output/                 # Generated reports and results
-
-docs/                       # Documentation
-├── API.md                  # API reference
-├── INSTALLATION.md         # Setup instructions
-├── USAGE.md               # Usage examples
-└── CONTRIBUTING.md        # Development guidelines
+quant-system/
+├── src/
+│   ├── core/                 # Unified system core
+│   │   ├── data_manager.py   # Multi-source data management
+│   │   ├── backtest_engine.py # Unified backtesting
+│   │   └── cache_manager.py  # Intelligent caching
+│   ├── cli/                  # Command-line interface
+│   │   └── unified_cli.py    # Main CLI entry point
+│   ├── reporting/            # Report generation
+│   ├── portfolio/            # Portfolio optimization
+│   └── utils/                # Utilities
+├── config/
+│   ├── portfolios/           # Portfolio configurations
+│   │   ├── crypto.json       # Crypto futures
+│   │   ├── forex.json        # Currency pairs
+│   │   ├── bonds.json        # Fixed income
+│   │   ├── commodities.json  # Commodity CFDs
+│   │   ├── indices.json      # Global indices
+│   │   └── stocks_traderfox_*.json # TraderFox stocks
+│   └── optimization_config.json
+├── docs/                     # Documentation
+├── tests/                    # Test suite
+├── docker-compose.yml        # Container orchestration
+├── Dockerfile               # Container definition
+└── pyproject.toml           # Dependencies
 ```
-
-## 📈 Portfolio Investment Features
-
-### **Risk-Adjusted Scoring System**
-- **Return Score**: Total return, annualized return, Sharpe ratio, win rate
-- **Risk Score**: Max drawdown, volatility, VaR, Sortino ratio
-- **Overall Score**: Weighted combination optimized for investment decisions
-
-### **Investment Prioritization**
-```python
-from src.core import PortfolioManager
-
-# Analyze multiple portfolios
-portfolio_manager = PortfolioManager()
-analysis = portfolio_manager.analyze_portfolios({
-    'Conservative Growth': conservative_results,
-    'Aggressive Tech': tech_results,
-    'Crypto Futures': crypto_results
-})
-
-# Get investment recommendations
-for rec in analysis['investment_recommendations']:
-    print(f"{rec['priority_rank']}. {rec['portfolio_name']}")
-    print(f"   Allocation: {rec['recommended_allocation_pct']:.1f}%")
-    print(f"   Expected Return: {rec['expected_annual_return']:.2f}%")
-    print(f"   Risk Level: {rec['risk_category']}")
-```
-
-### **Capital Allocation Planning**
-- **Risk Tolerance Matching**: Conservative, Moderate, Aggressive profiles
-- **Implementation Timeline**: Phased investment approach
-- **Risk Management Rules**: Stop-losses, position limits, rebalancing triggers
-- **Performance Monitoring**: Automated tracking and alerts
 
 ## 🔧 Configuration
 
-### **Environment Variables**
-```bash
-# Bybit API for crypto futures (optional)
-export BYBIT_API_KEY="your_api_key"
-export BYBIT_API_SECRET="your_api_secret"
-export BYBIT_TESTNET="false"  # Set to true for testing
+### Portfolio Configuration
+Each portfolio is defined in JSON format with:
+- **symbols**: List of trading instruments
+- **data_sources**: Primary and fallback data sources
+- **intervals**: Supported timeframes
+- **risk_parameters**: Position sizing and risk management
+- **optimization**: Strategy and metric preferences
 
-# Additional data sources (optional)
-export ALPHA_VANTAGE_API_KEY="your_alpha_vantage_key"
-export TWELVE_DATA_API_KEY="your_twelve_data_key"
-
-# Cache configuration
-export CACHE_SIZE_GB="10"
-export CACHE_TTL_HOURS="48"
+Example:
+```json
+{
+  "crypto": {
+    "name": "Crypto Portfolio",
+    "symbols": ["BTCUSDT", "ETHUSDT", ...],
+    "data_sources": {
+      "primary": ["bybit", "polygon", "twelve_data"],
+      "fallback": ["alpha_vantage", "yahoo_finance"]
+    },
+    "intervals": ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"],
+    "risk_profile": "high",
+    "leverage": 10
+  }
+}
 ```
 
-### **Cache Management**
+### Environment Variables
+Required API keys and configuration:
 ```bash
-# View cache statistics
-python -m src.cli.unified_cli cache stats
+# Data Sources
+ALPHA_VANTAGE_API_KEY=your_key
+TWELVE_DATA_API_KEY=your_key
+POLYGON_API_KEY=your_key
+BYBIT_API_KEY=your_key
+BYBIT_API_SECRET=your_secret
 
-# Clear old cache entries
-python -m src.cli.unified_cli cache clear --older-than 30
-
-# Clear specific cache types
-python -m src.cli.unified_cli cache clear --type data
+# System Configuration
+CACHE_ENABLED=true
+CACHE_DURATION_HOURS=24
 ```
 
-## 🎯 Use Cases
+## 🐳 Docker Deployment
 
-### **Professional Fund Management**
-- Analyze thousands of assets simultaneously
-- Generate investment recommendations with risk scoring
-- Create diversified portfolios with optimal allocation
-- Monitor performance with comprehensive risk metrics
+### Quick Start with Docker
+```bash
+# Run production system
+docker-compose up quant-system
 
-### **Crypto Futures Trading**
-- Access Bybit's professional trading platform
-- Implement leveraged strategies with risk management
-- Real-time data for algorithmic trading
-- Comprehensive backtesting on historical futures data
+# Run with full stack
+docker-compose --profile database --profile api --profile monitoring up
+```
 
-### **Quantitative Research**
-- Test complex multi-asset strategies
-- Optimize parameters across large datasets
-- Compare strategy performance across asset classes
-- Generate publication-ready research reports
+### Available Profiles
+- `dev`: Development environment
+- `test`: Testing environment  
+- `api`: Web API service
+- `database`: PostgreSQL database
+- `cache`: Redis caching
+- `monitoring`: Prometheus + Grafana
+- `jupyter`: Jupyter Lab analysis
 
-### **Individual Investors**
-- Get AI-driven portfolio recommendations
-- Understand risk-adjusted returns
-- Implement professional-grade strategies
-- Monitor portfolio performance automatically
+## 📊 Portfolio Portfolios
+
+### Crypto (220+ symbols)
+Bybit perpetual futures covering:
+- Major cryptocurrencies (BTC, ETH, etc.)
+- DeFi tokens
+- Layer 1/2 protocols
+- Meme coins
+- Emerging altcoins
+
+### Forex (72+ pairs)
+Complete currency coverage:
+- Major pairs (EUR/USD, GBP/USD, etc.)
+- Minor pairs (cross currencies)
+- Exotic pairs (emerging markets)
+
+### TraderFox Stocks (1000+ symbols)
+Research-based stock selection:
+- **German DAX**: SAP, Siemens, BMW, etc.
+- **US Tech**: FAANG, semiconductors, software
+- **US Healthcare**: Pharma, biotech, devices
+- **US Financials**: Banks, fintech, insurance
+- **European**: ASML, Nestlé, LVMH, etc.
+
+### Bonds (30+ ETFs)
+Fixed income diversification:
+- Government bonds (US, international)
+- Corporate bonds
+- TIPS (inflation-protected)
+- Municipal bonds
+
+### Commodities (46+ CFDs)
+Direct commodity exposure:
+- Precious metals (Gold, Silver, Platinum)
+- Energy (Oil, Natural Gas, Coal)
+- Agriculture (Wheat, Corn, Coffee)
+- Industrial metals (Copper, Aluminum)
+
+### Indices (114+ ETFs)
+Global market coverage:
+- Country-specific ETFs
+- Sector ETFs
+- Factor-based ETFs
+- Regional groupings
 
 ## 📚 Documentation
 
-- **[Installation Guide](docs/INSTALLATION.md)**: Detailed setup instructions
-- **[API Reference](docs/API.md)**: Complete API documentation
-- **[Usage Examples](docs/USAGE.md)**: Comprehensive usage guide
-- **[Contributing](docs/CONTRIBUTING.md)**: Development guidelines
-- **[Architecture](RESTRUCTURING_SUMMARY.md)**: System design overview
+- [Complete CLI Guide](docs/COMPLETE_CLI_GUIDE.md)
+- [Data Sources Guide](docs/DATA_SOURCES_GUIDE.md)
+- [Docker Guide](docs/DOCKER_GUIDE.md)
+- [Symbol Transformation Guide](docs/SYMBOL_TRANSFORMATION_GUIDE.md)
+- [System Summary](docs/FINAL_SYSTEM_SUMMARY.md)
 
-## 🧪 Testing
+## 🧪 Testing & Development
 
+### Testing Commands
 ```bash
-# Run comprehensive examples
-python examples/comprehensive_example.py
+# Run all tests with coverage
+pytest
 
-# Test data fetching
-python -m src.cli.unified_cli data sources
+# Run only unit tests
+pytest -m "not integration"
 
-# Test crypto futures (requires API key)
-python -m src.cli.unified_cli data symbols --asset-type crypto
+# Run only integration tests
+pytest -m "integration"
 
-# Run basic backtest
-python -m src.cli.unified_cli backtest single \
-    --symbol AAPL --strategy rsi \
-    --start-date 2023-01-01 --end-date 2023-12-31
+# Run tests with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_data_manager.py
+
+# Run tests in parallel
+pytest -n auto
 ```
 
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
-
-### **Development Setup**
+### Code Quality
 ```bash
-# Clone and setup development environment
-git clone https://github.com/yourusername/quant-system.git
-cd quant-system
+# Format code
+black .
+
+# Sort imports
+isort .
+
+# Lint code
+ruff check .
+
+# Type checking
+mypy src/
+
+# Security scanning
+bandit -r src/
+
+# Check for vulnerable dependencies
+safety check
+```
+
+### Development Setup
+```bash
+# Install dependencies with dev tools
 poetry install --with dev
+
+# Activate virtual environment
+poetry shell
 
 # Install pre-commit hooks
 pre-commit install
 
-# Run tests
-pytest tests/
-
-# Run linting
-ruff check src/
-black src/
+# Build package
+poetry build
 ```
 
-## 📊 Example Results
+### CI/CD Pipeline
+- **Automated testing** on every push/PR
+- **Code quality checks** (linting, formatting, types)
+- **Security scanning** (Bandit, Safety)
+- **Coverage reporting** (minimum 80%)
+- **Docker image building**
+- **Automated releases** on tags
 
-### **Portfolio Analysis Output**
-```
-Portfolio Rankings:
-==================
+## 🤝 Contributing
 
-1. Aggressive Tech
-   Overall Score: 85.2/100
-   Average Return: 24.8%
-   Sharpe Ratio: 1.45
-   Risk Category: Moderate
-   Max Drawdown: -12.3%
-
-2. Conservative Growth  
-   Overall Score: 78.9/100
-   Average Return: 12.4%
-   Sharpe Ratio: 1.28
-   Risk Category: Conservative
-   Max Drawdown: -6.7%
-
-Investment Recommendations:
-==========================
-
-1. Aggressive Tech
-   Recommended Allocation: 35.0%
-   Expected Return: 24.8%
-   Risk Level: Moderate
-   Confidence Score: 87.3/100
-```
-
-## 🛡️ Risk Management
-
-### **Built-in Safety Features**
-- **Position Sizing**: Automatic position sizing based on risk tolerance
-- **Stop Losses**: Configurable stop-loss rules per strategy
-- **Drawdown Limits**: Portfolio-level drawdown protection
-- **Correlation Monitoring**: Automatic diversification analysis
-- **Leverage Controls**: Maximum leverage limits for futures trading
-
-### **Risk Metrics**
-- **Value at Risk (VaR)**: 95% and 99% confidence intervals
-- **Conditional VaR**: Expected shortfall analysis
-- **Maximum Drawdown**: Peak-to-trough analysis
-- **Sharpe Ratio**: Risk-adjusted return measurement
-- **Sortino Ratio**: Downside deviation focus
-- **Calmar Ratio**: Return vs maximum drawdown
-
-## 🌟 What's New in v2.0
-
-✅ **Unified Architecture**: Eliminated 60% of duplicate code  
-✅ **Bybit Integration**: Professional crypto futures trading  
-✅ **Portfolio Prioritization**: AI-driven investment recommendations  
-✅ **10x Performance**: Advanced caching and parallel processing  
-✅ **Risk Management**: Comprehensive risk analysis tools  
-✅ **Professional CLI**: Single interface for all operations  
-
-## 📊 CLI Command Reference
-
-### **Data Management**
-```bash
-# Download market data
-python -m src.cli.unified_cli data download --symbols AAPL MSFT --start-date 2023-01-01 --end-date 2023-12-31
-
-# Show available data sources
-python -m src.cli.unified_cli data sources
-
-# List available symbols
-python -m src.cli.unified_cli data symbols --asset-type crypto
-```
-
-### **Backtesting**
-```bash
-# Single backtest
-python -m src.cli.unified_cli backtest single --symbol AAPL --strategy rsi --start-date 2023-01-01 --end-date 2023-12-31
-
-# Batch backtests
-python -m src.cli.unified_cli backtest batch --symbols AAPL MSFT GOOGL --strategies rsi macd --start-date 2023-01-01 --end-date 2023-12-31
-```
-
-### **Portfolio Management**
-```bash
-# Portfolio backtest
-python -m src.cli.unified_cli portfolio backtest --symbols AAPL MSFT GOOGL --strategy rsi --start-date 2023-01-01 --end-date 2023-12-31
-
-# Compare portfolios
-python -m src.cli.unified_cli portfolio compare --portfolios portfolios.json --start-date 2023-01-01 --end-date 2023-12-31
-
-# Generate investment plan
-python -m src.cli.unified_cli portfolio plan --portfolios results.json --capital 100000 --risk-tolerance moderate
-```
-
-### **Cache Management**
-```bash
-# Show cache statistics
-python -m src.cli.unified_cli cache stats
-
-# Clear cache
-python -m src.cli.unified_cli cache clear --type data --older-than 30
-```
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📚 Complete Documentation
+## 🆘 Support
 
-### **🚀 Quick Reference**
-- **[Complete CLI Guide](docs/COMPLETE_CLI_GUIDE.md)** - All CLI commands, options, and examples
-- **[Data Sources Guide](docs/DATA_SOURCES_GUIDE.md)** - Multi-source data configuration
-- **[Symbol Transformation Guide](docs/SYMBOL_TRANSFORMATION_GUIDE.md)** - Symbol format conversion
+- **Documentation**: Check the `docs/` directory
+- **Issues**: Open a GitHub issue
+- **Discord**: Join our trading community
 
-### **🔧 Technical Guides**
-- **[Testing Guide](docs/TESTING_GUIDE.md)** - Comprehensive testing documentation
-- **[Docker Guide](docs/DOCKER_GUIDE.md)** - Container deployment instructions
-- **[Production Ready Guide](docs/PRODUCTION_READY.md)** - Production deployment guide
+## 🔗 Links
 
-### **📊 Analysis Features**
-- **32+ Trading Strategies** - Automatically discovered and tested
-- **5 Asset Class Portfolios** - Forex, Crypto, Stocks, Commodities, Bonds
-- **6+ Premium Data Sources** - Polygon, Alpha Vantage, Twelve Data, Tiingo, Finnhub, Bybit
-- **Interactive Reports** - Plotly charts with quarterly organization
-- **Performance Metrics** - Sharpe, Sortino, Profit Factor, Max Drawdown
-
-### **⚡ Key Commands Summary**
-
-```bash
-# Test all 32+ strategies on forex portfolio
-poetry run python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/portfolios/forex.json --metric sharpe_ratio --period max --test-timeframes --open-browser
-
-# Test crypto portfolio with Sortino ratio
-poetry run python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/portfolios/crypto.json --metric sortino_ratio --period max --test-timeframes --open-browser
-
-# Organize quarterly reports  
-poetry run python -m src.cli.unified_cli reports organize
-
-# View all available strategies and data sources
-poetry run python -m src.cli.unified_cli data sources
-```
-
-### **🌟 Latest Results**
-
-**Forex Portfolio (16 pairs, 32 strategies tested)**:
-1. **Weekly Breakout** (1.67 Sharpe) 
-2. **Inside Day** (1.64 Sharpe)
-3. **Stan Weinstein Stage 2** (1.64 Sharpe)
-4. **Linear Regression** (1.60 Sharpe)
-5. **Moving Average Crossover** (1.57 Sharpe)
-
-**All strategies tested with full historical data (2015-present) and proper benchmark comparisons!**
+- **Repository**: https://github.com/LouisLetcher/quant-system
+- **Documentation**: https://LouisLetcher.github.io/quant-system
+- **Docker Hub**: https://hub.docker.com/r/LouisLetcher/quant-system
 
 ---
 
-**Built with ❤️ for quantitative traders and investors worldwide.**
-
-## 🔗 Repository Links
-
-- **Issues**: [GitHub Issues](https://github.com/LouisLetcher/quant-system/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/LouisLetcher/quant-system/discussions)
-- **Latest Release**: [Releases](https://github.com/LouisLetcher/quant-system/releases)
+**⚡ Built for speed, designed for scale, optimized for profit.**
