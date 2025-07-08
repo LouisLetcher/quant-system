@@ -1,7 +1,7 @@
 {
   "bonds": {
     "name": "Bonds Portfolio",
-    "description": "Diversified fixed income portfolio with government and corporate bonds",
+    "description": "Comprehensive fixed income portfolio with US/international government bonds, corporate bonds, TIPS, and floating rate securities",
     "asset_type": "bond",
     "symbols": [
       "TLT",
@@ -15,7 +15,25 @@
       "AGG",
       "BND",
       "VGIT",
-      "VCIT"
+      "VCIT",
+      "GOVT",
+      "SCHO",
+      "IEI",
+      "SCHZ",
+      "BWX",
+      "IGOV",
+      "WIP",
+      "MUB",
+      "VMBS",
+      "VCSH",
+      "VCLT",
+      "VGSH",
+      "VGLT",
+      "EDV",
+      "ZROZ",
+      "FLOT",
+      "NEAR",
+      "JPST"
     ],
     "data_sources": {
       "primary": ["polygon", "alpha_vantage", "twelve_data"],
@@ -32,7 +50,7 @@
     "take_profit": 0.04,
     "currency": "USD",
     "leverage": 1,
-    "intervals": ["1d", "1h"],
+    "intervals": ["30m", "1h", "4h", "1d"],
     "risk_profile": "conservative",
     "target_return": 0.06,
     "benchmark": "AGG",
@@ -40,11 +58,11 @@
     "rebalance_frequency": "quarterly",
     "metadata": {
       "created_date": "2025-01-07",
-      "asset_classes": ["government_bonds", "corporate_bonds", "municipal_bonds", "treasury"],
-      "regions": ["usa", "global"],
+      "asset_classes": ["government_bonds", "corporate_bonds", "municipal_bonds", "treasury", "international_bonds", "tips", "short_term_bonds", "floating_rate"],
+      "regions": ["usa", "global", "international"],
       "currency_exposure": ["USD"],
       "best_data_coverage": "2003-present",
-      "recommended_timeframes": ["1d", "1h"],
+      "recommended_timeframes": ["30m", "1h", "4h", "1d"],
       "data_quality": "excellent",
       "market_hours": "9:30-16:00 EST",
       "interest_rate_sensitive": true
