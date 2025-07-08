@@ -15,7 +15,7 @@ pydantic = "^2.11"
 yfinance = "^0.2"
 yfinance-cache = "^0.7"
 pandas = "^2.2"
-numpy = "^2.2"
+numpy = "^1.24.0"
 matplotlib = "^3.10"
 jinja2 = "^3.1"
 sqlalchemy = "^2.0"
@@ -23,13 +23,33 @@ asyncpg = "^0.30"
 alembic = "^1.15"
 bayesian-optimization = "^2.0"
 backtesting = "^0.6"
+requests = "^2.31.0"
+scipy = "^1.11.0"
+scikit-learn = "^1.5.0"
+aiohttp = "^3.9.0"
+plotly = "^5.18.0"
+seaborn = "^0.13.0"
+tqdm = "^4.66.0"
+pytz = "^2024.1"
+python-dateutil = "^2.8.2"
+click = "^8.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3"
+pytest-cov = "^6.0"
+pytest-mock = "^3.14"
+pytest-asyncio = "^0.25"
+pytest-xdist = "^3.6"
 black = "^25.1"
 isort = "^6.0"
 pre-commit = "^4.2"
 ruff = "^0.11"
+mypy = "^1.13"
+coverage = "^7.6"
+bandit = "^1.7"
+safety = "^3.2"
+types-requests = "^2.31"
+types-python-dateutil = "^2.8"
 
 [tool.poetry.scripts]
 start = "uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
@@ -37,3 +57,96 @@ start = "uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+# Tool Configurations
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html:reports_output/coverage",
+    "--cov-report=xml:reports_output/coverage.xml",
+    "--cov-fail-under=80",
+    "-ra"
+]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:"
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "yfinance.*",
+    "backtesting.*",
+    "plotly.*",
+    "seaborn.*",
+    "bayesian_optimization.*"
+]
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["src"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "build", "dist"]
+skips = ["B101"]  # Skip assert_used test

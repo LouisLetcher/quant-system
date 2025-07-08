@@ -1,337 +1,374 @@
-# 📊 Quant Trading System
+# 🚀 Quantitative Analysis System
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
-[![Poetry](https://img.shields.io/badge/Poetry-Package%20Manager-1E293B)](https://python-poetry.org/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+A comprehensive, production-ready quantitative analysis system with multi-asset support, advanced portfolio optimization, and extensive backtesting capabilities.
 
-A comprehensive Python-based quantitative trading system for backtesting, optimizing, and analyzing algorithmic trading strategies with professional-grade reports.
+## ✨ Features
 
-## 📑 Table of Contents
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [Architecture](#-architecture)
-- [Tech Stack](#-tech-stack)
-- [Installation & Setup](#-installation--setup)
-- [Configuration](#-configuration)
-- [CLI Commands](#-cli-commands)
-- [Example Workflows](#-example-workflows)
-- [Code Quality](#-code-quality)
-- [Deployment](#-deployment)
-- [Troubleshooting](#-troubleshooting)
-- [License](#-license)
+### 📊 **Multi-Asset Trading Support**
+- **Stocks**: Individual stocks, ETFs, indices (5 specialized TraderFox portfolios)
+- **Forex**: 72+ major, minor, and exotic currency pairs
+- **Crypto**: 220+ Bybit perpetual futures with real-time data
+- **Commodities**: 46+ CFD/rolling futures contracts  
+- **Bonds**: 30+ government and corporate bond ETFs
+- **Indices**: 114+ global country and sector ETFs
 
-## 🔍 Overview
+### 🌐 **Multiple Data Sources**
+- **Yahoo Finance** (Free, no API key required)
+- **Alpha Vantage** (Stock/Forex/Crypto data)
+- **Twelve Data** (Multi-asset financial data)
+- **Polygon.io** (Real-time market data)
+- **Tiingo** (Stock and ETF data)
+- **Finnhub** (Market data)
+- **Bybit** (Crypto derivatives)
+- **Pandas DataReader** (Economic data)
 
-This Quant Trading System enables traders, quants, and financial analysts to:
+### 🧠 **Advanced Portfolio Management**
+- **5 Specialized TraderFox Portfolios**:
+  - German DAX/MDAX stocks (130 symbols)
+  - US Technology sector (275 symbols)
+  - US Healthcare/Biotech (450 symbols)
+  - US Financials (185 symbols)
+  - European blue chips (95 symbols)
 
-- Backtest trading strategies against historical market data
-- Optimize strategy parameters for maximum performance
-- Analyze performance with comprehensive metrics
-- Generate professional HTML reports with interactive charts
-- Run portfolio-level analysis across multiple assets
-- Find optimal combinations of strategies and timeframes
-- Fine-tune strategy parameters for best performance
+### ⚡ **Unified CLI System**
+All functionality accessible through a single command interface:
 
-Whether you're a professional trader or a financial enthusiast, this system provides the tools to validate and refine your trading strategies with rigorous quantitative analysis.
+```bash
+# Portfolio Testing
+poetry run python -m src.cli.unified_cli portfolio test-all --portfolio config/portfolios/crypto.json --metric sharpe_ratio --period max --test-timeframes --open-browser
 
-## 🔥 Key Features
+# Data Management
+poetry run python -m src.cli.unified_cli data download --symbols BTC-USD,ETH-USD --start-date 2023-01-01 --source bybit
 
-✅ **Data Acquisition & Management**
-- Fetch historical price data from Yahoo Finance (`yfinance`)
-- Intelligent caching system for efficient data retrieval
-- Data cleaning and preprocessing utilities
+# Cache Management
+poetry run python -m src.cli.unified_cli cache stats
+poetry run python -m src.cli.unified_cli cache clear
 
-✅ **Backtesting Engine**
-- Multiple built-in trading strategies
-- Custom strategy development framework
-- Commission modeling and slippage simulation
-- Multi-timeframe analysis
+# Report Generation
+poetry run python -m src.cli.unified_cli reports organize
+```
 
-✅ **Strategy Optimization**
-- Bayesian optimization for parameter tuning
-- Performance metric selection (Sharpe, profit factor, returns)
-- Hyperparameter search with constraints
-- Random and grid search optimization methods
+### 🔄 **Smart Symbol Transformation**
+Automatic symbol format conversion between data sources:
+- Yahoo Finance: `EURUSD=X`
+- Twelve Data: `EUR/USD`
+- Bybit: `BTCUSDT`
+- Polygon: `BTC-USD`
 
-✅ **Portfolio Analysis**
-- Multi-asset backtesting
-- Portfolio optimization
-- Risk assessment and drawdown analysis
-- Asset correlation analysis
-- Optimal strategy/timeframe selection
-- Parameter fine-tuning for best combinations
+### 📈 **Interactive Reporting**
+- **HTML Portfolio Reports** with Plotly charts
+- **Performance Analytics** with risk metrics
+- **Comparison Analysis** across strategies and timeframes
+- **Auto-opening browser** for immediate visualization
 
-✅ **Reporting & Visualization**
-- Interactive HTML reports with charts
-- Detailed portfolio reports with equity curves and drawdown charts
-- Trade analysis tables with win/loss highlighting
-- Performance metrics dashboards
-- Tabbed interface for easy navigation across assets
-- Parameter optimization reports
+### 🐳 **Docker Support**
+Complete containerization with docker-compose:
+- Production deployment
+- Development environment
+- Testing environment
+- Jupyter Lab for analysis
+- API service
+- Database (PostgreSQL)
+- Caching (Redis)
+- Monitoring (Prometheus + Grafana)
 
-✅ **API & Integration**
-- FastAPI backend for frontend integration
-- Database integration for storing results
-- Docker support for deployment
+## 🚀 Quick Start
 
-## 🏗 Architecture
+### Prerequisites
+- Python 3.12+
+- Poetry
+- Docker (optional)
+
+### Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/your-username/quant-system.git
+   cd quant-system
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   poetry install
+   ```
+
+3. **Set up environment variables**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys
+   ```
+
+4. **Test the system**:
+   ```bash
+   poetry run python -m src.cli.unified_cli cache stats
+   ```
+
+### Example Usage
+
+**Test a cryptocurrency portfolio:**
+```bash
+poetry run python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/crypto.json \
+  --metric sharpe_ratio \
+  --period max \
+  --test-timeframes \
+  --open-browser
+```
+
+**Download forex data:**
+```bash
+poetry run python -m src.cli.unified_cli data download \
+  --symbols EURUSD=X,GBPUSD=X \
+  --start-date 2023-01-01 \
+  --end-date 2024-01-01 \
+  --source twelve_data
+```
+
+**Analyze German DAX stocks:**
+```bash
+poetry run python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/stocks_traderfox_dax.json \
+  --metric sortino_ratio \
+  --period 1y \
+  --test-timeframes
+```
+
+## 📂 Project Structure
 
 ```
 quant-system/
 ├── src/
-│   ├── api/                # FastAPI endpoints
-│   ├── backtesting_engine/ # Backtesting functionality
-│   ├── cli/                # Command-line interface
-│   ├── data_scraper/       # Data acquisition modules
-│   ├── optimizer/          # Optimization algorithms
-│   ├── portfolio/          # Portfolio analysis modules
-│   ├── reports/            # Report generation & templates
-│   └── utils/              # Utility functions
-├── config/                 # Configuration files
-├── reports_output/         # Generated report output
-└── tests/                  # Test suites
+│   ├── core/                 # Unified system core
+│   │   ├── data_manager.py   # Multi-source data management
+│   │   ├── backtest_engine.py # Unified backtesting
+│   │   └── cache_manager.py  # Intelligent caching
+│   ├── cli/                  # Command-line interface
+│   │   └── unified_cli.py    # Main CLI entry point
+│   ├── reporting/            # Report generation
+│   ├── portfolio/            # Portfolio optimization
+│   └── utils/                # Utilities
+├── config/
+│   ├── portfolios/           # Portfolio configurations
+│   │   ├── crypto.json       # Crypto futures
+│   │   ├── forex.json        # Currency pairs
+│   │   ├── bonds.json        # Fixed income
+│   │   ├── commodities.json  # Commodity CFDs
+│   │   ├── indices.json      # Global indices
+│   │   └── stocks_traderfox_*.json # TraderFox stocks
+│   └── optimization_config.json
+├── docs/                     # Documentation
+├── tests/                    # Test suite
+├── docker-compose.yml        # Container orchestration
+├── Dockerfile               # Container definition
+└── pyproject.toml           # Dependencies
 ```
 
-## 🛠 Tech Stack
-
-- **FastAPI**: Backend API framework for frontend integration
-- **Backtesting.py**: Core backtesting engine
-- **yfinance**: Market data acquisition
-- **Bayesian Optimization**: Parameter tuning algorithms
-- **PostgreSQL/MongoDB**: Data storage options
-- **Jinja2 + Chart.js**: HTML report generation with interactive charts
-- **Docker**: Containerization for deployment
-- **Poetry**: Dependency management
-- **Pandas & NumPy**: Data manipulation and analysis
-- **Matplotlib**: Visualization for equity curves and drawdowns
-
-## 🚀 Installation & Setup
-
-### Prerequisites
-- Python 3.8+
-- Poetry package manager
-- Git
-
-### 1️⃣ Install Poetry (if not already installed)
-```bash
-pip install poetry
-```
-
-### 2️⃣ Clone Repository
-```bash
-git clone https://github.com/yourusername/quant-system.git
-cd quant-system
-```
-
-### 3️⃣ Install Dependencies
-```bash
-poetry install
-```
-
-### 4️⃣ Activate Virtual Environment
-```bash
-poetry shell
-```
-
-## ⚙️ Configuration
+## 🔧 Configuration
 
 ### Portfolio Configuration
-Create `config/assets_config.json` with your portfolio settings:
+Each portfolio is defined in JSON format with:
+- **symbols**: List of trading instruments
+- **data_sources**: Primary and fallback data sources
+- **intervals**: Supported timeframes
+- **risk_parameters**: Position sizing and risk management
+- **optimization**: Strategy and metric preferences
 
+Example:
 ```json
 {
-    "portfolios": {
-        "tech_stocks": {
-            "description": "Technology sector stocks",
-            "assets": [
-                {
-                    "ticker": "AAPL",
-                    "commission": 0.001,
-                    "initial_capital": 10000
-                },
-                {
-                    "ticker": "MSFT",
-                    "commission": 0.001,
-                    "initial_capital": 10000
-                }
-            ]
-        }
-    }
+  "crypto": {
+    "name": "Crypto Portfolio",
+    "symbols": ["BTCUSDT", "ETHUSDT", ...],
+    "data_sources": {
+      "primary": ["bybit", "polygon", "twelve_data"],
+      "fallback": ["alpha_vantage", "yahoo_finance"]
+    },
+    "intervals": ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"],
+    "risk_profile": "high",
+    "leverage": 10
+  }
 }
 ```
 
-## 🧪 CLI Commands
-
-### Strategy Backtesting
-
-#### Single Strategy Backtest
+### Environment Variables
+Required API keys and configuration:
 ```bash
-poetry run python -m src.cli.main backtest --strategy mean_reversion --ticker AAPL --period max
+# Data Sources
+ALPHA_VANTAGE_API_KEY=your_key
+TWELVE_DATA_API_KEY=your_key
+POLYGON_API_KEY=your_key
+BYBIT_API_KEY=your_key
+BYBIT_API_SECRET=your_secret
+
+# System Configuration
+CACHE_ENABLED=true
+CACHE_DURATION_HOURS=24
 ```
 
-#### Test All Available Strategies on a Single Asset
+## 🐳 Docker Deployment
+
+### Quick Start with Docker
 ```bash
-poetry run python -m src.cli.main all-strategies --ticker TSLA --period max --metric profit_factor
+# Run production system
+docker-compose up quant-system
+
+# Run with full stack
+docker-compose --profile database --profile api --profile monitoring up
 ```
 
-#### Backtest a Portfolio with All Strategies
+### Available Profiles
+- `dev`: Development environment
+- `test`: Testing environment  
+- `api`: Web API service
+- `database`: PostgreSQL database
+- `cache`: Redis caching
+- `monitoring`: Prometheus + Grafana
+- `jupyter`: Jupyter Lab analysis
+
+## 📊 Portfolio Portfolios
+
+### Crypto (220+ symbols)
+Bybit perpetual futures covering:
+- Major cryptocurrencies (BTC, ETH, etc.)
+- DeFi tokens
+- Layer 1/2 protocols
+- Meme coins
+- Emerging altcoins
+
+### Forex (72+ pairs)
+Complete currency coverage:
+- Major pairs (EUR/USD, GBP/USD, etc.)
+- Minor pairs (cross currencies)
+- Exotic pairs (emerging markets)
+
+### TraderFox Stocks (1000+ symbols)
+Research-based stock selection:
+- **German DAX**: SAP, Siemens, BMW, etc.
+- **US Tech**: FAANG, semiconductors, software
+- **US Healthcare**: Pharma, biotech, devices
+- **US Financials**: Banks, fintech, insurance
+- **European**: ASML, Nestlé, LVMH, etc.
+
+### Bonds (30+ ETFs)
+Fixed income diversification:
+- Government bonds (US, international)
+- Corporate bonds
+- TIPS (inflation-protected)
+- Municipal bonds
+
+### Commodities (46+ CFDs)
+Direct commodity exposure:
+- Precious metals (Gold, Silver, Platinum)
+- Energy (Oil, Natural Gas, Coal)
+- Agriculture (Wheat, Corn, Coffee)
+- Industrial metals (Copper, Aluminum)
+
+### Indices (114+ ETFs)
+Global market coverage:
+- Country-specific ETFs
+- Sector ETFs
+- Factor-based ETFs
+- Regional groupings
+
+## 📚 Documentation
+
+- [Complete CLI Guide](docs/COMPLETE_CLI_GUIDE.md)
+- [Data Sources Guide](docs/DATA_SOURCES_GUIDE.md)
+- [Docker Guide](docs/DOCKER_GUIDE.md)
+- [Symbol Transformation Guide](docs/SYMBOL_TRANSFORMATION_GUIDE.md)
+- [System Summary](docs/FINAL_SYSTEM_SUMMARY.md)
+
+## 🧪 Testing & Development
+
+### Testing Commands
 ```bash
-poetry run python -m src.cli.main portfolio --name tech_stocks --period max --metric sharpe --open-browser
+# Run all tests with coverage
+pytest
+
+# Run only unit tests
+pytest -m "not integration"
+
+# Run only integration tests
+pytest -m "integration"
+
+# Run tests with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_data_manager.py
+
+# Run tests in parallel
+pytest -n auto
 ```
 
-### Timeframe Analysis
-
-#### Test Different Timeframes for a Strategy
-```bash
-poetry run python -m src.cli.main intervals --strategy momentum --ticker AAPL
-```
-
-#### Find Optimal Strategy and Timeframe Combination
-```bash
-poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --metric sharpe --intervals 1d 1h 4h --open-browser
-```
-
-### Strategy Optimization
-
-#### Optimize Strategy Parameters
-```bash
-poetry run python -m src.cli.main optimize --strategy mean_reversion --ticker AAPL --metric sharpe --iterations 50
-```
-
-#### Optimize Parameters for Best Portfolio Combinations
-```bash
-poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric sharpe --max-tries 200 --method random --open-browser
-```
-
-### Utility Commands
-
-#### List Available Portfolios
-```bash
-poetry run python -m src.cli.main list-portfolios
-```
-
-#### List Available Strategies
-```bash
-poetry run python -m src.cli.main list-strategies
-```
-
-## 📋 Example Workflows
-
-### Momentum Strategy Development Workflow
-
-1. Create a portfolio configuration in `config/assets_config.json`
-```bash
-# List available strategies
-poetry run python -m src.cli.main list-strategies
-
-# Backtest the momentum strategy on Apple
-poetry run python -m src.cli.main backtest --strategy momentum --ticker AAPL --period 5y
-
-# Optimize the strategy parameters
-poetry run python -m src.cli.main optimize --strategy momentum --ticker AAPL --metric sharpe --iterations 100
-
-# Test the strategy across different timeframes
-poetry run python -m src.cli.main intervals --strategy momentum --ticker AAPL
-
-# Apply the strategy to a portfolio
-poetry run python -m src.cli.main portfolio --name tech_stocks --period 5y --metric sharpe --open-browser
-```
-
-### Finding the Best Strategy for a Portfolio
-
-```bash
-# List available portfolios
-poetry run python -m src.cli.main list-portfolios
-
-# Find optimal strategy-timeframe combinations for each asset
-poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --metric profit_factor --intervals 1d 1h 4h --open-browser
-
-# Further optimize the parameters of the best combinations
-poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric profit_factor --max-tries 200 --open-browser
-```
-
-### Detailed Portfolio Analysis
-
-```bash
-# Generate a detailed portfolio report with equity curves and trade tables
-poetry run python -m src.cli.main portfolio --name tech_stocks --period 5y --metric sharpe --open-browser
-
-# Compare different timeframes for optimal performance
-poetry run python -m src.cli.main portfolio-optimal --name tech_stocks --intervals 1d 1h 4h --metric profit_factor --open-browser
-
-# Fine-tune strategy parameters for best performance
-poetry run python -m src.cli.main portfolio-optimize-params --name tech_stocks --metric sharpe --max-tries 100 --method grid --open-browser
-```
-
-The detailed reports include:
-- Performance summary statistics for the entire portfolio
-- Interactive tabs to view each asset's performance
-- Equity curves with drawdown visualization
-- Detailed trade tables with win/loss highlighting
-- Key metrics including Sharpe ratio, profit factor, and maximum drawdown
-- Parameter optimization results showing improvements
-
-## 🎯 Code Quality
-
-Run these commands to maintain code quality:
-
+### Code Quality
 ```bash
 # Format code
-poetry run black src/
+black .
 
 # Sort imports
-poetry run isort src/
+isort .
 
-# Run linter
-poetry run ruff check src/
+# Lint code
+ruff check .
+
+# Type checking
+mypy src/
+
+# Security scanning
+bandit -r src/
+
+# Check for vulnerable dependencies
+safety check
 ```
 
-## 🚀 Deployment
-
-### Deploy with Docker
-
+### Development Setup
 ```bash
-# Build Docker image
-docker build -t quant-trading-app .
+# Install dependencies with dev tools
+poetry install --with dev
 
-# Run container
-docker run -p 8000:8000 quant-trading-app
+# Activate virtual environment
+poetry shell
+
+# Install pre-commit hooks
+pre-commit install
+
+# Build package
+poetry build
 ```
 
-### Access API Endpoints
+### CI/CD Pipeline
+- **Automated testing** on every push/PR
+- **Code quality checks** (linting, formatting, types)
+- **Security scanning** (Bandit, Safety)
+- **Coverage reporting** (minimum 80%)
+- **Docker image building**
+- **Automated releases** on tags
 
-Once deployed, access the API at:
-```
-http://localhost:8000/docs
-```
+## 🤝 Contributing
 
-## 🔧 Troubleshooting
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
-### Common Issues
+## 📄 License
 
-#### Module Import Errors
-If you encounter "No module named 'src.utils'" or similar:
-```bash
-# Ensure you have __init__.py files in all directories
-touch src/__init__.py
-touch src/utils/__init__.py
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-#### Data Fetching Issues
-If you encounter problems with data fetching:
-```bash
-# Check your internet connection
-# Try with a different ticker or time period
-poetry run python -m src.cli.main backtest --strategy mean_reversion --ticker SPY --period 1y
-```
+## 🆘 Support
 
-#### Report Generation Errors
-Ensure the reports_output directory exists:
-```bash
-mkdir -p reports_output
-```
+- **Documentation**: Check the `docs/` directory
+- **Issues**: Open a GitHub issue
+- **Discord**: Join our trading community
 
-## 📜 License
+## 🔗 Links
 
-Proprietary License - All rights reserved.
+- **Repository**: https://github.com/LouisLetcher/quant-system
+- **Documentation**: https://LouisLetcher.github.io/quant-system
+- **Docker Hub**: https://hub.docker.com/r/LouisLetcher/quant-system
+
+---
+
+**⚡ Built for speed, designed for scale, optimized for profit.**
