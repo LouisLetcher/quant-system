@@ -31,8 +31,9 @@ cache/
 !data/
 
 # Output files
-reports_output/
+# reports_output/ - Now tracking quarterly reports
 backtests/results/
+exports/
 
 # QuantConnect Lean files
 lean_config.json
@@ -59,6 +60,8 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pytest_cache/
+.cache/
 .mypy_cache/
 .dmypy.json
 dmypy.json
