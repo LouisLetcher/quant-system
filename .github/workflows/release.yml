@@ -1,228 +1,97 @@
-name: Release Pipeline
+name: Release
 
 on:
   push:
     tags:
       - 'v*'
-  release:
-    types: [published]
 
 env:
   PYTHON_VERSION: "3.12"
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  POETRY_VERSION: "1.8.0"
 
 jobs:
-  test:
-    name: Run Full Test Suite
+  release:
+    name: Create Release
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        
-    - name: Install dependencies
-      run: poetry install --no-interaction
-      
-    - name: Run all tests
-      run: poetry run pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
-      
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  build-and-publish-docker:
-    name: Build and Publish Docker Image
-    runs-on: ubuntu-latest
-    needs: test
-    permissions:
-      contents: read
-      packages: write
-      
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha
-          
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./Dockerfile
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        platforms: linux/amd64,linux/arm64
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-  create-release-notes:
-    name: Create Release Notes
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'release'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Generate changelog
-      id: changelog
-      run: |
-        echo "## Changes in this Release" > RELEASE_NOTES.md
-        echo "" >> RELEASE_NOTES.md
-        
-        # Get changes since last tag
-        LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
-        if [ -n "$LAST_TAG" ]; then
-          echo "### Commits since $LAST_TAG:" >> RELEASE_NOTES.md
-          git log $LAST_TAG..HEAD --oneline --no-merges >> RELEASE_NOTES.md
-        else
-          echo "### All commits:" >> RELEASE_NOTES.md
-          git log --oneline --no-merges >> RELEASE_NOTES.md
-        fi
-        
-        echo "" >> RELEASE_NOTES.md
-        echo "### Docker Images" >> RELEASE_NOTES.md
-        echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}\`" >> RELEASE_NOTES.md
-        echo "- \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> RELEASE_NOTES.md
-        
-    - name: Update release
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const releaseNotes = fs.readFileSync('RELEASE_NOTES.md', 'utf8');
-          
-          await github.rest.repos.updateRelease({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            release_id: context.payload.release.id,
-            body: releaseNotes
-          });
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
 
-  deploy-docs:
-    name: Deploy Documentation
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'release'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        
-    - name: Install dependencies
-      run: |
-        pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
-        
-    - name: Build documentation
-      run: |
-        # Create mkdocs.yml if it doesn't exist
-        if [ ! -f mkdocs.yml ]; then
-          cat > mkdocs.yml << EOF
-        site_name: Quant Trading System
-        site_description: A comprehensive Python-based quantitative trading system
-        site_url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
-        
-        nav:
-          - Home: README.md
-          - Restructuring Summary: RESTRUCTURING_SUMMARY.md
-          - Optimization Guide: docs/OPTIMIZATION_GUIDE.md
-          - Examples: 
-            - Comprehensive Example: examples/comprehensive_example.py
-        
-        theme:
-          name: material
-          palette:
-            - scheme: default
-              primary: blue
-              accent: blue
-          features:
-            - navigation.tabs
-            - navigation.sections
-            - toc.integrate
-        
-        plugins:
-          - search
-          - mermaid2
-        
-        markdown_extensions:
-          - codehilite
-          - admonition
-          - toc:
-              permalink: true
-          - pymdownx.superfences:
-              custom_fences:
-                - name: mermaid
-                  class: mermaid
-                  format: !!python/name:mermaid2.fence_mermaid
-        EOF
-        fi
-        
-        mkdocs build
-        
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./site
+      - name: Build package
+        run: poetry build
 
-  notify:
-    name: Notify on Release
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## Changes in this Release
+            
+            Please see CHANGELOG.md for detailed changes.
+            
+            ## Installation
+            
+            ```bash
+            pip install quant-system==${{ github.ref_name }}
+            ```
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/quant-system-${{ github.ref_name }}.tar.gz
+          asset_name: quant-system-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
+
+  docker-release:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    needs: [build-and-publish-docker, deploy-docs]
-    if: always() && github.event_name == 'release'
-    
     steps:
-    - name: Notify success
-      if: needs.build-and-publish-docker.result == 'success' && needs.deploy-docs.result == 'success'
-      run: |
-        echo "🎉 Release ${{ github.ref_name }} successfully published!"
-        echo "📦 Docker image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
-        echo "📚 Documentation: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-        
-    - name: Notify failure
-      if: needs.build-and-publish-docker.result == 'failure' || needs.deploy-docs.result == 'failure'
-      run: |
-        echo "❌ Release ${{ github.ref_name }} failed to publish"
-        exit 1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/quant-system
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,187 @@
+# Development Guide
+
+Guide for developers working on the Quant Trading System.
+
+## 🚀 Quick Setup
+
+### Prerequisites
+- Python 3.12+
+- Poetry
+- Git
+
+### Installation
+```bash
+git clone https://github.com/LouisLetcher/quant-system.git
+cd quant-system
+poetry install --with dev
+poetry shell
+pre-commit install
+```
+
+## 🧪 Testing
+
+### Running Tests
+```bash
+# All tests with coverage
+pytest
+
+# Unit tests only
+pytest -m "not integration"
+
+# Integration tests
+pytest -m "integration"
+
+# Specific test file
+pytest tests/test_data_manager.py
+
+# Parallel execution
+pytest -n auto
+```
+
+### Test Structure
+- `tests/test_*.py` - Unit tests
+- `tests/test_integration.py` - Integration tests
+- `tests/conftest.py` - Shared fixtures and configuration
+
+## 🔍 Code Quality
+
+### Formatting and Linting
+```bash
+black .          # Format code
+isort .          # Sort imports
+ruff check .     # Lint code
+mypy src/        # Type checking
+```
+
+### Security Checks
+```bash
+bandit -r src/   # Security linting
+safety check     # Dependency vulnerabilities
+```
+
+### Pre-commit Hooks
+Pre-commit hooks run automatically on git commit:
+- Code formatting (Black)
+- Import sorting (isort)
+- Linting (Ruff)
+- Type checking (MyPy)
+- Security scanning (Bandit)
+
+## 📁 Project Structure
+
+```
+src/
+├── core/                 # Core system components
+│   ├── data_manager.py   # Data fetching and management
+│   ├── portfolio.py      # Portfolio management
+│   └── strategy.py       # Trading strategies
+├── cli/                  # Command-line interface
+├── api/                  # FastAPI web interface
+├── reporting/            # Report generation
+└── utils/                # Utility functions
+
+tests/
+├── test_*.py            # Unit tests
+├── test_integration.py  # Integration tests
+└── conftest.py          # Test configuration
+
+config/
+└── portfolios/          # Portfolio configurations
+```
+
+## 🔧 Development Commands
+
+### Building
+```bash
+poetry build        # Build package
+docker build .      # Build Docker image
+```
+
+### Running Services
+```bash
+# CLI commands
+python -m src.cli.unified_cli portfolio list
+
+# API server
+uvicorn src.api.main:app --reload
+
+# Docker development
+docker-compose up dev
+```
+
+## 📝 Contributing
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Make** your changes
+4. **Add** tests for new functionality
+5. **Ensure** all tests pass: `pytest`
+6. **Commit** your changes: `git commit -m 'Add amazing feature'`
+7. **Push** to the branch: `git push origin feature/amazing-feature`
+8. **Open** a Pull Request
+
+### Code Style Guidelines
+- **Line length**: 88 characters (Black default)
+- **Type hints**: Required for all public functions
+- **Docstrings**: Google-style for all modules, classes, and functions
+- **Tests**: Required for all new functionality
+
+### Commit Message Format
+```
+type(scope): description
+
+[optional body]
+
+[optional footer]
+```
+
+Examples:
+- `feat(data): add Alpha Vantage data source`
+- `fix(portfolio): correct position sizing calculation`
+- `docs(readme): update installation instructions`
+
+## 🔍 Debugging
+
+### Environment Variables
+```bash
+export LOG_LEVEL=DEBUG
+export TESTING=true
+```
+
+### Common Issues
+1. **Import errors**: Ensure virtual environment is activated
+2. **API failures**: Check API keys in `.env` file
+3. **Permission errors**: Check file permissions for cache/exports directories
+
+### Debug Commands
+```bash
+# Clear cache
+rm -rf cache/*
+
+# Reset environment
+poetry env remove python
+poetry install --with dev
+
+# Verbose testing
+pytest -v -s
+```
+
+## 📊 CI/CD Pipeline
+
+The project uses GitHub Actions for continuous integration:
+
+- **Pull Request**: Lint, test, security checks
+- **Main Branch**: Full test suite, build, deploy docs
+- **Tags**: Create releases, build Docker images
+
+### Workflow Files
+- `.github/workflows/ci.yml` - Main CI/CD pipeline
+- `.github/workflows/release.yml` - Release automation
+- `.github/workflows/codeql.yml` - Security analysis
+
+## 📚 Additional Resources
+
+- **Poetry Documentation**: https://python-poetry.org/docs/
+- **pytest Documentation**: https://docs.pytest.org/
+- **Black Documentation**: https://black.readthedocs.io/
+- **FastAPI Documentation**: https://fastapi.tiangolo.com/
