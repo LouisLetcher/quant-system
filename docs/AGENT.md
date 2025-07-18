@@ -6,17 +6,22 @@ This file contains essential commands, conventions, and development practices fo
 
 ```
 quant-system/
-├── src/                    # Main source code
-│   ├── core/              # Core trading logic
-│   ├── cli/               # Command-line interface
-│   ├── api/               # FastAPI web interface
-│   └── reporting/         # Report generation
-├── config/                # Configuration files
-├── tests/                 # Test suite
-├── docs/                  # Documentation
-├── cache/                 # Data cache
-├── exports/               # Export outputs
-└── reports_output/        # Generated reports
+├── src/                           # Main source code
+│   ├── backtesting_engine/       # Strategies submodule (quant-strategies repo)
+│   │   └── algorithms/python/    # Python strategy implementations (40+ strategies)
+│   ├── core/                     # Core trading logic
+│   ├── cli/                      # Command-line interface
+│   ├── portfolio/                # Portfolio management
+│   ├── reporting/                # Report generation
+│   └── utils/                    # Utility functions
+├── config/                       # Configuration files
+│   └── portfolios/               # Portfolio configurations
+├── tests/                        # Test suite
+├── docs/                         # Documentation
+├── scripts/                      # Utility scripts
+├── cache/                        # Data cache
+├── exports/                      # Export outputs
+└── reports_output/               # Generated reports
 ```
 
 ## Essential Commands
@@ -88,9 +93,6 @@ python -m src.cli.unified_cli portfolio test-all
 
 # Generate reports
 python -m src.cli.unified_cli reports generate <portfolio_name>
-
-# Start API server
-uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
 # Run with Docker
 docker-compose up --build

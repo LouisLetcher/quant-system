@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
 from sqlalchemy.orm import Session
 
-from src.database.db_connection import get_db_session  # Hypothetical DB session import
+# from src.database.db_connection import get_db_session  # TODO: Implement DB connection
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,48 +18,50 @@ class DataSender:
 
     @staticmethod
     def send_to_api(
-        endpoint: str, data: Dict[str, Any], headers: Optional[Dict[str, str]] = None
-    ) -> Dict:
+        endpoint: str, data: dict[str, Any], headers: dict[str, str] | None = None
+    ) -> dict:
         """Sends data to an external API endpoint."""
         headers = headers or {"Content-Type": "application/json"}
         try:
             response = requests.post(endpoint, json=data, headers=headers, timeout=10)
             response.raise_for_status()
-            logger.info(f"✅ Successfully sent data to {endpoint}")
+            logger.info("✅ Successfully sent data to %s", endpoint)
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"❌ API request failed: {e!s}")
+            logger.error("❌ API request failed: %s", e)
             return {"status": "error", "message": str(e)}
 
     @staticmethod
     def save_to_database(
-        data: Dict[str, Any], table_model, session: Optional[Session] = None
+        data: dict[str, Any], table_model, session: Session | None = None
     ):
         """Saves data to a database table using SQLAlchemy."""
-        session = session or get_db_session()
+        if session is None:
+            msg = "Database session is required but not provided"
+            raise ValueError(msg)
         try:
             record = table_model(**data)
             session.add(record)
             session.commit()
-            logger.info(f"✅ Data successfully saved to {table_model.__tablename__}")
+            logger.info("✅ Data successfully saved to %s", table_model.__tablename__)
             return {"status": "success", "message": "Data saved successfully"}
         except Exception as e:
             session.rollback()
-            logger.error(f"❌ Database save failed: {e!s}")
+            logger.error("❌ Database save failed: %s", e)
             return {"status": "error", "message": str(e)}
         finally:
             session.close()
 
     @staticmethod
-    def send_to_messaging_queue(queue_name: str, data: Dict[str, Any]):
+    def send_to_messaging_queue(queue_name: str, data: dict[str, Any]):
         """Sends data to a messaging queue (RabbitMQ, Kafka, etc.)."""
         try:
             # Hypothetical message queue connection
             from src.messaging.queue_service import QueueService  # Hypothetical module
 
             QueueService.publish(queue_name, json.dumps(data))
-            logger.info(f"✅ Data successfully sent to queue: {queue_name}")
+            logger.info("✅ Data successfully sent to queue: %s", queue_name)
             return {"status": "success", "message": f"Data sent to queue {queue_name}"}
         except Exception as e:
-            logger.error(f"❌ Messaging queue send failed: {e!s}")
+            logger.error("❌ Messaging queue send failed: %s", e)
             return {"status": "error", "message": str(e)}

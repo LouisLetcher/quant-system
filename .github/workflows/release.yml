@@ -13,6 +13,9 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,11 +43,11 @@ jobs:
           release_name: Release ${{ github.ref }}
           body: |
             ## Changes in this Release
-            
+
             Please see CHANGELOG.md for detailed changes.
-            
+
             ## Installation
-            
+
             ```bash
             pip install quant-system==${{ github.ref_name }}
             ```
@@ -64,6 +67,9 @@ jobs:
   docker-release:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
