@@ -53,10 +53,7 @@ jobs:
     needs: setup
     permissions:
       contents: read
-<<<<<<< HEAD
-=======
       actions: read
->>>>>>> 33af371 (Add explicit permissions to all GitHub Actions workflows)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
