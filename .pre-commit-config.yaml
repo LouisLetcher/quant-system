@@ -12,26 +12,26 @@ repos:
       - id: debug-statements
       - id: check-toml
 
-  # Python formatting - Black
+  # Python formatting - Black (check mode to match CI)
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
       - id: black
         language_version: python3.12
+        args: [--check]
 
-  # Python import sorting - isort
+  # Python import sorting - isort (check mode to match CI)
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
       - id: isort
-        args: [--profile, black]
+        args: [--profile, black, --check-only]
 
-  # Python linting - Ruff
+  # Python linting - Ruff (check mode to match CI)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.4
     hooks:
-      - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-check
 
   # Python type checking - MyPy (disabled for showcase)
   # - repo: https://github.com/pre-commit/mirrors-mypy
@@ -49,12 +49,12 @@ repos:
   #     - id: markdownlint
   #       args: [--config, .markdownlint.yaml]
 
-  # Security linting - Bandit
+  # Security linting - Bandit (align with CI)
   - repo: https://github.com/PyCQA/bandit
     rev: 1.8.6
     hooks:
       - id: bandit
-        args: [-r, src/, -ll, --skip, B101]
+        args: [-r, src/, -ll]
         pass_filenames: false
 
   # Python security - Safety (manual check for now)

@@ -28,7 +28,7 @@ class TestPerformanceBenchmarks:
             index=dates,
         )
 
-    @pytest.mark.benchmark()
+    @pytest.mark.benchmark
     def test_data_processing_performance(self, benchmark, sample_data):
         """Benchmark data processing performance."""
 
@@ -43,7 +43,7 @@ class TestPerformanceBenchmarks:
         result = benchmark(process_data)
         assert len(result) == 1000
 
-    @pytest.mark.benchmark()
+    @pytest.mark.benchmark
     def test_strategy_signal_generation(self, benchmark, sample_data):
         """Benchmark strategy signal generation."""
         strategy = BuyAndHoldStrategy()
@@ -54,7 +54,7 @@ class TestPerformanceBenchmarks:
         signals = benchmark(generate_signals)
         assert len(signals) == len(sample_data)
 
-    @pytest.mark.benchmark()
+    @pytest.mark.benchmark
     def test_large_dataset_processing(self, benchmark):
         """Benchmark processing of large datasets."""
         # Create a large dataset
