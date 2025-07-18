@@ -304,22 +304,16 @@ pytest -n auto
 ### Code Quality
 ```bash
 # Format code
-black .
+poetry run black .
 
 # Sort imports
-isort .
+poetry run isort .
 
 # Lint code
-ruff check .
+poetry run ruff check .
 
-# Type checking
-mypy src/
-
-# Security scanning
-bandit -r src/
-
-# Check for vulnerable dependencies
-safety check
+# Pre-commit checks (aligned with CI)
+pre-commit run --all-files
 ```
 
 ### Development Setup
@@ -337,13 +331,11 @@ pre-commit install
 poetry build
 ```
 
-### CI/CD Pipeline
-- **Automated testing** on every push/PR
-- **Code quality checks** (linting, formatting, types)
-- **Security scanning** (Bandit, Safety)
-- **Coverage reporting** (minimum 80%)
-- **Docker image building**
-- **Automated releases** on tags
+### CI/CD Pipeline (Simplified for Showcase)
+- **Essential checks**: Format, lint, test, build on every push/PR
+- **GitHub native features**: CodeQL security scanning, Dependabot dependency updates
+- **Automated releases**: GitHub releases with artifacts on tags
+- **KISS principle**: Minimal, focused workflows leveraging GitHub's built-in capabilities
 
 ## 🤝 Contributing
 
