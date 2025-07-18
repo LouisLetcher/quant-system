@@ -49,6 +49,8 @@ jobs:
     name: Dependency Review
     runs-on: ubuntu-latest
     needs: setup
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
