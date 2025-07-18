@@ -177,13 +177,34 @@ class ConfigManager:
         Args:
             file_path: Path to save the configuration to
         """
+        # Create a serializable copy of the config
+        serializable_config = self._make_serializable(self.config)
+
         # Determine file type based on extension
         if file_path.endswith(".json"):
             with Path(file_path).open("w") as f:
-                json.dump(self.config, f, indent=4)
+                json.dump(serializable_config, f, indent=4)
         elif file_path.endswith((".yaml", ".yml")):
             with Path(file_path).open("w") as f:
-                yaml.dump(self.config, f, default_flow_style=False)
+                yaml.dump(serializable_config, f, default_flow_style=False)
         else:
             msg = "Unsupported file format. Use .json, .yaml, or .yml"
             raise ValueError(msg)
+
+    def _make_serializable(self, obj: Any) -> Any:
+        """
+        Convert objects to serializable format.
+
+        Args:
+            obj: Object to make serializable
+
+        Returns:
+            Serializable version of the object
+        """
+        if isinstance(obj, Path):
+            return str(obj)
+        if isinstance(obj, dict):
+            return {key: self._make_serializable(value) for key, value in obj.items()}
+        if isinstance(obj, list):
+            return [self._make_serializable(item) for item in obj]
+        return obj

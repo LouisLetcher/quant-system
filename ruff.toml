@@ -7,6 +7,8 @@ exclude = [
     "docsrc/**/*",
     # examples
     "examples/**/*",
+    # submodules - strategies are managed in separate repo
+    "src/backtesting_engine/**/*",
 ]
 
 [lint]
@@ -156,10 +158,6 @@ fixable = [
 [lint.per-file-ignores]
 "tests/**/*.py" = ["S101"]  # Allow assert statements in tests
 "scripts/**/*.py" = ["S101"]  # Allow assert statements in scripts
-"src/backtesting_engine/algorithms/original/*.py" = ["F821", "D100", "D101", "D102"]  # QuantConnect files
-"src/backtesting_engine/algorithms/quantconnect/*.py" = ["SIM103"]  # QuantConnect files
-"src/backtesting_engine/algorithms/python/*.py" = ["D100", "D101", "D102"]  # Algorithm files
-"src/backtesting_engine/strategies/strategy_factory.py" = ["B904"]  # Strategy factory exceptions
 "src/portfolio/advanced_optimizer.py" = ["F821"]  # Optional import issue
 
 [format]
