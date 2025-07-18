@@ -30,14 +30,19 @@ logs/
 cache/
 !data/
 
-# Output files
-# reports_output/ - Now tracking quarterly reports
+# Output files and reports
+reports_output/
 backtests/results/
 exports/
 dist/
 build/
 *.tar.gz
 *.whl
+
+# Performance and benchmark data
+.benchmarks/
+performance_reports/
+benchmark_results/
 
 # QuantConnect Lean files
 lean_config.json
