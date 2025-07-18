@@ -171,39 +171,7 @@ services:
       - redis
     command: ["python", "-m", "src.worker.main"]
 
-  # Monitoring with Prometheus (optional)
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: quant-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
-    networks:
-      - quant-network
-    profiles:
-      - monitoring
-    restart: unless-stopped
 
-  # Grafana for dashboards (optional)
-  grafana:
-    image: grafana/grafana:latest
-    container_name: quant-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana:/etc/grafana/provisioning:ro
-    networks:
-      - quant-network
-    profiles:
-      - monitoring
-    restart: unless-stopped
-    depends_on:
-      - prometheus
 
 networks:
   quant-network:
@@ -213,6 +181,4 @@ volumes:
   postgres-data:
   redis-data:
   jupyter-data:
-  prometheus-data:
-  grafana-data:
   dev-cache:
