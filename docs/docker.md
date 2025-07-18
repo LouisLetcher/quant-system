@@ -193,7 +193,7 @@ print(response.status_code, response.json())
    ```bash
    # Check port usage
    lsof -i :8000
-   
+
    # Use different ports
    export API_PORT=8001
    docker-compose up
@@ -203,7 +203,7 @@ print(response.status_code, response.json())
    ```bash
    # Fix file permissions
    sudo chown -R $USER:$USER ./cache ./reports_output
-   
+
    # Or use Docker user
    export UID=$(id -u)
    export GID=$(id -g)
@@ -214,7 +214,7 @@ print(response.status_code, response.json())
    ```bash
    # Increase Docker memory limit
    # Docker Desktop: Settings > Resources > Memory
-   
+
    # Or limit container memory
    docker-compose up --memory=2g
    ```
@@ -223,7 +223,7 @@ print(response.status_code, response.json())
    ```bash
    # Check database status
    docker-compose logs postgres
-   
+
    # Connect to database
    docker-compose exec postgres psql -U quant_user -d quant_db
    ```

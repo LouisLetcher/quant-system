@@ -1,9 +1,9 @@
 """Integration tests for the full quant system workflow."""
 
-import os
+from __future__ import annotations
+
 import tempfile
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -56,30 +56,28 @@ class TestFullWorkflow:
     def sample_data(self):
         """Generate sample market data."""
         dates = pd.date_range("2023-01-01", periods=252, freq="D")
-        np.random.seed(42)  # For reproducibility
+        rng = np.random.default_rng(42)  # For reproducibility
 
         # Generate realistic price data
         initial_price = 100
-        returns = np.random.normal(0.001, 0.02, 252)  # Daily returns
+        returns = rng.normal(0.001, 0.02, 252)  # Daily returns
         prices = [initial_price]
 
         for ret in returns:
             prices.append(prices[-1] * (1 + ret))
 
-        data = pd.DataFrame(
+        return pd.DataFrame(
             {
                 "Open": prices[:-1],
-                "High": [p * (1 + abs(np.random.normal(0, 0.01))) for p in prices[:-1]],
-                "Low": [p * (1 - abs(np.random.normal(0, 0.01))) for p in prices[:-1]],
+                "High": [p * (1 + abs(rng.normal(0, 0.01))) for p in prices[:-1]],
+                "Low": [p * (1 - abs(rng.normal(0, 0.01))) for p in prices[:-1]],
                 "Close": prices[1:],
-                "Volume": np.random.randint(1000000, 10000000, 252),
+                "Volume": rng.integers(1000000, 10000000, 252),
             },
             index=dates,
         )
 
-        return data
-
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_complete_single_asset_workflow(
         self, data_manager, backtest_engine, sample_data
     ):
@@ -109,53 +107,53 @@ class TestFullWorkflow:
             assert isinstance(result.sharpe_ratio, float)
             assert isinstance(result.equity_curve, pd.Series)
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_complete_portfolio_workflow(
         self, portfolio_manager, data_manager, sample_data
     ):
         """Test complete portfolio management workflow."""
         # Mock data fetching for multiple symbols
-        with patch.object(data_manager, "fetch_data", return_value=sample_data):
-            with patch.object(data_manager, "batch_fetch_data") as mock_batch:
-                mock_batch.return_value = {
-                    "AAPL": sample_data,
-                    "MSFT": sample_data,
-                    "GOOGL": sample_data,
-                }
+        with (
+            patch.object(data_manager, "fetch_data", return_value=sample_data),
+            patch.object(data_manager, "batch_fetch_data") as mock_batch,
+        ):
+            mock_batch.return_value = {
+                "AAPL": sample_data,
+                "MSFT": sample_data,
+                "GOOGL": sample_data,
+            }
 
-                # Define portfolio
-                portfolio_config = {
-                    "name": "Tech Portfolio",
-                    "symbols": ["AAPL", "MSFT", "GOOGL"],
-                    "strategies": ["rsi", "macd"],
-                    "risk_profile": "moderate",
-                    "target_return": 0.12,
-                }
+            # Define portfolio
+            portfolio_config = {
+                "name": "Tech Portfolio",
+                "symbols": ["AAPL", "MSFT", "GOOGL"],
+                "strategies": ["rsi", "macd"],
+                "risk_profile": "moderate",
+                "target_return": 0.12,
+            }
 
-                # Add portfolio
-                portfolio_manager.add_portfolio("tech_portfolio", portfolio_config)
+            # Add portfolio
+            portfolio_manager.add_portfolio("tech_portfolio", portfolio_config)
 
-                # Generate investment recommendations
-                recommendations = portfolio_manager.generate_investment_recommendations(
-                    capital=100000,
-                    risk_tolerance="moderate",
-                    start_date="2023-01-01",
-                    end_date="2023-12-31",
-                )
+            # Generate investment recommendations
+            recommendations = portfolio_manager.generate_investment_recommendations(
+                capital=100000,
+                risk_tolerance="moderate",
+                start_date="2023-01-01",
+                end_date="2023-12-31",
+            )
 
-                # Verify recommendations
-                assert isinstance(recommendations, dict)
-                assert "recommended_allocations" in recommendations
-                assert "expected_return" in recommendations
-                assert "investment_plan" in recommendations
+            # Verify recommendations
+            assert isinstance(recommendations, dict)
+            assert "recommended_allocations" in recommendations
+            assert "expected_return" in recommendations
+            assert "investment_plan" in recommendations
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_cache_integration_workflow(self, cache_manager, data_manager, sample_data):
         """Test workflow with cache integration."""
         # First request - should cache the data
-        with patch.object(
-            data_manager, "fetch_data", return_value=sample_data
-        ) as mock_fetch:
+        with patch.object(data_manager, "fetch_data", return_value=sample_data):
             # Remove any existing data sources to force fresh fetch
             data_manager.sources.clear()
             data_manager.add_source("yahoo_finance")
@@ -180,7 +178,7 @@ class TestFullWorkflow:
             assert isinstance(result1, pd.DataFrame)
             assert isinstance(result2, pd.DataFrame)
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_batch_processing_workflow(
         self, backtest_engine, data_manager, sample_data
     ):
@@ -210,7 +208,7 @@ class TestFullWorkflow:
             # Note: Results might be empty due to multiprocessing issues in tests
             # but the structure should be correct
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_optimization_workflow(self, backtest_engine, data_manager, sample_data):
         """Test strategy optimization workflow."""
         # Mock data fetching
@@ -243,7 +241,7 @@ class TestFullWorkflow:
                 # Optimization might fail in test environment, log but don't fail test
                 pytest.skip(f"Optimization test skipped due to: {e}")
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_risk_analysis_workflow(self, portfolio_manager, data_manager, sample_data):
         """Test risk analysis workflow."""
         # Mock data for risk analysis
@@ -284,7 +282,7 @@ class TestFullWorkflow:
             assert "rankings" in comparison
             assert "summary" in comparison
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_data_quality_workflow(self, data_manager, sample_data):
         """Test data quality validation workflow."""
         # Test with good data
@@ -298,14 +296,14 @@ class TestFullWorkflow:
             # Test good data path
             mock_fetch.return_value = good_data
             result1 = data_manager.fetch_data("AAPL", "2023-01-01", "2023-12-31")
-            assert data_manager._validate_data_quality(result1) == True
+            assert data_manager._validate_data_quality(result1)
 
             # Test bad data path
             mock_fetch.return_value = bad_data
             result2 = data_manager.fetch_data("AAPL", "2023-01-01", "2023-12-31")
-            assert data_manager._validate_data_quality(result2) == False
+            assert not data_manager._validate_data_quality(result2)
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_performance_monitoring_workflow(self, backtest_engine, cache_manager):
         """Test performance monitoring throughout workflow."""
         # Get initial cache stats
@@ -323,7 +321,7 @@ class TestFullWorkflow:
         assert "total_backtests" in engine_stats
         assert "cache_hits" in engine_stats
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_error_recovery_workflow(self, data_manager, backtest_engine):
         """Test error recovery and graceful degradation."""
         # Test data fetching with network error
@@ -333,9 +331,9 @@ class TestFullWorkflow:
             try:
                 result = data_manager.fetch_data("AAPL", "2023-01-01", "2023-12-31")
                 assert result is None or isinstance(result, pd.DataFrame)
-            except Exception:
-                # Should handle gracefully
-                pass
+            except Exception as e:
+                # Should handle gracefully - log error in real implementation
+                pytest.fail(f"Unexpected error: {e}")
 
         # Test backtest with invalid configuration
         invalid_config = BacktestConfig(
@@ -352,8 +350,8 @@ class TestFullWorkflow:
             # Expected behavior for invalid config
             pass
 
-    @pytest.mark.integration
-    @pytest.mark.slow
+    @pytest.mark.integration()
+    @pytest.mark.slow()
     def test_large_scale_workflow(self, portfolio_manager, data_manager, sample_data):
         """Test workflow with large number of assets (marked as slow test)."""
         # Create large portfolio
@@ -383,7 +381,7 @@ class TestFullWorkflow:
 
             assert isinstance(recommendations, dict)
 
-    @pytest.mark.integration
+    @pytest.mark.integration()
     def test_concurrent_workflow(self, portfolio_manager, data_manager, sample_data):
         """Test concurrent operations workflow."""
         import threading

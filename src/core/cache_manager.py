@@ -15,7 +15,7 @@ import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pandas as pd
 
@@ -29,12 +29,12 @@ class CacheEntry:
     symbol: str
     created_at: datetime
     last_accessed: datetime
-    expires_at: Optional[datetime]
+    expires_at: datetime | None
     size_bytes: int
-    source: Optional[str] = None
-    interval: Optional[str] = None
-    data_type: Optional[str] = None  # 'spot', 'futures', etc.
-    parameters_hash: Optional[str] = None
+    source: str | None = None
+    interval: str | None = None
+    data_type: str | None = None  # 'spot', 'futures', etc.
+    parameters_hash: str | None = None
     version: str = "1.0"
 
 
@@ -61,7 +61,7 @@ class UnifiedCacheManager:
         self._init_database()
         self.logger = logging.getLogger(__name__)
 
-    def _init_database(self):
+    def _init_database(self) -> None:
         """Initialize SQLite database for metadata."""
         with sqlite3.connect(self.metadata_db) as conn:
             conn.execute(
@@ -102,8 +102,8 @@ class UnifiedCacheManager:
         symbol: str,
         data: pd.DataFrame,
         interval: str = "1d",
-        source: str = None,
-        data_type: str = None,
+        source: str | None = None,
+        data_type: str | None = None,
         ttl_hours: int = 48,
     ) -> str:
         """
@@ -158,12 +158,12 @@ class UnifiedCacheManager:
     def get_data(
         self,
         symbol: str,
-        start_date: str = None,
-        end_date: str = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
         interval: str = "1d",
-        source: str = None,
-        data_type: str = None,
-    ) -> Optional[pd.DataFrame]:
+        source: str | None = None,
+        data_type: str | None = None,
+    ) -> pd.DataFrame | None:
         """
         Retrieve cached market data.
 
@@ -228,7 +228,7 @@ class UnifiedCacheManager:
                 return data if not data.empty else None
 
             except Exception as e:
-                self.logger.warning(f"Failed to load cached data for {symbol}: {e}")
+                self.logger.warning("Failed to load cached data for %s: %s", symbol, e)
                 self._remove_entry(entry.key)
                 return None
 
@@ -236,8 +236,8 @@ class UnifiedCacheManager:
         self,
         symbol: str,
         strategy: str,
-        parameters: Dict[str, Any],
-        result: Dict[str, Any],
+        parameters: dict[str, Any],
+        result: dict[str, Any],
         interval: str = "1d",
         ttl_days: int = 30,
     ) -> str:
@@ -290,9 +290,9 @@ class UnifiedCacheManager:
         self,
         symbol: str,
         strategy: str,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         interval: str = "1d",
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Retrieve cached backtest result."""
         with self.lock:
             params_hash = self._hash_parameters(parameters)
@@ -325,10 +325,11 @@ class UnifiedCacheManager:
                 cached_data = self._decompress_data(compressed_data)
 
                 self._update_access_time(entry.key)
-                return cached_data["result"]
+                result = cached_data.get("result")
+                return result if result is not None else {}
 
             except Exception as e:
-                self.logger.warning(f"Failed to load cached backtest: {e}")
+                self.logger.warning("Failed to load cached backtest: %s", e)
                 self._remove_entry(entry.key)
                 return None
 
@@ -336,8 +337,8 @@ class UnifiedCacheManager:
         self,
         symbol: str,
         strategy: str,
-        optimization_config: Dict[str, Any],
-        result: Dict[str, Any],
+        optimization_config: dict[str, Any],
+        result: dict[str, Any],
         interval: str = "1d",
         ttl_days: int = 60,
     ) -> str:
@@ -389,9 +390,9 @@ class UnifiedCacheManager:
         self,
         symbol: str,
         strategy: str,
-        optimization_config: Dict[str, Any],
+        optimization_config: dict[str, Any],
         interval: str = "1d",
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Retrieve cached optimization result."""
         with self.lock:
             config_hash = self._hash_parameters(optimization_config)
@@ -423,20 +424,21 @@ class UnifiedCacheManager:
                 cached_data = self._decompress_data(compressed_data)
 
                 self._update_access_time(entry.key)
-                return cached_data["result"]
+                result = cached_data.get("result")
+                return result if result is not None else {}
 
             except Exception as e:
-                self.logger.warning(f"Failed to load cached optimization: {e}")
+                self.logger.warning("Failed to load cached optimization: %s", e)
                 self._remove_entry(entry.key)
                 return None
 
     def clear_cache(
         self,
-        cache_type: str = None,
-        symbol: str = None,
-        source: str = None,
-        older_than_days: int = None,
-    ):
+        cache_type: str | None = None,
+        symbol: str | None = None,
+        source: str | None = None,
+        older_than_days: int | None = None,
+    ) -> None:
         """Clear cache entries based on filters."""
         with self.lock:
             conditions = []
@@ -462,10 +464,12 @@ class UnifiedCacheManager:
             where_clause = " AND ".join(conditions) if conditions else "1=1"
 
             with sqlite3.connect(self.metadata_db) as conn:
-                cursor = conn.execute(
-                    f"SELECT key, cache_type FROM cache_entries WHERE {where_clause}",
-                    params,
-                )
+                # Use parameterized query to prevent SQL injection
+                if conditions:
+                    query = f"SELECT key, cache_type FROM cache_entries WHERE {where_clause}"  # nosec B608
+                else:
+                    query = "SELECT key, cache_type FROM cache_entries"
+                cursor = conn.execute(query, params)
 
                 entries_to_remove = cursor.fetchall()
 
@@ -476,24 +480,30 @@ class UnifiedCacheManager:
                         file_path.unlink()
 
                 # Remove metadata
-                conn.execute(f"DELETE FROM cache_entries WHERE {where_clause}", params)
+                if conditions:
+                    delete_query = (
+                        f"DELETE FROM cache_entries WHERE {where_clause}"  # nosec B608
+                    )
+                else:
+                    delete_query = "DELETE FROM cache_entries"
+                conn.execute(delete_query, params)
 
-            self.logger.info(f"Cleared {len(entries_to_remove)} cache entries")
+            self.logger.info("Cleared %s cache entries", len(entries_to_remove))
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get comprehensive cache statistics."""
         with sqlite3.connect(self.metadata_db) as conn:
             # Overall stats
             cursor = conn.execute(
                 """
-                SELECT 
+                SELECT
                     cache_type,
                     COUNT(*) as count,
                     SUM(size_bytes) as total_size,
                     AVG(size_bytes) as avg_size,
                     MIN(created_at) as oldest,
                     MAX(created_at) as newest
-                FROM cache_entries 
+                FROM cache_entries
                 GROUP BY cache_type
             """
             )
@@ -518,8 +528,8 @@ class UnifiedCacheManager:
             # Source distribution for data cache
             cursor = conn.execute(
                 """
-                SELECT source, COUNT(*), SUM(size_bytes) 
-                FROM cache_entries 
+                SELECT source, COUNT(*), SUM(size_bytes)
+                FROM cache_entries
                 WHERE cache_type = 'data' AND source IS NOT NULL
                 GROUP BY source
             """
@@ -539,7 +549,7 @@ class UnifiedCacheManager:
                 "by_source": source_stats,
             }
 
-    def _generate_key(self, cache_type: str, **kwargs) -> str:
+    def _generate_key(self, cache_type: str, **kwargs: Any) -> str:
         """Generate unique cache key."""
         key_parts = [cache_type]
         for k, v in sorted(kwargs.items()):
@@ -553,39 +563,38 @@ class UnifiedCacheManager:
         """Get file path for cache entry."""
         if cache_type == "data":
             return self.data_dir / f"{key}.gz"
-        elif cache_type == "backtest":
+        if cache_type == "backtest":
             return self.backtest_dir / f"{key}.gz"
-        elif cache_type == "optimization":
+        if cache_type == "optimization":
             return self.optimization_dir / f"{key}.gz"
-        else:
-            raise ValueError(f"Unknown cache type: {cache_type}")
+        msg = f"Unknown cache type: {cache_type}"
+        raise ValueError(msg)
 
     def _compress_data(self, data: Any) -> bytes:
         """Compress data using gzip."""
-        if isinstance(data, pd.DataFrame):
-            serialized = pickle.dumps(data)
-        else:
-            serialized = pickle.dumps(data)
+        serialized = pickle.dumps(data)
 
         return gzip.compress(serialized)
 
     def _decompress_data(self, compressed_data: bytes) -> Any:
         """Decompress data."""
         decompressed = gzip.decompress(compressed_data)
-        return pickle.loads(decompressed)
+        # Note: pickle.loads() can be unsafe with untrusted data
+        # In production, consider using safer serialization formats
+        return pickle.loads(decompressed)  # nosec B301
 
-    def _hash_parameters(self, parameters: Dict[str, Any]) -> str:
+    def _hash_parameters(self, parameters: dict[str, Any]) -> str:
         """Generate hash for parameters."""
         params_str = json.dumps(parameters, sort_keys=True)
         return hashlib.sha256(params_str.encode()).hexdigest()[:16]
 
-    def _save_entry(self, entry: CacheEntry, file_path: Path):
+    def _save_entry(self, entry: CacheEntry, file_path: Path) -> None:
         """Save cache entry metadata."""
         with sqlite3.connect(self.metadata_db) as conn:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO cache_entries
-                (key, cache_type, symbol, created_at, last_accessed, expires_at, 
+                (key, cache_type, symbol, created_at, last_accessed, expires_at,
                  size_bytes, source, interval, data_type, parameters_hash, version, file_path)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -606,7 +615,7 @@ class UnifiedCacheManager:
                 ),
             )
 
-    def _find_entries(self, cache_type: str, **filters) -> List[CacheEntry]:
+    def _find_entries(self, cache_type: str, **filters: Any) -> list[CacheEntry]:
         """Find cache entries matching filters."""
         conditions = ["cache_type = ?"]
         params = [cache_type]
@@ -619,9 +628,9 @@ class UnifiedCacheManager:
         where_clause = " AND ".join(conditions)
 
         with sqlite3.connect(self.metadata_db) as conn:
-            cursor = conn.execute(
-                f"SELECT * FROM cache_entries WHERE {where_clause}", params
-            )
+            # Use parameterized query to prevent SQL injection
+            query = f"SELECT * FROM cache_entries WHERE {where_clause}"  # nosec B608
+            cursor = conn.execute(query, params)
 
             entries = []
             for row in cursor:
@@ -649,7 +658,7 @@ class UnifiedCacheManager:
             return False
         return datetime.now() > entry.expires_at
 
-    def _update_access_time(self, key: str):
+    def _update_access_time(self, key: str) -> None:
         """Update last access time."""
         with sqlite3.connect(self.metadata_db) as conn:
             conn.execute(
@@ -657,7 +666,7 @@ class UnifiedCacheManager:
                 (datetime.now().isoformat(), key),
             )
 
-    def _remove_entry(self, key: str):
+    def _remove_entry(self, key: str) -> None:
         """Remove cache entry and its file."""
         with sqlite3.connect(self.metadata_db) as conn:
             cursor = conn.execute(
@@ -673,14 +682,15 @@ class UnifiedCacheManager:
 
                 conn.execute("DELETE FROM cache_entries WHERE key = ?", (key,))
 
-    def _cleanup_if_needed(self):
+    def _cleanup_if_needed(self) -> None:
         """Clean up cache if size exceeds limit."""
         stats = self.get_cache_stats()
         total_size = stats["total_size_bytes"]
 
         if total_size > self.max_size_bytes:
             self.logger.info(
-                f"Cache size ({total_size/1024**3:.2f} GB) exceeds limit, cleaning up..."
+                "Cache size (%.2f GB) exceeds limit, cleaning up...",
+                total_size / 1024**3,
             )
 
             # Remove expired entries first
@@ -691,7 +701,7 @@ class UnifiedCacheManager:
             if stats["total_size_bytes"] > self.max_size_bytes:
                 self._cleanup_lru()
 
-    def _cleanup_expired(self):
+    def _cleanup_expired(self) -> None:
         """Remove expired cache entries."""
         now = datetime.now().isoformat()
 
@@ -709,17 +719,17 @@ class UnifiedCacheManager:
 
             conn.execute("DELETE FROM cache_entries WHERE expires_at < ?", (now,))
 
-        self.logger.info(f"Removed {len(expired_entries)} expired cache entries")
+        self.logger.info("Removed %s expired cache entries", len(expired_entries))
 
-    def _cleanup_lru(self):
+    def _cleanup_lru(self) -> None:
         """Remove least recently used entries."""
         target_size = int(self.max_size_bytes * 0.8)  # Clean to 80% of limit
 
         with sqlite3.connect(self.metadata_db) as conn:
             cursor = conn.execute(
                 """
-                SELECT key, cache_type, size_bytes 
-                FROM cache_entries 
+                SELECT key, cache_type, size_bytes
+                FROM cache_entries
                 ORDER BY last_accessed ASC
             """
             )
@@ -739,4 +749,4 @@ class UnifiedCacheManager:
                 current_size -= size_bytes
                 removed_count += 1
 
-        self.logger.info(f"Removed {removed_count} LRU cache entries")
+        self.logger.info("Removed %s LRU cache entries", removed_count)

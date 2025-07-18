@@ -1,18 +1,20 @@
+"""Module for adding tickers from export files to assets configuration."""
+
+from __future__ import annotations
+
 import argparse
-import glob
 import json
-import os
 import re
-import sys
+from pathlib import Path
 
 # Get the project root directory
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-config_path = os.path.join(project_root, "config", "assets_config.json")
-exports_dir = os.path.join(project_root, "exports")
+project_root = Path(__file__).parent.parent.parent
+config_path = project_root / "config" / "assets_config.json"
+exports_dir = project_root / "exports"
 
 # Create exports directory if it doesn't exist
-if not os.path.exists(exports_dir):
-    os.makedirs(exports_dir)
+if not exports_dir.exists():
+    exports_dir.mkdir(parents=True)
     print(f"Created exports directory at {exports_dir}")
 
 # Set up argument parser
@@ -30,7 +32,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Load the existing assets_config.json
-with open(config_path, "r") as f:
+with config_path.open() as f:
     config = json.load(f)
 
 # Get available portfolios
@@ -40,24 +42,26 @@ available_portfolios = list(config["portfolios"].keys())
 if args.export_file:
     # Process a specific file
     export_filename = args.export_file
-    export_path = os.path.join(exports_dir, export_filename)
+    export_path = exports_dir / export_filename
     export_files = [export_path]
 else:
     # Process all *_export.txt files in the exports directory
-    export_files = glob.glob(os.path.join(exports_dir, "*_export.txt"))
+    export_files = list(exports_dir.glob("*_export.txt"))
     if not export_files:
         print(f"No export files found in {exports_dir}")
-        print(
-            "Please place your export files in the 'exports' directory with the naming pattern: {portfolio_name}_export.txt"
+        msg = (
+            "Please place your export files in the 'exports' directory with the "
+            "naming pattern: {portfolio_name}_export.txt"
         )
+        print(msg)
         print(f"Available portfolios: {', '.join(available_portfolios)}")
         exit(1)
 
 # Process each export file
 for export_path in export_files:
     # Extract portfolio name from filename
-    filename = os.path.basename(export_path)
-    match = re.match(r"([a-zA-Z0-9_]+)_export\.txt", filename)
+    filename = export_path.name
+    match = re.match(r"(\w+)_export\.txt", filename)
 
     if not match:
         print(
@@ -87,7 +91,7 @@ for export_path in export_files:
 
     # Read the tickers from the export file
     try:
-        with open(export_path, "r") as f:
+        with export_path.open() as f:
             input_string = f.read().strip()
     except FileNotFoundError:
         print(f"Error: Export file not found at {export_path}")
@@ -133,7 +137,7 @@ for export_path in export_files:
         print("New tickers:", new_tickers)
 
 # Save the updated configuration
-with open(config_path, "w") as f:
+with config_path.open("w") as f:
     json.dump(config, f, indent=4)
 
 print("Configuration saved successfully.")

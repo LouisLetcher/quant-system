@@ -1,20 +1,21 @@
-import json
-import os
-import unittest
+"""Test suite for CLI config loader."""
+
+from __future__ import annotations
+
 from unittest.mock import mock_open, patch
 
-from src.cli.config.config_loader import (
-    get_default_parameters,
-    get_portfolio_config,
-    load_config_file,
-)
+import pytest
+
+from src.cli.config.config_loader import get_default_parameters, get_portfolio_config, load_assets_config
 
 
-class TestConfigLoader(unittest.TestCase):
+class TestConfigLoader:
+    """Test class for CLI config loader functionality."""
 
-    def setUp(self):
-        # Sample config data
-        self.sample_config = {
+    @pytest.fixture
+    def sample_config(self):
+        """Create sample configuration for testing."""
+        return {
             "portfolios": {
                 "tech_stocks": {
                     "description": "Technology sector stocks",
@@ -34,54 +35,47 @@ class TestConfigLoader(unittest.TestCase):
             }
         }
 
-    @patch("builtins.open", new_callable=mock_open)
+    @patch("builtins.open", new_callable=mock_open, read_data='{"portfolios": {}}')
     @patch("json.load")
-    def test_load_config_file(self, mock_json_load, mock_file_open):
-        # Setup mock
-        mock_json_load.return_value = self.sample_config
+    def test_load_assets_config(self, mock_json_load, mock_file_open, sample_config):
+        """Test loading assets configuration."""
+        mock_json_load.return_value = sample_config
 
-        # Call function
-        result = load_config_file("config/assets_config.json")
+        result = load_assets_config()
 
-        # Assertions
         mock_file_open.assert_called_with("config/assets_config.json", "r")
         mock_json_load.assert_called_once()
-        self.assertEqual(result, self.sample_config)
+        assert result == sample_config
 
         # Test with file not found
         mock_file_open.side_effect = FileNotFoundError()
-        result = load_config_file("config/assets_config.json")
-        self.assertEqual(result, {})
+        result = load_assets_config()
+        assert result == {"portfolios": {}}
 
-    @patch("src.cli.config.config_loader.load_config_file")
-    def test_get_portfolio_config(self, mock_load_config):
-        # Setup mock
-        mock_load_config.return_value = self.sample_config
+    @patch("src.cli.config.config_loader.load_assets_config")
+    def test_get_portfolio_config(self, mock_load_config, sample_config):
+        """Test getting portfolio configuration."""
+        mock_load_config.return_value = sample_config
 
-        # Call function
         result = get_portfolio_config("tech_stocks")
 
         # Assertions
         mock_load_config.assert_called_once()
-        self.assertEqual(result["description"], "Technology sector stocks")
-        self.assertEqual(len(result["assets"]), 2)
-        self.assertEqual(result["assets"][0]["ticker"], "AAPL")
+        assert result["description"] == "Technology sector stocks"
+        assert len(result["assets"]) == 2
+        assert result["assets"][0]["ticker"] == "AAPL"
 
         # Test with non-existent portfolio
         result = get_portfolio_config("non_existent")
-        self.assertIsNone(result)
+        assert result is None
 
     def test_get_default_parameters(self):
-        # Call function
+        """Test getting default parameters."""
         defaults = get_default_parameters()
 
         # Assertions
-        self.assertIsInstance(defaults, dict)
-        self.assertIn("commission", defaults)
-        self.assertIn("initial_capital", defaults)
-        self.assertIn("period", defaults)
-        self.assertIn("interval", defaults)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert isinstance(defaults, dict)
+        assert "commission" in defaults
+        assert "initial_capital" in defaults
+        assert "period" in defaults
+        assert "interval" in defaults

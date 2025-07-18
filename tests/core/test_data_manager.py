@@ -1,13 +1,14 @@
 """Unit tests for UnifiedDataManager."""
 
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from __future__ import annotations
+
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from src.core.data_manager import DataSource, UnifiedDataManager
+from src.core.data_manager import UnifiedDataManager
 
 
 class TestUnifiedDataManager:
@@ -33,17 +34,17 @@ class TestUnifiedDataManager:
     def sample_data(self):
         """Sample market data."""
         dates = pd.date_range("2023-01-01", periods=100, freq="D")
-        data = pd.DataFrame(
+        rng = np.random.default_rng(42)
+        return pd.DataFrame(
             {
-                "Open": np.random.uniform(100, 200, 100),
-                "High": np.random.uniform(100, 200, 100),
-                "Low": np.random.uniform(100, 200, 100),
-                "Close": np.random.uniform(100, 200, 100),
-                "Volume": np.random.randint(1000000, 10000000, 100),
+                "Open": rng.uniform(100, 200, 100),
+                "High": rng.uniform(100, 200, 100),
+                "Low": rng.uniform(100, 200, 100),
+                "Close": rng.uniform(100, 200, 100),
+                "Volume": rng.integers(1000000, 10000000, 100),
             },
             index=dates,
         )
-        return data
 
     def test_init(self, data_manager):
         """Test initialization."""
@@ -150,13 +151,13 @@ class TestUnifiedDataManager:
     def test_validate_symbol(self, data_manager):
         """Test symbol validation."""
         # Valid symbols
-        assert data_manager._validate_symbol("AAPL", "stocks") == True
-        assert data_manager._validate_symbol("BTCUSDT", "crypto") == True
-        assert data_manager._validate_symbol("EURUSD=X", "forex") == True
+        assert data_manager._validate_symbol("AAPL", "stocks")
+        assert data_manager._validate_symbol("BTCUSDT", "crypto")
+        assert data_manager._validate_symbol("EURUSD=X", "forex")
 
         # Invalid symbols
-        assert data_manager._validate_symbol("", "stocks") == False
-        assert data_manager._validate_symbol("INVALID123", "stocks") == False
+        assert not data_manager._validate_symbol("", "stocks")
+        assert not data_manager._validate_symbol("INVALID123", "stocks")
 
     def test_get_available_symbols(self, data_manager):
         """Test getting available symbols."""
@@ -198,7 +199,7 @@ class TestUnifiedDataManager:
         data_manager.cache_manager.get_data.assert_called_once()
 
     @pytest.mark.parametrize(
-        "asset_type,expected_interval",
+        ("asset_type", "expected_interval"),
         [("stocks", "1d"), ("crypto", "1h"), ("forex", "1d")],
     )
     def test_get_default_interval(self, data_manager, asset_type, expected_interval):
@@ -210,18 +211,18 @@ class TestUnifiedDataManager:
         """Test data quality validation."""
         # Test with good data
         is_valid = data_manager._validate_data_quality(sample_data)
-        assert is_valid == True
+        assert is_valid
 
         # Test with data containing NaN
         bad_data = sample_data.copy()
         bad_data.iloc[0, 0] = np.nan
         is_valid = data_manager._validate_data_quality(bad_data)
-        assert is_valid == False
+        assert not is_valid
 
         # Test with empty data
         empty_data = pd.DataFrame()
         is_valid = data_manager._validate_data_quality(empty_data)
-        assert is_valid == False
+        assert not is_valid
 
     def test_data_normalization(self, data_manager):
         """Test data normalization across different sources."""

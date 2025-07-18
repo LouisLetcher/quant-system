@@ -171,7 +171,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA system TO quantuser;
 
 -- Create views for common queries
 CREATE OR REPLACE VIEW analytics.portfolio_performance AS
-SELECT 
+SELECT
     p.name as portfolio_name,
     COUNT(br.id) as backtest_count,
     AVG(br.total_return) as avg_return,
@@ -184,7 +184,7 @@ WHERE p.is_active = true
 GROUP BY p.id, p.name;
 
 CREATE OR REPLACE VIEW analytics.strategy_performance AS
-SELECT 
+SELECT
     s.name as strategy_name,
     COUNT(br.id) as backtest_count,
     AVG(br.total_return) as avg_return,
@@ -198,7 +198,7 @@ GROUP BY s.id, s.name;
 
 -- Create materialized view for performance dashboard
 CREATE MATERIALIZED VIEW IF NOT EXISTS analytics.daily_performance_summary AS
-SELECT 
+SELECT
     DATE(br.created_at) as backtest_date,
     COUNT(*) as total_backtests,
     COUNT(DISTINCT br.symbol_id) as unique_symbols,

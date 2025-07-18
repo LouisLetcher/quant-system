@@ -1,11 +1,11 @@
 """Unit tests for UnifiedCacheManager."""
 
-import json
-import os
+from __future__ import annotations
+
 import sqlite3
 import tempfile
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -32,13 +32,14 @@ class TestUnifiedCacheManager:
     def sample_dataframe(self):
         """Sample DataFrame for testing."""
         dates = pd.date_range("2023-01-01", periods=100, freq="D")
+        rng = np.random.default_rng(42)
         return pd.DataFrame(
             {
-                "Open": np.random.uniform(100, 200, 100),
-                "High": np.random.uniform(100, 200, 100),
-                "Low": np.random.uniform(100, 200, 100),
-                "Close": np.random.uniform(100, 200, 100),
-                "Volume": np.random.randint(1000000, 10000000, 100),
+                "Open": rng.uniform(100, 200, 100),
+                "High": rng.uniform(100, 200, 100),
+                "Low": rng.uniform(100, 200, 100),
+                "Close": rng.uniform(100, 200, 100),
+                "Volume": rng.integers(1000000, 10000000, 100),
             },
             index=dates,
         )
@@ -60,7 +61,7 @@ class TestUnifiedCacheManager:
         """Test initialization."""
         assert str(cache_manager.cache_dir) == temp_cache_dir
         assert cache_manager.max_size_bytes == int(1.0 * 1024**3)
-        assert os.path.exists(cache_manager.metadata_db_path)
+        assert Path(cache_manager.metadata_db_path).exists()
 
     def test_generate_cache_key(self, cache_manager):
         """Test cache key generation."""
@@ -88,19 +89,17 @@ class TestUnifiedCacheManager:
 
         # Cache the data
         success = cache_manager.cache_data(key, sample_dataframe, ttl_hours=1)
-        assert success == True
+        assert success
 
         # Verify file was created
-        expected_path = os.path.join(
-            cache_manager.cache_dir, "data", f"{key}.parquet.gz"
-        )
-        assert os.path.exists(expected_path)
+        expected_path = Path(cache_manager.cache_dir) / "data" / f"{key}.parquet.gz"
+        assert expected_path.exists()
 
         # Verify metadata was stored
         metadata = cache_manager._get_metadata(key)
         assert metadata is not None
         assert metadata["data_type"] == "data"
-        assert metadata["compressed"] == True
+        assert metadata["compressed"]
 
     def test_get_data(self, cache_manager, sample_dataframe):
         """Test retrieving cached data."""
@@ -122,13 +121,11 @@ class TestUnifiedCacheManager:
 
         # Cache the result
         success = cache_manager.cache_backtest_result(key, sample_backtest_result)
-        assert success == True
+        assert success
 
         # Verify file was created
-        expected_path = os.path.join(
-            cache_manager.cache_dir, "backtests", f"{key}.json.gz"
-        )
-        assert os.path.exists(expected_path)
+        expected_path = Path(cache_manager.cache_dir) / "backtests" / f"{key}.json.gz"
+        assert expected_path.exists()
 
     def test_get_backtest_result(self, cache_manager, sample_backtest_result):
         """Test retrieving cached backtest results."""
@@ -160,7 +157,7 @@ class TestUnifiedCacheManager:
 
         # Cache the result
         success = cache_manager.cache_optimization_result(key, optimization_result)
-        assert success == True
+        assert success
 
         # Retrieve the result
         retrieved_result = cache_manager.get_optimization_result(key)
@@ -173,15 +170,15 @@ class TestUnifiedCacheManager:
         key = "test_validity_key"
 
         # Non-existent cache should be invalid
-        assert cache_manager.is_valid_cache(key) == False
+        assert not cache_manager.is_valid_cache(key)
 
         # Fresh cache should be valid
         cache_manager.cache_data(key, sample_dataframe, ttl_hours=1)
-        assert cache_manager.is_valid_cache(key) == True
+        assert cache_manager.is_valid_cache(key)
 
         # Expired cache should be invalid
         cache_manager.cache_data(key, sample_dataframe, ttl_hours=0)
-        assert cache_manager.is_valid_cache(key) == False
+        assert not cache_manager.is_valid_cache(key)
 
     def test_delete_cache(self, cache_manager, sample_dataframe):
         """Test cache deletion."""
@@ -189,12 +186,12 @@ class TestUnifiedCacheManager:
 
         # Cache some data
         cache_manager.cache_data(key, sample_dataframe)
-        assert cache_manager.is_valid_cache(key) == True
+        assert cache_manager.is_valid_cache(key)
 
         # Delete the cache
         success = cache_manager.delete_cache(key)
-        assert success == True
-        assert cache_manager.is_valid_cache(key) == False
+        assert success
+        assert not cache_manager.is_valid_cache(key)
 
     def test_clear_expired_cache(self, cache_manager, sample_dataframe):
         """Test clearing expired cache entries."""
@@ -207,9 +204,9 @@ class TestUnifiedCacheManager:
         cleared_count = cache_manager.clear_expired_cache()
 
         assert cleared_count == 2
-        assert cache_manager.is_valid_cache("expired_1") == False
-        assert cache_manager.is_valid_cache("expired_2") == False
-        assert cache_manager.is_valid_cache("valid_1") == True
+        assert not cache_manager.is_valid_cache("expired_1")
+        assert not cache_manager.is_valid_cache("expired_2")
+        assert cache_manager.is_valid_cache("valid_1")
 
     def test_clear_cache_by_type(
         self, cache_manager, sample_dataframe, sample_backtest_result
@@ -224,9 +221,9 @@ class TestUnifiedCacheManager:
         cleared_count = cache_manager.clear_cache_by_type("data")
 
         assert cleared_count == 2
-        assert cache_manager.is_valid_cache("data_1") == False
-        assert cache_manager.is_valid_cache("data_2") == False
-        assert cache_manager.is_valid_cache("backtest_1") == True
+        assert not cache_manager.is_valid_cache("data_1")
+        assert not cache_manager.is_valid_cache("data_2")
+        assert cache_manager.is_valid_cache("backtest_1")
 
     def test_clear_cache_older_than(self, cache_manager, sample_dataframe):
         """Test clearing cache older than specified days."""
@@ -236,10 +233,10 @@ class TestUnifiedCacheManager:
         # Manually update metadata to simulate old cache
         conn = sqlite3.connect(cache_manager.metadata_db_path)
         cursor = conn.cursor()
-        old_timestamp = datetime.now() - timedelta(days=10)
+        old_timestamp = datetime.now(timezone.utc) - timedelta(days=10)
         cursor.execute(
             """
-            INSERT OR REPLACE INTO cache_metadata 
+            INSERT OR REPLACE INTO cache_metadata
             (cache_key, data_type, file_path, created_at, expires_at, size_bytes, compressed, source)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -300,10 +297,8 @@ class TestUnifiedCacheManager:
         cache_manager.cache_data(key, sample_dataframe, compress=True)
 
         # Verify compressed file exists
-        compressed_path = os.path.join(
-            cache_manager.cache_dir, "data", f"{key}.parquet.gz"
-        )
-        assert os.path.exists(compressed_path)
+        compressed_path = Path(cache_manager.cache_dir) / "data" / f"{key}.parquet.gz"
+        assert compressed_path.exists()
 
         # Verify we can retrieve the data correctly
         retrieved_data = cache_manager.get_data(key)
@@ -328,7 +323,6 @@ class TestUnifiedCacheManager:
     def test_concurrent_access(self, cache_manager, sample_dataframe):
         """Test concurrent cache access."""
         import threading
-        import time
 
         keys = [f"concurrent_test_{i}" for i in range(5)]
         results = {}

@@ -5,16 +5,14 @@ Supports multiple data sources including Bybit for crypto futures.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-import aiohttp
 import pandas as pd
 import requests
 from requests.adapters import HTTPAdapter
@@ -36,20 +34,20 @@ class DataSourceConfig:
     timeout: float
     supports_batch: bool = False
     supports_futures: bool = False
-    asset_types: List[str] = None
+    asset_types: List[str] | None = None
     max_symbols_per_request: int = 1
 
 
 class DataSource(ABC):
     """Abstract base class for all data sources."""
 
-    def __init__(self, config: DataSourceConfig):
+    def __init__(self, config: DataSourceConfig) -> None:
         self.config = config
         self.last_request_time = 0
         self.session = self._create_session()
         self.logger = logging.getLogger(f"{__name__}.{config.name}")
 
-    def transform_symbol(self, symbol: str, asset_type: str = None) -> str:
+    def transform_symbol(self, symbol: str, asset_type: str | None = None) -> str:
         """Transform symbol to fit this data source's format."""
         return symbol  # Default: no transformation
 
@@ -66,12 +64,12 @@ class DataSource(ABC):
         session.mount("https://", adapter)
         return session
 
-    def _rate_limit(self):
+    def _rate_limit(self) -> None:
         """Apply rate limiting."""
         elapsed = time.time() - self.last_request_time
         if elapsed < self.config.rate_limit:
             time.sleep(self.config.rate_limit - elapsed)
-        self.last_request_time = time.time()
+        self.last_request_time = int(time.time())
 
     @abstractmethod
     def fetch_data(
@@ -83,7 +81,6 @@ class DataSource(ABC):
         **kwargs,
     ) -> Optional[pd.DataFrame]:
         """Fetch data for a single symbol."""
-        pass
 
     @abstractmethod
     def fetch_batch_data(
@@ -95,12 +92,10 @@ class DataSource(ABC):
         **kwargs,
     ) -> Dict[str, pd.DataFrame]:
         """Fetch data for multiple symbols."""
-        pass
 
     @abstractmethod
-    def get_available_symbols(self, asset_type: str = None) -> List[str]:
+    def get_available_symbols(self, asset_type: str | None = None) -> List[str]:
         """Get available symbols for this source."""
-        pass
 
     def standardize_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardize data format across all sources."""
@@ -131,7 +126,8 @@ class DataSource(ABC):
         required_cols = ["open", "high", "low", "close"]
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
-            raise ValueError(f"Missing required columns: {missing_cols}")
+            msg = f"Missing required columns: {missing_cols}"
+            raise ValueError(msg)
 
         # Convert to numeric
         numeric_cols = ["open", "high", "low", "close", "volume"]
@@ -162,7 +158,7 @@ class DataSource(ABC):
 class YahooFinanceSource(DataSource):
     """Yahoo Finance data source - primary for stocks, forex, commodities."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         config = DataSourceConfig(
             name="yahoo_finance",
             priority=1,
@@ -176,7 +172,7 @@ class YahooFinanceSource(DataSource):
         )
         super().__init__(config)
 
-    def transform_symbol(self, symbol: str, asset_type: str = None) -> str:
+    def transform_symbol(self, symbol: str, asset_type: str | None = None) -> str:
         """Transform symbol for Yahoo Finance format."""
         # Yahoo Finance forex format
         if asset_type == "forex" or "=" in symbol:
@@ -240,7 +236,7 @@ class YahooFinanceSource(DataSource):
             return self.standardize_data(data)
 
         except Exception as e:
-            self.logger.warning(f"Yahoo Finance fetch failed for {symbol}: {e}")
+            self.logger.warning("Yahoo Finance fetch failed for %s: %s", symbol, e)
             return None
 
     def fetch_batch_data(
@@ -281,10 +277,10 @@ class YahooFinanceSource(DataSource):
             return result
 
         except Exception as e:
-            self.logger.warning(f"Yahoo Finance batch fetch failed: {e}")
+            self.logger.warning("Yahoo Finance batch fetch failed: %s", e)
             return {}
 
-    def get_available_symbols(self, asset_type: str = None) -> List[str]:
+    def get_available_symbols(self, asset_type: str | None = None) -> List[str]:
         """Get available symbols (placeholder implementation)."""
         return []
 
@@ -293,8 +289,11 @@ class BybitSource(DataSource):
     """Bybit data source - primary for crypto futures trading."""
 
     def __init__(
-        self, api_key: str = None, api_secret: str = None, testnet: bool = False
-    ):
+        self,
+        api_key: Optional[str] = None,
+        api_secret: Optional[str] = None,
+        testnet: bool = False,
+    ) -> None:
         config = DataSourceConfig(
             name="bybit",
             priority=1,  # Primary for crypto
@@ -334,7 +333,8 @@ class BybitSource(DataSource):
             symbol: Trading symbol (e.g., 'BTCUSDT')
             start_date: Start date
             end_date: End date
-            interval: Kline interval ('1', '3', '5', '15', '30', '60', '120', '240', '360', '720', 'D', 'W', 'M')
+            interval: Kline interval ('1', '3', '5', '15', '30', '60', '120', '240',
+                     '360', '720', 'D', 'W', 'M')
             category: Product category ('spot', 'linear', 'inverse', 'option')
         """
         self._rate_limit()
@@ -343,7 +343,7 @@ class BybitSource(DataSource):
             # Convert interval to Bybit format
             bybit_interval = self._convert_interval(interval)
             if not bybit_interval:
-                self.logger.error(f"Unsupported interval: {interval}")
+                self.logger.error("Unsupported interval: %s", interval)
                 return None
 
             # Convert dates to timestamps
@@ -376,7 +376,7 @@ class BybitSource(DataSource):
                 data = response.json()
 
                 if data.get("retCode") != 0:
-                    self.logger.error(f"Bybit API error: {data.get('retMsg')}")
+                    self.logger.error("Bybit API error: %s", data.get("retMsg"))
                     break
 
                 klines = data.get("result", {}).get("list", [])
@@ -421,7 +421,7 @@ class BybitSource(DataSource):
             return self.standardize_data(df)
 
         except Exception as e:
-            self.logger.warning(f"Bybit fetch failed for {symbol}: {e}")
+            self.logger.warning("Bybit fetch failed for %s: %s", symbol, e)
             return None
 
     def fetch_batch_data(
@@ -454,7 +454,7 @@ class BybitSource(DataSource):
             data = response.json()
 
             if data.get("retCode") != 0:
-                self.logger.error(f"Bybit API error: {data.get('retMsg')}")
+                self.logger.error("Bybit API error: %s", data.get("retMsg"))
                 return []
 
             instruments = data.get("result", {}).get("list", [])
@@ -467,7 +467,7 @@ class BybitSource(DataSource):
             return symbols
 
         except Exception as e:
-            self.logger.error(f"Failed to fetch Bybit symbols: {e}")
+            self.logger.error("Failed to fetch Bybit symbols: %s", e)
             return []
 
     def get_futures_symbols(self) -> List[str]:
@@ -501,7 +501,7 @@ class BybitSource(DataSource):
 class AlphaVantageSource(DataSource):
     """Alpha Vantage source for additional stock data."""
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str) -> None:
         config = DataSourceConfig(
             name="alpha_vantage",
             priority=3,
@@ -573,7 +573,7 @@ class AlphaVantageSource(DataSource):
             return self.standardize_data(df) if not df.empty else None
 
         except Exception as e:
-            self.logger.warning(f"Alpha Vantage fetch failed for {symbol}: {e}")
+            self.logger.warning("Alpha Vantage fetch failed for %s: %s", symbol, e)
             return None
 
     def fetch_batch_data(
@@ -592,7 +592,7 @@ class AlphaVantageSource(DataSource):
                 result[symbol] = data
         return result
 
-    def get_available_symbols(self, asset_type: str = None) -> List[str]:
+    def get_available_symbols(self, asset_type: str | None = None) -> List[str]:
         """Get available symbols (placeholder)."""
         return []
 
@@ -600,14 +600,13 @@ class AlphaVantageSource(DataSource):
         """Get Alpha Vantage function name."""
         if interval in ["1m", "5m", "15m", "30m", "60m"]:
             return "TIME_SERIES_INTRADAY"
-        elif interval == "1d":
+        if interval == "1d":
             return "TIME_SERIES_DAILY_ADJUSTED"
-        elif interval == "1w":
+        if interval == "1w":
             return "TIME_SERIES_WEEKLY_ADJUSTED"
-        elif interval == "1M":
+        if interval == "1M":
             return "TIME_SERIES_MONTHLY_ADJUSTED"
-        else:
-            return "TIME_SERIES_DAILY_ADJUSTED"
+        return "TIME_SERIES_DAILY_ADJUSTED"
 
     def _convert_interval(self, interval: str) -> str:
         """Convert to Alpha Vantage format."""
@@ -627,15 +626,15 @@ class UnifiedDataManager:
     Automatically routes requests to appropriate data sources based on asset type.
     """
 
-    def __init__(self, cache_manager: UnifiedCacheManager = None):
+    def __init__(self, cache_manager: UnifiedCacheManager | None = None) -> None:
         self.cache_manager = cache_manager or UnifiedCacheManager()
-        self.sources = {}
+        self.sources: dict[str, DataSource] = {}
         self.logger = logging.getLogger(__name__)
 
         # Initialize default sources
         self._initialize_sources()
 
-    def _initialize_sources(self):
+    def _initialize_sources(self) -> None:
         """Initialize available data sources."""
         import os
 
@@ -648,7 +647,7 @@ class UnifiedDataManager:
             try:
                 self.add_source(EnhancedAlphaVantageSource())
             except Exception as e:
-                self.logger.warning(f"Could not add Enhanced Alpha Vantage: {e}")
+                self.logger.warning("Could not add Enhanced Alpha Vantage: %s", e)
                 # Fallback to existing implementation
                 try:
                     self.add_source(AlphaVantageSource(av_key))
@@ -661,7 +660,7 @@ class UnifiedDataManager:
             try:
                 self.add_source(TwelveDataSource())
             except Exception as e:
-                self.logger.warning(f"Could not add Twelve Data: {e}")
+                self.logger.warning("Could not add Twelve Data: %s", e)
 
         # Bybit for crypto futures (specialized)
         bybit_key = os.getenv("BYBIT_API_KEY")
@@ -673,7 +672,7 @@ class UnifiedDataManager:
     def add_source(self, source: DataSource):
         """Add a data source."""
         self.sources[source.config.name] = source
-        self.logger.info(f"Added data source: {source.config.name}")
+        self.logger.info("Added data source: %s", source.config.name)
 
     def get_data(
         self,
@@ -682,7 +681,7 @@ class UnifiedDataManager:
         end_date: str,
         interval: str = "1d",
         use_cache: bool = True,
-        asset_type: str = None,
+        asset_type: str | None = None,
         **kwargs,
     ) -> Optional[pd.DataFrame]:
         """
@@ -703,7 +702,7 @@ class UnifiedDataManager:
                 symbol, start_date, end_date, interval
             )
             if cached_data is not None:
-                self.logger.debug(f"Cache hit for {symbol}")
+                self.logger.debug("Cache hit for %s", symbol)
                 return cached_data
 
         # Determine asset type if not provided
@@ -729,17 +728,17 @@ class UnifiedDataManager:
                         )
 
                     self.logger.info(
-                        f"Successfully fetched {symbol} from {source.config.name}"
+                        "Successfully fetched %s from %s", symbol, source.config.name
                     )
                     return data
 
             except Exception as e:
                 self.logger.warning(
-                    f"Source {source.config.name} failed for {symbol}: {e}"
+                    "Source %s failed for %s: %s", source.config.name, symbol, e
                 )
                 continue
 
-        self.logger.error(f"All sources failed for {symbol}")
+        self.logger.error("All sources failed for %s", symbol)
         return None
 
     def get_batch_data(
@@ -749,7 +748,7 @@ class UnifiedDataManager:
         end_date: str,
         interval: str = "1d",
         use_cache: bool = True,
-        asset_type: str = None,
+        asset_type: str | None = None,
         **kwargs,
     ) -> Dict[str, pd.DataFrame]:
         """Get data for multiple symbols with intelligent batching."""
@@ -783,7 +782,7 @@ class UnifiedDataManager:
 
                     except Exception as e:
                         self.logger.warning(
-                            f"Batch fetch failed from {source.config.name}: {e}"
+                            "Batch fetch failed from %s: %s", source.config.name, e
                         )
 
             # Fall back to individual requests for remaining symbols
@@ -837,7 +836,7 @@ class UnifiedDataManager:
             return data
 
         except Exception as e:
-            self.logger.error(f"Failed to fetch futures data for {symbol}: {e}")
+            self.logger.error("Failed to fetch futures data for %s: %s", symbol, e)
             return None
 
     def _detect_asset_type(self, symbol: str) -> str:
@@ -847,24 +846,21 @@ class UnifiedDataManager:
         # Crypto patterns
         if any(
             pattern in symbol_upper for pattern in ["USDT", "BTC", "ETH", "BNB", "ADA"]
-        ):
+        ) or (symbol_upper.endswith("USD") and len(symbol_upper) > 6):
             return "crypto"
-        elif symbol_upper.endswith("USD") and len(symbol_upper) > 6:
-            return "crypto"
-        elif "-USD" in symbol_upper:
+        if "-USD" in symbol_upper:
             return "crypto"
 
         # Forex patterns
-        elif symbol_upper.endswith("=X") or len(symbol_upper) == 6:
+        if symbol_upper.endswith("=X") or len(symbol_upper) == 6:
             return "forex"
 
         # Futures patterns
-        elif symbol_upper.endswith("=F"):
+        if symbol_upper.endswith("=F"):
             return "commodities"
 
         # Default to stocks
-        else:
-            return "stocks"
+        return "stocks"
 
     def _get_sources_for_asset_type(self, asset_type: str) -> List[DataSource]:
         """Get appropriate sources for asset type, sorted by priority."""
@@ -886,10 +882,10 @@ class UnifiedDataManager:
         return suitable_sources
 
     def _group_symbols_by_type(
-        self, symbols: List[str], default_type: str = None
+        self, symbols: List[str], default_type: Optional[str] = None
     ) -> Dict[str, List[str]]:
         """Group symbols by detected asset type."""
-        groups = {}
+        groups: Dict[str, List[str]] = {}
 
         for symbol in symbols:
             asset_type = default_type or self._detect_asset_type(symbol)
@@ -927,7 +923,7 @@ class UnifiedDataManager:
 class EnhancedAlphaVantageSource(DataSource):
     """Enhanced Alpha Vantage data source - excellent for stocks, forex, crypto."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         config = DataSourceConfig(
             name="alpha_vantage_enhanced",
             priority=2,
@@ -941,7 +937,7 @@ class EnhancedAlphaVantageSource(DataSource):
         self.api_key = os.getenv("ALPHA_VANTAGE_API_KEY", "demo")
         self.base_url = "https://www.alphavantage.co/query"
 
-    def transform_symbol(self, symbol: str, asset_type: str = None) -> str:
+    def transform_symbol(self, symbol: str, asset_type: str | None = None) -> str:
         """Transform symbol for Alpha Vantage format."""
         # Alpha Vantage forex format (no =X suffix)
         if "=X" in symbol:
@@ -993,11 +989,11 @@ class EnhancedAlphaVantageSource(DataSource):
 
             # Check for API errors
             if "Error Message" in data:
-                self.logger.error(f"Alpha Vantage error: {data['Error Message']}")
+                self.logger.error("Alpha Vantage error: %s", data["Error Message"])
                 return None
 
             if "Note" in data:
-                self.logger.warning(f"Alpha Vantage rate limit: {data['Note']}")
+                self.logger.warning("Alpha Vantage rate limit: %s", data["Note"])
                 return None
 
             # Parse data
@@ -1012,7 +1008,7 @@ class EnhancedAlphaVantageSource(DataSource):
             return df
 
         except Exception as e:
-            self.logger.error(f"Error fetching {symbol} from Alpha Vantage: {e}")
+            self.logger.error("Error fetching %s from Alpha Vantage: %s", symbol, e)
             return None
 
     def _map_interval(self, interval: str) -> str:
@@ -1032,22 +1028,19 @@ class EnhancedAlphaVantageSource(DataSource):
         if "/" in symbol:  # Forex
             if interval == "1d":
                 return "FX_DAILY"
-            else:
-                return "FX_INTRADAY"
-        elif any(crypto in symbol.upper() for crypto in ["BTC", "ETH", "LTC", "XRP"]):
+            return "FX_INTRADAY"
+        if any(crypto in symbol.upper() for crypto in ["BTC", "ETH", "LTC", "XRP"]):
             if interval == "1d":
                 return "DIGITAL_CURRENCY_DAILY"
-            else:
-                return "CRYPTO_INTRADAY"
-        else:  # Stocks
-            if interval == "1d":
-                return "TIME_SERIES_DAILY"
-            else:
-                return "TIME_SERIES_INTRADAY"
+            return "CRYPTO_INTRADAY"
+        # Stocks
+        if interval == "1d":
+            return "TIME_SERIES_DAILY"
+        return "TIME_SERIES_INTRADAY"
 
     def _get_time_series_key(self, data: dict) -> Optional[str]:
         """Find the time series key in the response."""
-        for key in data.keys():
+        for key in data:
             if "Time Series" in key:
                 return key
         return None
@@ -1083,14 +1076,42 @@ class EnhancedAlphaVantageSource(DataSource):
             return df
 
         except Exception as e:
-            self.logger.error(f"Error parsing Alpha Vantage data: {e}")
+            self.logger.error("Error parsing Alpha Vantage data: %s", e)
             return None
+
+    def fetch_batch_data(
+        self,
+        symbols: list[str],
+        start_date: str,
+        end_date: str,
+        interval: str = "1d",
+        **kwargs: Any,
+    ) -> dict[str, pd.DataFrame]:
+        """Fetch data for multiple symbols."""
+        result = {}
+        for symbol in symbols:
+            data = self.fetch_data(symbol, start_date, end_date, interval, **kwargs)
+            if data is not None:
+                result[symbol] = data
+        return result
+
+    def get_available_symbols(self, asset_type: str | None = None) -> list[str]:
+        """Get available symbols for this source."""
+        # Alpha Vantage doesn't provide a comprehensive symbol list
+        # Return common symbols based on asset type
+        if asset_type == "stock":
+            return ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA", "META"]
+        if asset_type == "forex":
+            return ["EUR/USD", "GBP/USD", "USD/JPY", "USD/CHF"]
+        if asset_type == "crypto":
+            return ["BTC/USD", "ETH/USD", "LTC/USD", "XRP/USD"]
+        return []
 
 
 class TwelveDataSource(DataSource):
     """Twelve Data source - excellent coverage for stocks, forex, crypto, indices."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         config = DataSourceConfig(
             name="twelve_data",
             priority=2,
@@ -1105,7 +1126,7 @@ class TwelveDataSource(DataSource):
         self.api_key = os.getenv("TWELVE_DATA_API_KEY", "demo")
         self.base_url = "https://api.twelvedata.com"
 
-    def transform_symbol(self, symbol: str, asset_type: str = None) -> str:
+    def transform_symbol(self, symbol: str, asset_type: str | None = None) -> str:
         """Transform symbol for Twelve Data format."""
         # Twelve Data forex format (use slash format)
         if "=X" in symbol:
@@ -1153,18 +1174,18 @@ class TwelveDataSource(DataSource):
 
             if "code" in data and data["code"] != 200:
                 self.logger.error(
-                    f"Twelve Data error: {data.get('message', 'Unknown error')}"
+                    "Twelve Data error: %s", data.get("message", "Unknown error")
                 )
                 return None
 
             if "values" not in data:
-                self.logger.warning(f"No data returned for {symbol}")
+                self.logger.warning("No data returned for %s", symbol)
                 return None
 
             return self._parse_twelve_data(data["values"])
 
         except Exception as e:
-            self.logger.error(f"Error fetching {symbol} from Twelve Data: {e}")
+            self.logger.error("Error fetching %s from Twelve Data: %s", symbol, e)
             return None
 
     def _map_interval(self, interval: str) -> str:
@@ -1212,8 +1233,36 @@ class TwelveDataSource(DataSource):
             return df.sort_index()
 
         except Exception as e:
-            self.logger.error(f"Error parsing Twelve Data: {e}")
+            self.logger.error("Error parsing Twelve Data: %s", e)
             return None
+
+    def fetch_batch_data(
+        self,
+        symbols: list[str],
+        start_date: str,
+        end_date: str,
+        interval: str = "1d",
+        **kwargs: Any,
+    ) -> dict[str, pd.DataFrame]:
+        """Fetch data for multiple symbols."""
+        result = {}
+        for symbol in symbols:
+            data = self.fetch_data(symbol, start_date, end_date, interval, **kwargs)
+            if data is not None:
+                result[symbol] = data
+        return result
+
+    def get_available_symbols(self, asset_type: str | None = None) -> list[str]:
+        """Get available symbols for this source."""
+        # Twelve Data doesn't provide a comprehensive symbol list in free tier
+        # Return common symbols based on asset type
+        if asset_type == "stock":
+            return ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA", "META", "NVDA", "NFLX"]
+        if asset_type == "forex":
+            return ["EUR/USD", "GBP/USD", "USD/JPY", "USD/CHF", "AUD/USD", "USD/CAD"]
+        if asset_type == "crypto":
+            return ["BTC/USD", "ETH/USD", "LTC/USD", "XRP/USD", "ADA/USD", "DOT/USD"]
+        return []
 
 
 # Import required modules

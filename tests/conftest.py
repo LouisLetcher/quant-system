@@ -1,8 +1,9 @@
 """Pytest configuration and shared fixtures."""
 
+from __future__ import annotations
+
 import os
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -33,10 +34,10 @@ def reports_dir():
 def sample_ohlcv_data():
     """Create sample OHLCV data for testing."""
     dates = pd.date_range("2024-01-01", periods=100, freq="D")
-    np.random.seed(42)  # For reproducible tests
+    rng = np.random.default_rng(42)  # For reproducible tests
 
     base_price = 100
-    returns = np.random.normal(0.001, 0.02, len(dates))
+    returns = rng.normal(0.001, 0.02, len(dates))
     prices = [base_price]
 
     for ret in returns[1:]:
@@ -44,11 +45,11 @@ def sample_ohlcv_data():
 
     data = pd.DataFrame(
         {
-            "Open": [p * (1 + np.random.normal(0, 0.001)) for p in prices],
-            "High": [p * (1 + abs(np.random.normal(0, 0.01))) for p in prices],
-            "Low": [p * (1 - abs(np.random.normal(0, 0.01))) for p in prices],
+            "Open": [p * (1 + rng.normal(0, 0.001)) for p in prices],
+            "High": [p * (1 + abs(rng.normal(0, 0.01))) for p in prices],
+            "Low": [p * (1 - abs(rng.normal(0, 0.01))) for p in prices],
             "Close": prices,
-            "Volume": [1000 + np.random.randint(-200, 200) for _ in prices],
+            "Volume": [1000 + rng.integers(-200, 200) for _ in prices],
         },
         index=dates,
     )
@@ -119,7 +120,7 @@ def stock_symbols():
 
 @pytest.fixture(autouse=True)
 def setup_test_environment(reports_dir):
-    """Setup test environment automatically."""
+    """Set up test environment automatically."""
     # Ensure reports directory exists
     reports_dir.mkdir(exist_ok=True)
 
