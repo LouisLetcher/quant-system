@@ -1,26 +1,30 @@
+"""Configuration management module for the quant system."""
+
 from __future__ import annotations
 
+import contextlib
 import json
 import os
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any
 
 import yaml
 
 
 class ConfigManager:
-    """
-    Manages configuration settings for the application.
+    """Manages configuration settings for the application.
+
     Supports loading from JSON or YAML files and environment variables.
     """
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: str | None = None):
         """
         Initialize the config manager.
 
         Args:
             config_path: Optional path to a configuration file
         """
-        self.config: Dict[str, Any] = {}
+        self.config: dict[str, Any] = {}
 
         # Load default configuration
         self._load_defaults()
@@ -37,9 +41,7 @@ class ConfigManager:
         self.config = {
             "data": {
                 "default_interval": "1d",
-                "cache_dir": os.path.join(
-                    os.path.expanduser("~"), ".quant-py", "cache"
-                ),
+                "cache_dir": Path.home() / ".quant-py" / "cache",
             },
             "backtest": {
                 "default_commission": 0.001,  # 0.1% commission
@@ -47,16 +49,16 @@ class ConfigManager:
             },
             "logging": {
                 "level": "INFO",
-                "log_file": os.path.join(
-                    os.path.expanduser("~"), ".quant-py", "logs", "quant-py.log"
-                ),
+                "log_file": Path.home() / ".quant-py" / "logs" / "quant-py.log",
                 "debug_backtest": False,  # Add debug flag for backtest operations
             },
         }
 
         # Create necessary directories
-        os.makedirs(self.config["data"]["cache_dir"], exist_ok=True)
-        os.makedirs(os.path.dirname(self.config["logging"]["log_file"]), exist_ok=True)
+        Path(self.config["data"]["cache_dir"]).mkdir(parents=True, exist_ok=True)
+        Path(self.config["logging"]["log_file"]).parent.mkdir(
+            parents=True, exist_ok=True
+        )
 
     def load_config_file(self, config_path: str) -> None:
         """
@@ -65,20 +67,20 @@ class ConfigManager:
         Args:
             config_path: Path to the configuration file (JSON or YAML)
         """
-        if not os.path.exists(config_path):
-            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        if not Path(config_path).exists():
+            msg = f"Configuration file not found: {config_path}"
+            raise FileNotFoundError(msg)
 
         # Determine file type and load accordingly
         if config_path.endswith(".json"):
-            with open(config_path) as f:
+            with Path(config_path).open() as f:
                 file_config = json.load(f)
         elif config_path.endswith((".yaml", ".yml")):
-            with open(config_path) as f:
+            with Path(config_path).open() as f:
                 file_config = yaml.safe_load(f)
         else:
-            raise ValueError(
-                "Unsupported configuration file format. Use .json, .yaml, or .yml"
-            )
+            msg = "Unsupported configuration file format. Use .json, .yaml, or .yml"
+            raise ValueError(msg)
 
         # Update configuration
         self._update_nested_dict(self.config, file_config)
@@ -106,21 +108,20 @@ class ConfigManager:
                         self.config[section] = {}
 
                     # Convert value to appropriate type if possible
+                    parsed_value: str | bool | int | float = value
                     if value.lower() in ("true", "yes", "1"):
-                        value = True
+                        parsed_value = True
                     elif value.lower() in ("false", "no", "0"):
-                        value = False
+                        parsed_value = False
                     elif value.isdigit():
-                        value = int(value)
+                        parsed_value = int(value)
                     else:
-                        try:
-                            value = float(value)
-                        except ValueError:
-                            pass  # Keep as string
+                        with contextlib.suppress(ValueError):
+                            parsed_value = float(value)
 
-                    self.config[section][key] = value
+                    self.config[section][key] = parsed_value
 
-    def _update_nested_dict(self, d: Dict[str, Any], u: Dict[str, Any]) -> None:
+    def _update_nested_dict(self, d: dict[str, Any], u: dict[str, Any]) -> None:
         """
         Update a nested dictionary with values from another dictionary.
 
@@ -176,12 +177,34 @@ class ConfigManager:
         Args:
             file_path: Path to save the configuration to
         """
+        # Create a serializable copy of the config
+        serializable_config = self._make_serializable(self.config)
+
         # Determine file type based on extension
         if file_path.endswith(".json"):
-            with open(file_path, "w") as f:
-                json.dump(self.config, f, indent=4)
+            with Path(file_path).open("w") as f:
+                json.dump(serializable_config, f, indent=4)
         elif file_path.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
-                yaml.dump(self.config, f, default_flow_style=False)
+            with Path(file_path).open("w") as f:
+                yaml.dump(serializable_config, f, default_flow_style=False)
         else:
-            raise ValueError("Unsupported file format. Use .json, .yaml, or .yml")
+            msg = "Unsupported file format. Use .json, .yaml, or .yml"
+            raise ValueError(msg)
+
+    def _make_serializable(self, obj: Any) -> Any:
+        """
+        Convert objects to serializable format.
+
+        Args:
+            obj: Object to make serializable
+
+        Returns:
+            Serializable version of the object
+        """
+        if isinstance(obj, Path):
+            return str(obj)
+        if isinstance(obj, dict):
+            return {key: self._make_serializable(value) for key, value in obj.items()}
+        if isinstance(obj, list):
+            return [self._make_serializable(item) for item in obj]
+        return obj

@@ -125,7 +125,7 @@ Always configure fallback sources for reliability:
    ```bash
    # Check environment variables
    echo $ALPHA_VANTAGE_API_KEY
-   
+
    # Verify .env file
    cat .env
    ```
@@ -147,7 +147,7 @@ Always configure fallback sources for reliability:
    ```bash
    # Test connectivity
    ping finance.yahoo.com
-   
+
    # Check firewall/proxy settings
    ```
 

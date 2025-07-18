@@ -9,10 +9,9 @@ import logging
 import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
-import pandas as pd
 
 from .backtest_engine import BacktestResult
 from .result_analyzer import UnifiedResultAnalyzer
@@ -53,8 +52,8 @@ class InvestmentRecommendation:
     confidence_score: float
     risk_category: str
     investment_rationale: str
-    key_strengths: List[str]
-    key_risks: List[str]
+    key_strengths: list[str]
+    key_risks: list[str]
     minimum_investment_period: str
 
 
@@ -86,8 +85,8 @@ class PortfolioManager:
         }
 
     def analyze_portfolios(
-        self, portfolios: Dict[str, List[BacktestResult]]
-    ) -> Dict[str, Any]:
+        self, portfolios: dict[str, list[BacktestResult]]
+    ) -> dict[str, Any]:
         """
         Analyze multiple portfolios and generate comprehensive comparison.
 
@@ -97,14 +96,14 @@ class PortfolioManager:
         Returns:
             Comprehensive portfolio analysis
         """
-        self.logger.info(f"Analyzing {len(portfolios)} portfolios...")
+        self.logger.info("Analyzing %s portfolios...", len(portfolios))
 
         portfolio_summaries = {}
         detailed_analysis = {}
 
         # Analyze each portfolio
         for portfolio_name, results in portfolios.items():
-            self.logger.info(f"Analyzing portfolio: {portfolio_name}")
+            self.logger.info("Analyzing portfolio: %s", portfolio_name)
 
             # Calculate portfolio summary
             summary = self._calculate_portfolio_summary(portfolio_name, results)
@@ -121,7 +120,7 @@ class PortfolioManager:
         )
 
         # Generate overall analysis
-        overall_analysis = {
+        return {
             "analysis_date": datetime.now().isoformat(),
             "portfolios_analyzed": len(portfolios),
             "portfolio_summaries": {
@@ -139,14 +138,12 @@ class PortfolioManager:
             ),
         }
 
-        return overall_analysis
-
     def generate_investment_plan(
         self,
         total_capital: float,
-        portfolios: Dict[str, List[BacktestResult]],
+        portfolios: dict[str, list[BacktestResult]],
         risk_tolerance: str = "moderate",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate specific investment plan with capital allocation.
 
@@ -159,7 +156,9 @@ class PortfolioManager:
             Detailed investment plan
         """
         self.logger.info(
-            f"Generating investment plan for ${total_capital:,.2f} with {risk_tolerance} risk tolerance"
+            "Generating investment plan for $%.2f with %s risk tolerance",
+            total_capital,
+            risk_tolerance,
         )
 
         # Analyze portfolios
@@ -182,7 +181,7 @@ class PortfolioManager:
         # Risk management plan
         risk_management = self._generate_risk_management_plan(allocations, analysis)
 
-        investment_plan = {
+        return {
             "plan_date": datetime.now().isoformat(),
             "total_capital": total_capital,
             "risk_tolerance": risk_tolerance,
@@ -196,10 +195,8 @@ class PortfolioManager:
             "rebalancing_strategy": self._generate_rebalancing_strategy(allocations),
         }
 
-        return investment_plan
-
     def _calculate_portfolio_summary(
-        self, name: str, results: List[BacktestResult]
+        self, name: str, results: list[BacktestResult]
     ) -> PortfolioSummary:
         """Calculate summary statistics for a portfolio."""
         if not results:
@@ -283,8 +280,8 @@ class PortfolioManager:
         )
 
     def _calculate_detailed_metrics(
-        self, results: List[BacktestResult]
-    ) -> Dict[str, Any]:
+        self, results: list[BacktestResult]
+    ) -> dict[str, Any]:
         """Calculate detailed metrics for a portfolio."""
         successful_results = [r for r in results if not r.error and r.metrics]
 
@@ -362,8 +359,8 @@ class PortfolioManager:
         }
 
     def _rank_portfolios(
-        self, summaries: Dict[str, PortfolioSummary]
-    ) -> List[Tuple[str, PortfolioSummary]]:
+        self, summaries: dict[str, PortfolioSummary]
+    ) -> list[tuple[str, PortfolioSummary]]:
         """Rank portfolios by overall score."""
         # Sort by overall score (descending)
         ranked = sorted(
@@ -371,16 +368,16 @@ class PortfolioManager:
         )
 
         # Update priority rankings
-        for i, (name, summary) in enumerate(ranked):
+        for i, (_name, summary) in enumerate(ranked):
             summary.investment_priority = i + 1
 
         return ranked
 
     def _generate_investment_recommendations(
         self,
-        ranked_portfolios: List[Tuple[str, PortfolioSummary]],
-        detailed_analysis: Dict[str, Any],
-    ) -> List[InvestmentRecommendation]:
+        ranked_portfolios: list[tuple[str, PortfolioSummary]],
+        detailed_analysis: dict[str, Any],
+    ) -> list[InvestmentRecommendation]:
         """Generate investment recommendations for each portfolio."""
         recommendations = []
         total_score = sum(summary.overall_score for _, summary in ranked_portfolios)
@@ -435,7 +432,7 @@ class PortfolioManager:
 
         return recommendations
 
-    def _calculate_risk_score(self, results: List[BacktestResult]) -> float:
+    def _calculate_risk_score(self, results: list[BacktestResult]) -> float:
         """Calculate risk score for portfolio (0-100, higher is better)."""
         risk_metrics = []
 
@@ -469,7 +466,7 @@ class PortfolioManager:
 
         return np.mean(risk_metrics) if risk_metrics else 0
 
-    def _calculate_return_score(self, results: List[BacktestResult]) -> float:
+    def _calculate_return_score(self, results: list[BacktestResult]) -> float:
         """Calculate return score for portfolio (0-100, higher is better)."""
         return_metrics = []
 
@@ -506,14 +503,13 @@ class PortfolioManager:
         """Determine risk category based on metrics."""
         if risk_score >= 70 and abs(avg_drawdown) <= 10 and return_volatility <= 15:
             return "Conservative"
-        elif risk_score >= 50 and abs(avg_drawdown) <= 20 and return_volatility <= 25:
+        if risk_score >= 50 and abs(avg_drawdown) <= 20 and return_volatility <= 25:
             return "Moderate"
-        else:
-            return "Aggressive"
+        return "Aggressive"
 
     def _generate_market_analysis(
-        self, summaries: Dict[str, PortfolioSummary]
-    ) -> Dict[str, Any]:
+        self, summaries: dict[str, PortfolioSummary]
+    ) -> dict[str, Any]:
         """Generate overall market analysis."""
         if not summaries:
             return {}
@@ -540,11 +536,11 @@ class PortfolioManager:
         }
 
     def _generate_risk_analysis(
-        self, summaries: Dict[str, PortfolioSummary]
-    ) -> Dict[str, Any]:
+        self, summaries: dict[str, PortfolioSummary]
+    ) -> dict[str, Any]:
         """Generate risk analysis across portfolios."""
         risk_categories = {}
-        for name, summary in summaries.items():
+        for summary in summaries.values():
             category = summary.risk_category
             if category not in risk_categories:
                 risk_categories[category] = []
@@ -568,8 +564,8 @@ class PortfolioManager:
         }
 
     def _analyze_diversification_opportunities(
-        self, portfolios: Dict[str, List[BacktestResult]]
-    ) -> Dict[str, Any]:
+        self, portfolios: dict[str, list[BacktestResult]]
+    ) -> dict[str, Any]:
         """Analyze diversification opportunities across portfolios."""
         # Asset type analysis
         all_symbols = set()
@@ -622,8 +618,8 @@ class PortfolioManager:
         }
 
     def _filter_by_risk_tolerance(
-        self, recommendations: List[Dict], risk_tolerance: str
-    ) -> List[Dict]:
+        self, recommendations: list[dict], risk_tolerance: str
+    ) -> list[dict]:
         """Filter recommendations based on risk tolerance."""
         risk_mapping = {
             "conservative": ["Conservative"],
@@ -640,8 +636,8 @@ class PortfolioManager:
         ]
 
     def _calculate_capital_allocations(
-        self, recommendations: List[Dict], total_capital: float, risk_tolerance: str
-    ) -> List[Dict]:
+        self, recommendations: list[dict], total_capital: float, risk_tolerance: str
+    ) -> list[dict]:
         """Calculate specific capital allocations."""
         if not recommendations:
             return []
@@ -691,7 +687,7 @@ class PortfolioManager:
 
         return allocations
 
-    def _generate_implementation_plan(self, allocations: List[Dict]) -> Dict[str, Any]:
+    def _generate_implementation_plan(self, allocations: list[dict]) -> dict[str, Any]:
         """Generate implementation timeline."""
         # Sort by priority
         sorted_allocations = sorted(allocations, key=lambda x: x["priority_rank"])
@@ -731,13 +727,13 @@ class PortfolioManager:
         }
 
     def _generate_risk_management_plan(
-        self, allocations: List[Dict], analysis: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, allocations: list[dict], analysis: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate risk management plan."""
-        total_allocation = sum(a["allocation_amount"] for a in allocations)
+        sum(a["allocation_amount"] for a in allocations)
 
         # Calculate portfolio risk metrics
-        weighted_return = sum(
+        sum(
             a["expected_return"] * a["allocation_percentage"] / 100 for a in allocations
         )
 
@@ -771,8 +767,8 @@ class PortfolioManager:
         }
 
     def _calculate_expected_portfolio_metrics(
-        self, allocations: List[Dict]
-    ) -> Dict[str, float]:
+        self, allocations: list[dict]
+    ) -> dict[str, float]:
         """Calculate expected metrics for the combined portfolio."""
         if not allocations:
             return {}
@@ -807,7 +803,7 @@ class PortfolioManager:
             risk_category, 1.0
         )
 
-    def _estimate_volatility(self, detailed_analysis: Dict) -> float:
+    def _estimate_volatility(self, detailed_analysis: dict) -> float:
         """Estimate portfolio volatility."""
         if not detailed_analysis or "summary_metrics" not in detailed_analysis:
             return 20.0  # Default estimate
@@ -816,27 +812,29 @@ class PortfolioManager:
         return volatility_data.get("mean", 20.0)
 
     def _generate_investment_rationale(
-        self, summary: PortfolioSummary, detailed_analysis: Dict
+        self, summary: PortfolioSummary, detailed_analysis: dict
     ) -> str:
         """Generate investment rationale."""
         if summary.overall_score >= 70:
-            return f"Strong performer with {summary.avg_return:.1f}% average return and {summary.risk_category.lower()} risk profile."
-        elif summary.overall_score >= 50:
-            return f"Solid performer with balanced risk-return profile suitable for diversified portfolios."
-        else:
-            return f"Higher risk option that may be suitable for aggressive investors seeking potential upside."
+            return (
+                f"Strong performer with {summary.avg_return}% average return and "
+                f"{summary.risk_category.lower()} risk profile."
+            )
+        if summary.overall_score >= 50:
+            return "Solid performer with balanced risk-return profile suitable for diversified portfolios."
+        return "Higher risk option that may be suitable for aggressive investors seeking potential upside."
 
     def _identify_key_strengths(
-        self, summary: PortfolioSummary, detailed_analysis: Dict
-    ) -> List[str]:
+        self, summary: PortfolioSummary, detailed_analysis: dict
+    ) -> list[str]:
         """Identify key strengths."""
         strengths = []
 
         if summary.avg_return > 10:
-            strengths.append(f"High average return of {summary.avg_return:.1f}%")
+            strengths.append(f"High average return of {summary.avg_return}%")
         if summary.avg_sharpe > 1:
             strengths.append(
-                f"Strong risk-adjusted returns (Sharpe: {summary.avg_sharpe:.2f})"
+                f"Strong risk-adjusted returns (Sharpe: {summary.avg_sharpe})"
             )
         if abs(summary.max_drawdown) < 10:
             strengths.append("Low drawdown risk")
@@ -846,8 +844,8 @@ class PortfolioManager:
         return strengths[:3]  # Limit to top 3
 
     def _identify_key_risks(
-        self, summary: PortfolioSummary, detailed_analysis: Dict
-    ) -> List[str]:
+        self, summary: PortfolioSummary, detailed_analysis: dict
+    ) -> list[str]:
         """Identify key risks."""
         risks = []
 
@@ -863,7 +861,7 @@ class PortfolioManager:
         return risks[:3]  # Limit to top 3
 
     def _calculate_confidence_score(
-        self, summary: PortfolioSummary, detailed_analysis: Dict
+        self, summary: PortfolioSummary, detailed_analysis: dict
     ) -> float:
         """Calculate confidence score."""
         base_score = summary.overall_score
@@ -888,7 +886,7 @@ class PortfolioManager:
             "Aggressive": "24+ months",
         }.get(risk_category, "12-24 months")
 
-    def _generate_monitoring_recommendations(self) -> List[str]:
+    def _generate_monitoring_recommendations(self) -> list[str]:
         """Generate monitoring recommendations."""
         return [
             "Review portfolio performance weekly",
@@ -898,7 +896,7 @@ class PortfolioManager:
             "Consider strategy replacement if underperforming for 6+ months",
         ]
 
-    def _generate_rebalancing_strategy(self, allocations: List[Dict]) -> Dict[str, Any]:
+    def _generate_rebalancing_strategy(self, allocations: list[dict]) -> dict[str, Any]:
         """Generate rebalancing strategy."""
         return {
             "frequency": "Quarterly",
@@ -913,28 +911,28 @@ class PortfolioManager:
         }
 
     # Additional helper methods would be implemented here...
-    def _generate_market_recommendations(self, summaries: Dict) -> List[str]:
+    def _generate_market_recommendations(self, summaries: dict) -> list[str]:
         return ["Monitor market conditions", "Consider defensive strategies if needed"]
 
     def _get_category_allocation(self, category: str) -> float:
         return {"Conservative": 40, "Moderate": 35, "Aggressive": 25}.get(category, 30)
 
-    def _assess_overall_risk_level(self, summaries: Dict) -> str:
+    def _assess_overall_risk_level(self, summaries: dict) -> str:
         avg_risk = np.mean([s.risk_score for s in summaries.values()])
         return "Low" if avg_risk > 70 else "Medium" if avg_risk > 50 else "High"
 
-    def _calculate_diversification_score(self, summaries: Dict) -> float:
+    def _calculate_diversification_score(self, summaries: dict) -> float:
         total_assets = sum(s.total_assets for s in summaries.values())
         return min(100, total_assets * 2)  # Simplified calculation
 
-    def _generate_risk_recommendations(self, risk_analysis: Dict) -> List[str]:
+    def _generate_risk_recommendations(self, risk_analysis: dict) -> list[str]:
         return [
             "Maintain diversification",
             "Monitor correlation changes",
             "Review risk limits regularly",
         ]
 
-    def _classify_asset_types(self, symbols: set) -> Dict[str, int]:
+    def _classify_asset_types(self, symbols: set) -> dict[str, int]:
         crypto_count = len(
             [
                 s
@@ -947,11 +945,11 @@ class PortfolioManager:
 
         return {"stocks": stock_count, "crypto": crypto_count, "forex": forex_count}
 
-    def _identify_diversification_gaps(self, portfolio_overlap: Dict) -> List[str]:
+    def _identify_diversification_gaps(self, portfolio_overlap: dict) -> list[str]:
         return [
             "Consider adding international exposure",
             "Evaluate sector concentration",
         ]
 
-    def _recommend_portfolio_mix(self, portfolio_overlap: Dict) -> Dict[str, float]:
+    def _recommend_portfolio_mix(self, portfolio_overlap: dict) -> dict[str, float]:
         return {"Primary": 60, "Secondary": 25, "Satellite": 15}

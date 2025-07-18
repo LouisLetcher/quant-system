@@ -6,26 +6,23 @@ Supports genetic algorithms, grid search, Bayesian optimization, and ensemble me
 from __future__ import annotations
 
 import itertools
-import json
 import logging
 import multiprocessing as mp
 import random
 import time
 import warnings
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional
 
 import numpy as np
-import pandas as pd
 from scipy import optimize
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 
-from src.core.backtest_engine import (
-    BacktestConfig,
-)
+from src.core.backtest_engine import BacktestConfig
 from src.core.backtest_engine import UnifiedBacktestEngine as OptimizedBacktestEngine
 from src.core.cache_manager import UnifiedCacheManager
 
@@ -36,12 +33,12 @@ warnings.filterwarnings("ignore")
 class OptimizationConfig:
     """Configuration for optimization runs."""
 
-    symbols: List[str]
-    strategies: List[str]
-    parameter_ranges: Dict[str, Dict[str, List]]  # strategy -> param -> range
+    symbols: list[str]
+    strategies: list[str]
+    parameter_ranges: dict[str, dict[str, list]]  # strategy -> param -> range
     optimization_metric: str = "sharpe_ratio"
     start_date: str = "2020-01-01"
-    end_date: str = None  # Will default to today if None
+    end_date: Optional[str] = None  # Will default to today if None
     interval: str = "1d"
     initial_capital: float = 10000
     max_iterations: int = 100
@@ -51,20 +48,20 @@ class OptimizationConfig:
     early_stopping_patience: int = 20
     n_jobs: int = -1
     use_cache: bool = True
-    constraint_functions: List[Callable] = None
+    constraint_functions: Optional[list[Callable]] = None
 
 
 @dataclass
 class OptimizationResult:
     """Result from optimization run."""
 
-    best_parameters: Dict[str, Any]
+    best_parameters: dict[str, Any]
     best_score: float
-    optimization_history: List[Dict[str, Any]]
+    optimization_history: list[dict[str, Any]]
     total_evaluations: int
     optimization_time: float
     convergence_generation: int
-    final_population: List[Dict[str, Any]]
+    final_population: list[dict[str, Any]]
     strategy: str
     symbol: str
     config: OptimizationConfig
@@ -78,7 +75,6 @@ class OptimizationMethod(ABC):
         self, objective_function: Callable, config: OptimizationConfig
     ) -> OptimizationResult:
         """Run optimization using this method."""
-        pass
 
 
 class GridSearchOptimizer(OptimizationMethod):
@@ -100,12 +96,16 @@ class GridSearchOptimizer(OptimizationMethod):
 
         param_ranges = config.parameter_ranges.get(strategy, {})
         if not param_ranges:
-            raise ValueError(f"No parameter ranges defined for strategy {strategy}")
+            msg = f"No parameter ranges defined for strategy {strategy}"
+            raise ValueError(msg)
 
         # Generate all parameter combinations
         param_combinations = self._generate_combinations(param_ranges)
         self.logger.info(
-            f"Grid search: {len(param_combinations)} combinations for {symbol}/{strategy}"
+            "Grid search: %s combinations for %s/%s",
+            len(param_combinations),
+            symbol,
+            strategy,
         )
 
         # Evaluate all combinations
@@ -137,7 +137,7 @@ class GridSearchOptimizer(OptimizationMethod):
                         best_params = params
 
                 except Exception as e:
-                    self.logger.warning(f"Evaluation failed for {params}: {e}")
+                    self.logger.warning("Evaluation failed for %s: %s", params, e)
                     history.append(
                         {
                             "parameters": params,
@@ -161,8 +161,8 @@ class GridSearchOptimizer(OptimizationMethod):
         )
 
     def _generate_combinations(
-        self, param_ranges: Dict[str, List]
-    ) -> List[Dict[str, Any]]:
+        self, param_ranges: dict[str, list]
+    ) -> list[dict[str, Any]]:
         """Generate all parameter combinations."""
         keys = list(param_ranges.keys())
         values = list(param_ranges.values())
@@ -193,11 +193,15 @@ class GeneticAlgorithmOptimizer(OptimizationMethod):
 
         param_ranges = config.parameter_ranges.get(strategy, {})
         if not param_ranges:
-            raise ValueError(f"No parameter ranges defined for strategy {strategy}")
+            msg = f"No parameter ranges defined for strategy {strategy}"
+            raise ValueError(msg)
 
         self.logger.info(
-            f"GA optimization for {symbol}/{strategy}: "
-            f"pop_size={config.population_size}, max_iter={config.max_iterations}"
+            "GA optimization for %s/%s: pop_size=%s, max_iter=%s",
+            symbol,
+            strategy,
+            config.population_size,
+            config.max_iterations,
         )
 
         # Initialize population
@@ -239,14 +243,16 @@ class GeneticAlgorithmOptimizer(OptimizationMethod):
             )
 
             self.logger.info(
-                f"Generation {generation}: best={gen_best_score:.4f}, "
-                f"mean={np.mean(scores):.4f}"
+                "Generation %s: best=%.4f, mean=%.4f",
+                generation,
+                gen_best_score,
+                np.mean(scores),
             )
 
             # Early stopping
             if generations_without_improvement >= config.early_stopping_patience:
                 convergence_generation = generation
-                self.logger.info(f"Early stopping at generation {generation}")
+                self.logger.info("Early stopping at generation %s", generation)
                 break
 
             # Create next generation
@@ -278,8 +284,8 @@ class GeneticAlgorithmOptimizer(OptimizationMethod):
         )
 
     def _initialize_population(
-        self, param_ranges: Dict[str, List], population_size: int
-    ) -> List[Dict[str, Any]]:
+        self, param_ranges: dict[str, list], population_size: int
+    ) -> list[dict[str, Any]]:
         """Initialize random population."""
         population = []
         for _ in range(population_size):
@@ -287,21 +293,21 @@ class GeneticAlgorithmOptimizer(OptimizationMethod):
             for param, values in param_ranges.items():
                 if isinstance(values[0], (int, float)):
                     # Numeric parameter - sample from range
-                    individual[param] = random.uniform(min(values), max(values))
+                    individual[param] = np.random.uniform(min(values), max(values))
                 else:
                     # Categorical parameter - sample from list
-                    individual[param] = random.choice(values)
+                    individual[param] = np.random.choice(values)
             population.append(individual)
         return population
 
     def _evaluate_population(
         self,
-        population: List[Dict[str, Any]],
+        population: list[dict[str, Any]],
         objective_function: Callable,
         symbol: str,
         strategy: str,
         config: OptimizationConfig,
-    ) -> List[float]:
+    ) -> list[float]:
         """Evaluate fitness of entire population."""
         with ProcessPoolExecutor(
             max_workers=config.n_jobs if config.n_jobs > 0 else mp.cpu_count()
@@ -317,18 +323,20 @@ class GeneticAlgorithmOptimizer(OptimizationMethod):
                 try:
                     scores[idx] = future.result()
                 except Exception as e:
-                    self.logger.warning(f"Evaluation failed for individual {idx}: {e}")
+                    self.logger.warning(
+                        "Evaluation failed for individual %s: %s", idx, e
+                    )
                     scores[idx] = float("-inf")
 
         return scores
 
     def _create_next_generation(
         self,
-        population: List[Dict[str, Any]],
-        scores: List[float],
-        param_ranges: Dict[str, List],
+        population: list[dict[str, Any]],
+        scores: list[float],
+        param_ranges: dict[str, list],
         config: OptimizationConfig,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Create next generation using selection, crossover, and mutation."""
         new_population = []
 
@@ -362,10 +370,10 @@ class GeneticAlgorithmOptimizer(OptimizationMethod):
 
     def _tournament_selection(
         self,
-        population: List[Dict[str, Any]],
-        scores: List[float],
+        population: list[dict[str, Any]],
+        scores: list[float],
         tournament_size: int = 3,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Tournament selection for parent selection."""
         tournament_indices = random.sample(
             range(len(population)), min(tournament_size, len(population))
@@ -376,14 +384,14 @@ class GeneticAlgorithmOptimizer(OptimizationMethod):
 
     def _crossover(
         self,
-        parent1: Dict[str, Any],
-        parent2: Dict[str, Any],
-        param_ranges: Dict[str, List],
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        parent1: dict[str, Any],
+        parent2: dict[str, Any],
+        param_ranges: dict[str, list],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         """Uniform crossover between two parents."""
         child1, child2 = parent1.copy(), parent2.copy()
 
-        for param in param_ranges.keys():
+        for param in param_ranges:
             if random.random() < 0.5:
                 child1[param], child2[param] = child2[param], child1[param]
 
@@ -391,10 +399,10 @@ class GeneticAlgorithmOptimizer(OptimizationMethod):
 
     def _mutate(
         self,
-        individual: Dict[str, Any],
-        param_ranges: Dict[str, List],
+        individual: dict[str, Any],
+        param_ranges: dict[str, list],
         mutation_strength: float = 0.1,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Mutate an individual."""
         mutated = individual.copy()
 
@@ -433,7 +441,8 @@ class BayesianOptimizer(OptimizationMethod):
 
         param_ranges = config.parameter_ranges.get(strategy, {})
         if not param_ranges:
-            raise ValueError(f"No parameter ranges defined for strategy {strategy}")
+            msg = f"No parameter ranges defined for strategy {strategy}"
+            raise ValueError(msg)
 
         # Only support numeric parameters for now
         numeric_params = {
@@ -442,15 +451,18 @@ class BayesianOptimizer(OptimizationMethod):
 
         if not numeric_params:
             self.logger.warning(
-                f"No numeric parameters found for {strategy}, falling back to grid search"
+                "No numeric parameters found for %s, falling back to grid search",
+                strategy,
             )
             return GridSearchOptimizer(self.engine).optimize(
                 objective_function, config, symbol, strategy
             )
 
         self.logger.info(
-            f"Bayesian optimization for {symbol}/{strategy}: "
-            f"max_iter={config.max_iterations}"
+            "Bayesian optimization for %s/%s: max_iter=%s",
+            symbol,
+            strategy,
+            config.max_iterations,
         )
 
         # Initialize with random samples
@@ -510,7 +522,7 @@ class BayesianOptimizer(OptimizationMethod):
                 best_params = next_params
 
             self.logger.info(
-                f"Iteration {iteration}: score={score:.4f}, best={best_score:.4f}"
+                "Iteration %s: score=%.4f, best=%.4f", iteration, score, best_score
             )
 
         return OptimizationResult(
@@ -526,7 +538,7 @@ class BayesianOptimizer(OptimizationMethod):
             config=config,
         )
 
-    def _sample_random_params(self, param_ranges: Dict[str, List]) -> Dict[str, Any]:
+    def _sample_random_params(self, param_ranges: dict[str, list]) -> dict[str, Any]:
         """Sample random parameters from ranges."""
         params = {}
         for param, values in param_ranges.items():
@@ -536,9 +548,9 @@ class BayesianOptimizer(OptimizationMethod):
     def _optimize_acquisition(
         self,
         gp: GaussianProcessRegressor,
-        param_ranges: Dict[str, List],
+        param_ranges: dict[str, list],
         current_best: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Optimize acquisition function to find next point."""
         bounds = [(min(values), max(values)) for values in param_ranges.values()]
         param_names = list(param_ranges.keys())
@@ -578,6 +590,7 @@ class AdvancedPortfolioOptimizer:
     def __init__(self, engine: OptimizedBacktestEngine = None):
         self.engine = engine or OptimizedBacktestEngine()
         self.logger = logging.getLogger(__name__)
+        self.advanced_cache = UnifiedCacheManager()
 
         # Available optimization methods
         self.optimizers = {
@@ -588,7 +601,7 @@ class AdvancedPortfolioOptimizer:
 
     def optimize_portfolio(
         self, config: OptimizationConfig, method: str = "genetic_algorithm"
-    ) -> Dict[str, Dict[str, OptimizationResult]]:
+    ) -> dict[str, dict[str, OptimizationResult]]:
         """
         Optimize entire portfolio of symbols and strategies.
 
@@ -600,12 +613,15 @@ class AdvancedPortfolioOptimizer:
             Nested dictionary: {symbol: {strategy: OptimizationResult}}
         """
         if method not in self.optimizers:
-            raise ValueError(f"Unknown optimization method: {method}")
+            msg = f"Unknown optimization method: {method}"
+            raise ValueError(msg)
 
         start_time = time.time()
         self.logger.info(
-            f"Portfolio optimization: {len(config.symbols)} symbols, "
-            f"{len(config.strategies)} strategies, method={method}"
+            "Portfolio optimization: %s symbols, %s strategies, method=%s",
+            len(config.symbols),
+            len(config.strategies),
+            method,
         )
 
         results = {}
@@ -617,7 +633,11 @@ class AdvancedPortfolioOptimizer:
 
             for strategy in config.strategies:
                 self.logger.info(
-                    f"Optimizing {symbol}/{strategy} ({completed+1}/{total_combinations})"
+                    "Optimizing %s/%s (%s/%s)",
+                    symbol,
+                    strategy,
+                    completed + 1,
+                    total_combinations,
                 )
 
                 try:
@@ -625,13 +645,13 @@ class AdvancedPortfolioOptimizer:
                     cache_key = self._get_optimization_cache_key(
                         symbol, strategy, config, method
                     )
-                    cached_result = advanced_cache.get_optimization_result(
+                    cached_result = self.advanced_cache.get_optimization_result(
                         symbol, strategy, cache_key, config.interval
                     )
 
                     if cached_result and config.use_cache:
                         self.logger.info(
-                            f"Using cached optimization for {symbol}/{strategy}"
+                            "Using cached optimization for %s/%s", symbol, strategy
                         )
                         results[symbol][strategy] = self._dict_to_optimization_result(
                             cached_result
@@ -646,7 +666,7 @@ class AdvancedPortfolioOptimizer:
 
                         # Cache result
                         if config.use_cache:
-                            advanced_cache.cache_optimization_result(
+                            self.advanced_cache.cache_optimization_result(
                                 symbol,
                                 strategy,
                                 cache_key,
@@ -658,7 +678,7 @@ class AdvancedPortfolioOptimizer:
 
                 except Exception as e:
                     self.logger.error(
-                        f"Optimization failed for {symbol}/{strategy}: {e}"
+                        "Optimization failed for %s/%s: %s", symbol, strategy, e
                     )
                     results[symbol][strategy] = OptimizationResult(
                         best_parameters={},
@@ -675,7 +695,7 @@ class AdvancedPortfolioOptimizer:
                     completed += 1
 
         total_time = time.time() - start_time
-        self.logger.info(f"Portfolio optimization completed in {total_time:.2f}s")
+        self.logger.info("Portfolio optimization completed in %.2fs", total_time)
 
         return results
 
@@ -688,7 +708,8 @@ class AdvancedPortfolioOptimizer:
     ) -> OptimizationResult:
         """Optimize a single symbol/strategy combination."""
         if method not in self.optimizers:
-            raise ValueError(f"Unknown optimization method: {method}")
+            msg = f"Unknown optimization method: {method}"
+            raise ValueError(msg)
 
         optimizer = self.optimizers[method]
         return optimizer.optimize(self._objective_function, config, symbol, strategy)
@@ -697,7 +718,7 @@ class AdvancedPortfolioOptimizer:
         self,
         symbol: str,
         strategy: str,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         config: OptimizationConfig,
     ) -> float:
         """Objective function for optimization."""
@@ -734,13 +755,13 @@ class AdvancedPortfolioOptimizer:
 
         except Exception as e:
             self.logger.warning(
-                f"Objective function failed for {symbol}/{strategy}: {e}"
+                "Objective function failed for %s/%s: %s", symbol, strategy, e
             )
             return float("-inf")
 
     def _get_optimization_cache_key(
         self, symbol: str, strategy: str, config: OptimizationConfig, method: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate cache key for optimization result."""
         return {
             "method": method,
@@ -755,7 +776,7 @@ class AdvancedPortfolioOptimizer:
             ),
         }
 
-    def _dict_to_optimization_result(self, cached_dict: Dict) -> OptimizationResult:
+    def _dict_to_optimization_result(self, cached_dict: dict) -> OptimizationResult:
         """Convert cached dictionary to OptimizationResult object."""
         return OptimizationResult(
             best_parameters=cached_dict.get("best_parameters", {}),
@@ -772,9 +793,9 @@ class AdvancedPortfolioOptimizer:
 
     def create_ensemble_strategy(
         self,
-        optimization_results: Dict[str, Dict[str, OptimizationResult]],
+        optimization_results: dict[str, dict[str, OptimizationResult]],
         top_n: int = 5,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create ensemble strategy from optimization results.
 
@@ -810,7 +831,7 @@ class AdvancedPortfolioOptimizer:
         total_score = sum(adjusted_scores)
         weights = [s / total_score for s in adjusted_scores]
 
-        ensemble_config = {
+        return {
             "strategies": top_strategies,
             "weights": weights,
             "creation_date": time.time(),
@@ -818,11 +839,9 @@ class AdvancedPortfolioOptimizer:
             "diversity_score": len(set(r["strategy"] for r in top_strategies)),
         }
 
-        return ensemble_config
-
     def get_optimization_summary(
-        self, results: Dict[str, Dict[str, OptimizationResult]]
-    ) -> Dict[str, Any]:
+        self, results: dict[str, dict[str, OptimizationResult]]
+    ) -> dict[str, Any]:
         """Generate summary statistics from optimization results."""
         all_scores = []
         strategy_performance = defaultdict(list)
@@ -835,7 +854,7 @@ class AdvancedPortfolioOptimizer:
                     strategy_performance[strategy].append(result.best_score)
                     symbol_performance[symbol].append(result.best_score)
 
-        summary = {
+        return {
             "total_optimizations": sum(
                 len(strategies) for strategies in results.values()
             ),
@@ -867,8 +886,6 @@ class AdvancedPortfolioOptimizer:
                 for symbol, scores in symbol_performance.items()
             },
         }
-
-        return summary
 
 
 # Import for Bayesian optimization

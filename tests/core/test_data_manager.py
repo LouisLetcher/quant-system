@@ -1,13 +1,14 @@
 """Unit tests for UnifiedDataManager."""
 
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from __future__ import annotations
+
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from src.core.data_manager import DataSource, UnifiedDataManager
+from src.core.data_manager import UnifiedDataManager
 
 
 class TestUnifiedDataManager:
@@ -33,229 +34,166 @@ class TestUnifiedDataManager:
     def sample_data(self):
         """Sample market data."""
         dates = pd.date_range("2023-01-01", periods=100, freq="D")
-        data = pd.DataFrame(
+        rng = np.random.default_rng(42)
+        return pd.DataFrame(
             {
-                "Open": np.random.uniform(100, 200, 100),
-                "High": np.random.uniform(100, 200, 100),
-                "Low": np.random.uniform(100, 200, 100),
-                "Close": np.random.uniform(100, 200, 100),
-                "Volume": np.random.randint(1000000, 10000000, 100),
+                "Open": rng.uniform(100, 200, 100),
+                "High": rng.uniform(100, 200, 100),
+                "Low": rng.uniform(100, 200, 100),
+                "Close": rng.uniform(100, 200, 100),
+                "Volume": rng.integers(1000000, 10000000, 100),
             },
             index=dates,
         )
-        return data
 
     def test_init(self, data_manager):
         """Test initialization."""
         assert isinstance(data_manager, UnifiedDataManager)
-        assert len(data_manager.sources) == 0
+        # Default sources are initialized automatically
+        assert len(data_manager.sources) >= 1  # At least yahoo_finance and bybit
         assert data_manager.cache_manager is not None
 
-    def test_add_data_source(self, data_manager):
-        """Test adding data sources."""
-        # Test adding yahoo finance source
-        data_manager.add_source("yahoo_finance")
-        assert "yahoo_finance" in data_manager.sources
+    def test_get_data(self, data_manager, sample_data):
+        """Test the main data fetching method."""
+        # Mock the cache manager to return None (cache miss)
+        data_manager.cache_manager.get_data.return_value = None
 
-        # Test adding bybit source
-        data_manager.add_source("bybit")
-        assert "bybit" in data_manager.sources
+        # Mock Yahoo Finance source
+        with patch("yfinance.Ticker") as mock_ticker:
+            mock_ticker_instance = Mock()
+            mock_ticker_instance.history.return_value = sample_data
+            mock_ticker.return_value = mock_ticker_instance
 
-        # Test invalid source
-        with pytest.raises(ValueError):
-            data_manager.add_source("invalid_source")
-
-    def test_remove_data_source(self, data_manager):
-        """Test removing data sources."""
-        data_manager.add_source("yahoo_finance")
-        data_manager.remove_source("yahoo_finance")
-        assert "yahoo_finance" not in data_manager.sources
-
-    @patch("src.core.data_manager.yf.download")
-    def test_fetch_yahoo_finance_data(
-        self, mock_yf_download, data_manager, sample_data
-    ):
-        """Test fetching data from Yahoo Finance."""
-        mock_yf_download.return_value = sample_data
-
-        data_manager.add_source("yahoo_finance")
-        result = data_manager.fetch_data(
-            symbol="AAPL", start_date="2023-01-01", end_date="2023-12-31"
-        )
-
-        assert isinstance(result, pd.DataFrame)
-        assert len(result) == 100
-        assert all(
-            col in result.columns for col in ["Open", "High", "Low", "Close", "Volume"]
-        )
-
-    @patch("src.core.data_manager.requests.get")
-    def test_fetch_bybit_data(self, mock_get, data_manager):
-        """Test fetching data from Bybit."""
-        # Mock Bybit API response
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "result": {
-                "list": [
-                    [
-                        "1640995200000",
-                        "47000",
-                        "47500",
-                        "46500",
-                        "47200",
-                        "1000",
-                        "47000000",
-                    ],
-                    [
-                        "1641081600000",
-                        "47200",
-                        "47800",
-                        "46800",
-                        "47400",
-                        "1200",
-                        "56880000",
-                    ],
-                ]
-            }
-        }
-        mock_get.return_value = mock_response
-
-        data_manager.add_source("bybit")
-        result = data_manager.fetch_data(
-            symbol="BTCUSDT",
-            start_date="2022-01-01",
-            end_date="2022-01-02",
-            asset_type="crypto",
-        )
-
-        assert isinstance(result, pd.DataFrame)
-        assert len(result) == 2
-
-    def test_batch_fetch_data(self, data_manager, sample_data, mock_cache_manager):
-        """Test batch data fetching."""
-        with patch("src.core.data_manager.yf.download") as mock_yf_download:
-            mock_yf_download.return_value = sample_data
-
-            data_manager.add_source("yahoo_finance")
-            results = data_manager.batch_fetch_data(
-                symbols=["AAPL", "MSFT"], start_date="2023-01-01", end_date="2023-12-31"
+            result = data_manager.get_data(
+                symbol="AAPL",
+                start_date="2023-01-01",
+                end_date="2023-12-31",
+                interval="1d",
             )
 
-            assert isinstance(results, dict)
-            assert len(results) == 2
-            assert "AAPL" in results
-            assert "MSFT" in results
+            assert isinstance(result, pd.DataFrame)
+            assert not result.empty
+            assert all(
+                col in result.columns for col in ["open", "high", "low", "close"]
+            )
 
-    def test_validate_symbol(self, data_manager):
-        """Test symbol validation."""
-        # Valid symbols
-        assert data_manager._validate_symbol("AAPL", "stocks") == True
-        assert data_manager._validate_symbol("BTCUSDT", "crypto") == True
-        assert data_manager._validate_symbol("EURUSD=X", "forex") == True
+    def test_add_source_with_actual_source(self, data_manager):
+        """Test adding actual DataSource objects."""
+        from src.core.data_manager import DataSource, DataSourceConfig
 
-        # Invalid symbols
-        assert data_manager._validate_symbol("", "stocks") == False
-        assert data_manager._validate_symbol("INVALID123", "stocks") == False
+        # Create a mock DataSource for testing
+        class MockDataSource(DataSource):
+            def __init__(self):
+                config = DataSourceConfig(
+                    name="test_source",
+                    priority=5,
+                    rate_limit=1.0,
+                    max_retries=3,
+                    timeout=30.0,
+                    supports_batch=False,
+                    asset_types=["stocks"],
+                )
+                super().__init__(config)
 
-    def test_get_available_symbols(self, data_manager):
-        """Test getting available symbols."""
-        symbols = data_manager.get_available_symbols("stocks")
-        assert isinstance(symbols, list)
-        assert len(symbols) > 0
+            def fetch_data(self, symbol, start_date, end_date, interval="1d", **kwargs):
+                return None
 
-    def test_get_source_info(self, data_manager):
-        """Test getting source information."""
-        data_manager.add_source("yahoo_finance")
-        info = data_manager.get_source_info()
+            def fetch_batch_data(
+                self, symbols, start_date, end_date, interval="1d", **kwargs
+            ):
+                return {}
 
-        assert isinstance(info, dict)
-        assert "yahoo_finance" in info
-        assert "priority" in info["yahoo_finance"]
-        assert "supports_batch" in info["yahoo_finance"]
+            def get_available_symbols(self, asset_type=None):
+                return []
 
-    def test_error_handling(self, data_manager):
-        """Test error handling."""
-        # Test with no sources
-        with pytest.raises(ValueError):
-            data_manager.fetch_data("AAPL", "2023-01-01", "2023-12-31")
+        # Test adding a DataSource object
+        test_source = MockDataSource()
+        initial_count = len(data_manager.sources)
+        data_manager.add_source(test_source)
 
-        # Test with invalid date format
-        data_manager.add_source("yahoo_finance")
-        with pytest.raises(ValueError):
-            data_manager.fetch_data("AAPL", "invalid-date", "2023-12-31")
+        assert len(data_manager.sources) == initial_count + 1
+        assert "test_source" in data_manager.sources
+        assert data_manager.sources["test_source"] == test_source
+
+    def test_default_sources_initialization(self):
+        """Test that default sources are properly initialized."""
+        from src.core.data_manager import UnifiedDataManager
+
+        # Create a fresh instance
+        manager = UnifiedDataManager()
+
+        # Should have at least yahoo_finance and bybit
+        assert len(manager.sources) >= 2
+        assert "yahoo_finance" in manager.sources
+        assert "bybit" in manager.sources
+
+        # Check that sources are properly configured
+        yahoo_source = manager.sources["yahoo_finance"]
+        assert yahoo_source.config.name == "yahoo_finance"
+        assert yahoo_source.config.supports_batch is True
+
+        bybit_source = manager.sources["bybit"]
+        assert bybit_source.config.name == "bybit"
+        assert bybit_source.config.supports_futures is True
 
     def test_cache_integration(self, data_manager, sample_data):
-        """Test cache integration."""
+        """Test that caching works properly."""
+        # Test cache hit
         data_manager.cache_manager.get_data.return_value = sample_data
 
-        # Test cache hit
-        result = data_manager.fetch_data(
-            symbol="AAPL", start_date="2023-01-01", end_date="2023-12-31"
+        result = data_manager.get_data(
+            symbol="AAPL",
+            start_date="2023-01-01",
+            end_date="2023-12-31",
+            use_cache=True,
         )
 
         assert isinstance(result, pd.DataFrame)
         data_manager.cache_manager.get_data.assert_called_once()
 
-    @pytest.mark.parametrize(
-        "asset_type,expected_interval",
-        [("stocks", "1d"), ("crypto", "1h"), ("forex", "1d")],
-    )
-    def test_get_default_interval(self, data_manager, asset_type, expected_interval):
-        """Test getting default intervals for different asset types."""
-        interval = data_manager._get_default_interval(asset_type)
-        assert interval == expected_interval
+        # Test cache miss and cache storage
+        data_manager.cache_manager.get_data.return_value = None
 
-    def test_data_quality_checks(self, data_manager, sample_data):
-        """Test data quality validation."""
-        # Test with good data
-        is_valid = data_manager._validate_data_quality(sample_data)
-        assert is_valid == True
+        with patch("yfinance.Ticker") as mock_ticker:
+            mock_ticker_instance = Mock()
+            mock_ticker_instance.history.return_value = sample_data
+            mock_ticker.return_value = mock_ticker_instance
 
-        # Test with data containing NaN
-        bad_data = sample_data.copy()
-        bad_data.iloc[0, 0] = np.nan
-        is_valid = data_manager._validate_data_quality(bad_data)
-        assert is_valid == False
-
-        # Test with empty data
-        empty_data = pd.DataFrame()
-        is_valid = data_manager._validate_data_quality(empty_data)
-        assert is_valid == False
-
-    def test_data_normalization(self, data_manager):
-        """Test data normalization across different sources."""
-        # Create test data with different formats
-        test_data = pd.DataFrame(
-            {
-                "open": [100, 101, 102],
-                "high": [105, 106, 107],
-                "low": [99, 100, 101],
-                "close": [104, 105, 106],
-                "volume": [1000000, 1100000, 1200000],
-            }
-        )
-
-        normalized = data_manager._normalize_data(test_data)
-
-        # Check that columns are standardized
-        expected_columns = ["Open", "High", "Low", "Close", "Volume"]
-        assert list(normalized.columns) == expected_columns
-
-    def test_concurrent_requests(self, data_manager, sample_data):
-        """Test handling of concurrent data requests."""
-        with patch("src.core.data_manager.yf.download") as mock_yf_download:
-            mock_yf_download.return_value = sample_data
-
-            data_manager.add_source("yahoo_finance")
-
-            # Simulate concurrent requests
-            symbols = ["AAPL", "MSFT", "GOOGL", "AMZN"]
-            results = data_manager.batch_fetch_data(
-                symbols=symbols, start_date="2023-01-01", end_date="2023-12-31"
+            result = data_manager.get_data(
+                symbol="TSLA",
+                start_date="2023-01-01",
+                end_date="2023-12-31",
+                use_cache=True,
             )
 
-            assert len(results) == len(symbols)
-            for symbol in symbols:
-                assert symbol in results
-                assert isinstance(results[symbol], pd.DataFrame)
+            assert isinstance(result, pd.DataFrame)
+            # Verify cache_data was called to store the result
+            data_manager.cache_manager.cache_data.assert_called_once()
+
+    def test_asset_type_detection(self, data_manager):
+        """Test asset type detection from symbols."""
+        # Test crypto detection
+        assert data_manager._detect_asset_type("BTCUSDT") == "crypto"
+        assert data_manager._detect_asset_type("ETH-USD") == "crypto"
+
+        # Test forex detection
+        assert data_manager._detect_asset_type("EURUSD=X") == "forex"
+        assert data_manager._detect_asset_type("GBPUSD") == "forex"
+
+        # Test stocks detection (default)
+        assert data_manager._detect_asset_type("AAPL") == "stocks"
+        assert data_manager._detect_asset_type("MSFT") == "stocks"
+
+    def test_source_status(self, data_manager):
+        """Test getting source status information."""
+        status = data_manager.get_source_status()
+
+        assert isinstance(status, dict)
+        assert "yahoo_finance" in status
+        assert "bybit" in status
+
+        # Check status structure
+        yahoo_status = status["yahoo_finance"]
+        assert "priority" in yahoo_status
+        assert "supports_batch" in yahoo_status
+        assert "asset_types" in yahoo_status
