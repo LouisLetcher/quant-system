@@ -14,7 +14,7 @@ def deduplicate_portfolio(file_path: Path) -> None:
     """Remove duplicate symbols from a portfolio file."""
     data = load_json_file(file_path)
 
-    for portfolio_name, portfolio_data in data.items():
+    for portfolio_data in data.values():
         if "symbols" in portfolio_data:
             original_count = len(portfolio_data["symbols"])
             unique_symbols = list(dict.fromkeys(portfolio_data["symbols"]))

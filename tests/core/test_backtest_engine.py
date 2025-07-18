@@ -277,7 +277,7 @@ class TestUnifiedBacktestEngine:
                 config=config,
             )
 
-            result = self.engine.run_backtest("AAPL", "BuyAndHold", config)
+            self.engine.run_backtest("AAPL", "BuyAndHold", config)
 
             assert self.engine.stats["cache_hits"] == 1
             assert self.engine.stats["cache_misses"] == 0
@@ -380,7 +380,7 @@ class TestUnifiedBacktestEngine:
                     config=config,
                 )
 
-                result = self.engine.run_backtest("BTC-USD", "BuyAndHold", config)
+                self.engine.run_backtest("BTC-USD", "BuyAndHold", config)
 
                 # Verify futures data method was called
                 self.mock_data_manager.get_crypto_futures_data.assert_called_once()
@@ -474,46 +474,50 @@ class TestIntegration:
         )
 
         # Mock only external dependencies
-        with patch("src.core.backtest_engine.UnifiedDataManager") as mock_dm_class:
-            with patch("src.core.backtest_engine.UnifiedCacheManager") as mock_cm_class:
-                # Setup mocks
-                mock_dm = MagicMock()
-                mock_cm = MagicMock()
-                mock_dm_class.return_value = mock_dm
-                mock_cm_class.return_value = mock_cm
+        with (
+            patch("src.core.backtest_engine.UnifiedDataManager") as mock_dm_class,
+            patch("src.core.backtest_engine.UnifiedCacheManager") as mock_cm_class,
+        ):
+            # Setup mocks
+            mock_dm = MagicMock()
+            mock_cm = MagicMock()
+            mock_dm_class.return_value = mock_dm
+            mock_cm_class.return_value = mock_cm
 
-                mock_dm.get_data.return_value = test_data
-                mock_cm.get_backtest_result.return_value = None
+            mock_dm.get_data.return_value = test_data
+            mock_cm.get_backtest_result.return_value = None
 
-                # Create engine
-                engine = UnifiedBacktestEngine()
+            # Create engine
+            engine = UnifiedBacktestEngine()
 
-                # Test configuration
-                config = BacktestConfig(
-                    symbols=["TEST"],
-                    strategies=["BuyAndHold"],
-                    start_date="2023-01-01",
-                    end_date="2023-01-05",
-                    use_cache=False,
+            # Test configuration
+            config = BacktestConfig(
+                symbols=["TEST"],
+                strategies=["BuyAndHold"],
+                start_date="2023-01-01",
+                end_date="2023-01-05",
+                use_cache=False,
+            )
+
+            # Mock strategy-related methods
+            with (
+                patch.object(engine, "_get_default_parameters") as mock_params,
+                patch.object(engine, "_execute_backtest") as mock_execute,
+            ):
+                mock_params.return_value = {}
+                mock_execute.return_value = BacktestResult(
+                    symbol="TEST",
+                    strategy="BuyAndHold",
+                    parameters={},
+                    metrics={"total_return": 0.06, "sharpe_ratio": 1.5},
+                    config=config,
                 )
 
-                # Mock strategy-related methods
-                with patch.object(engine, "_get_default_parameters") as mock_params:
-                    with patch.object(engine, "_execute_backtest") as mock_execute:
-                        mock_params.return_value = {}
-                        mock_execute.return_value = BacktestResult(
-                            symbol="TEST",
-                            strategy="BuyAndHold",
-                            parameters={},
-                            metrics={"total_return": 0.06, "sharpe_ratio": 1.5},
-                            config=config,
-                        )
+                result = engine.run_backtest("TEST", "BuyAndHold", config)
 
-                        result = engine.run_backtest("TEST", "BuyAndHold", config)
-
-                        # Verify result
-                        assert isinstance(result, BacktestResult)
-                        assert result.symbol == "TEST"
-                        assert result.strategy == "BuyAndHold"
-                        assert "total_return" in result.metrics
-                        assert result.metrics["total_return"] == 0.06
+                # Verify result
+                assert isinstance(result, BacktestResult)
+                assert result.symbol == "TEST"
+                assert result.strategy == "BuyAndHold"
+                assert "total_return" in result.metrics
+                assert result.metrics["total_return"] == 0.06
