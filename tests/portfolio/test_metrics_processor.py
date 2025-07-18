@@ -1,7 +1,9 @@
-import unittest
+"""Test suite for portfolio metrics processor."""
 
-import numpy as np
+from __future__ import annotations
+
 import pandas as pd
+import pytest
 
 from src.portfolio.metrics_processor import (
     calculate_calmar_ratio,
@@ -13,11 +15,13 @@ from src.portfolio.metrics_processor import (
 )
 
 
-class TestMetricsProcessor(unittest.TestCase):
+class TestMetricsProcessor:
+    """Test class for metrics processor functionality."""
 
-    def setUp(self):
-        # Create sample backtest result
-        self.backtest_result = {
+    @pytest.fixture
+    def backtest_result(self):
+        """Create sample backtest result for testing."""
+        return {
             "equity_curve": pd.Series(
                 [10000, 10100, 10200, 10150, 10300, 10250, 10400],
                 index=pd.date_range("2023-01-01", periods=7),
@@ -54,136 +58,140 @@ class TestMetricsProcessor(unittest.TestCase):
                     "type": "long",
                 },
             ],
-        }
-
-        # Add metrics
-        self.backtest_result["metrics"] = {
+            "initial_capital": 10000,
+            "total_return": 400,
             "return_pct": 4.0,
-            "sharpe_ratio": 1.5,
+            "max_drawdown": 50,
             "max_drawdown_pct": 0.5,
+            "sharpe_ratio": 1.5,
+            "sortino_ratio": 1.8,
+            "calmar_ratio": 8.0,
+            "volatility": 0.15,
             "win_rate": 66.67,
             "profit_factor": 7.0,
             "trades_count": 3,
         }
 
-    def test_extract_detailed_metrics(self):
+    def test_extract_detailed_metrics(self, backtest_result):
+        """Test extraction of detailed metrics from backtest results."""
         # Call function
-        metrics = extract_detailed_metrics(self.backtest_result, 10000)
+        metrics = extract_detailed_metrics(backtest_result, 10000)
 
         # Check basic metrics
-        self.assertIn("return_pct", metrics)
-        self.assertIn("sharpe_ratio", metrics)
-        self.assertIn("max_drawdown_pct", metrics)
-        self.assertIn("win_rate", metrics)
-        self.assertIn("profit_factor", metrics)
-        self.assertIn("trades_count", metrics)
+        assert "return_pct" in metrics
+        assert "sharpe_ratio" in metrics
+        assert "max_drawdown_pct" in metrics
+        assert "win_rate" in metrics
+        assert "profit_factor" in metrics
+        assert "trades_count" in metrics
 
         # Check additional metrics
-        self.assertIn("sortino_ratio", metrics)
-        self.assertIn("calmar_ratio", metrics)
-        self.assertIn("volatility", metrics)
-        self.assertIn("avg_trade_pct", metrics)
-        self.assertIn("best_trade_pct", metrics)
-        self.assertIn("worst_trade_pct", metrics)
+        assert "sortino_ratio" in metrics
+        assert "calmar_ratio" in metrics
+        assert "volatility" in metrics
+        assert "avg_trade_pct" in metrics
+        assert "best_trade_pct" in metrics
+        assert "worst_trade_pct" in metrics
 
         # Check values
-        self.assertEqual(metrics["trades_count"], 3)
-        self.assertEqual(metrics["win_rate"], 66.67)
-        self.assertEqual(metrics["best_trade_pct"], 2.0)
-        self.assertEqual(metrics["worst_trade_pct"], -0.5)
-        self.assertEqual(metrics["avg_trade_pct"], 1.0)
+        assert metrics["trades_count"] == 3
+        assert metrics["win_rate"] == 66.67
+        assert metrics["best_trade_pct"] == 2.0
+        assert metrics["worst_trade_pct"] == -0.5
+        assert metrics["avg_trade_pct"] == 1.0
 
     def test_ensure_all_metrics_exist(self):
+        """Test that all required metrics are present with defaults."""
         # Create incomplete metrics
         incomplete_metrics = {"return_pct": 4.0, "sharpe_ratio": 1.5}
 
-        # Call function
+        # Ensure all metrics exist
         complete_metrics = ensure_all_metrics_exist(incomplete_metrics)
 
         # Check that missing metrics were added with default values
-        self.assertIn("max_drawdown_pct", complete_metrics)
-        self.assertIn("win_rate", complete_metrics)
-        self.assertIn("profit_factor", complete_metrics)
-        self.assertIn("trades_count", complete_metrics)
-        self.assertIn("sortino_ratio", complete_metrics)
-        self.assertIn("calmar_ratio", complete_metrics)
+        assert "max_drawdown_pct" in complete_metrics
+        assert "win_rate" in complete_metrics
+        assert "profit_factor" in complete_metrics
+        assert "trades_count" in complete_metrics
+        assert "sortino_ratio" in complete_metrics
+        assert "calmar_ratio" in complete_metrics
 
     def test_calculate_sharpe_ratio(self):
+        """Test Sharpe ratio calculation."""
         # Create returns series
         returns = pd.Series([0.01, 0.02, -0.01, 0.015, -0.005, 0.02])
 
-        # Call function
+        # Calculate Sharpe ratio
         sharpe = calculate_sharpe_ratio(returns)
 
         # Check result
-        self.assertIsInstance(sharpe, float)
-        self.assertGreater(sharpe, 0)  # Should be positive for this sample
+        assert isinstance(sharpe, float)
+        assert sharpe > 0  # Should be positive for this sample
 
         # Test with empty returns
         empty_returns = pd.Series([])
         sharpe = calculate_sharpe_ratio(empty_returns)
-        self.assertEqual(sharpe, 0.0)  # Should return 0 for empty series
+        assert sharpe == 0.0  # Should return 0 for empty series
 
     def test_calculate_sortino_ratio(self):
+        """Test Sortino ratio calculation."""
         # Create returns series
         returns = pd.Series([0.01, 0.02, -0.01, 0.015, -0.005, 0.02])
 
-        # Call function
+        # Calculate Sortino ratio
         sortino = calculate_sortino_ratio(returns)
 
         # Check result
-        self.assertIsInstance(sortino, float)
-        self.assertGreater(sortino, 0)  # Should be positive for this sample
+        assert isinstance(sortino, float)
+        assert sortino > 0  # Should be positive for this sample
 
         # Test with no negative returns
         positive_returns = pd.Series([0.01, 0.02, 0.015, 0.02])
         sortino = calculate_sortino_ratio(positive_returns)
-        self.assertGreater(sortino, 0)  # Should still be positive
+        assert sortino > 0  # Should still be positive
 
         # Test with empty returns
         empty_returns = pd.Series([])
         sortino = calculate_sortino_ratio(empty_returns)
-        self.assertEqual(sortino, 0.0)  # Should return 0 for empty series
+        assert sortino == 0.0  # Should return 0 for empty series
 
     def test_calculate_calmar_ratio(self):
+        """Test Calmar ratio calculation."""
         # Create returns series and max drawdown
         returns = pd.Series([0.01, 0.02, -0.01, 0.015, -0.005, 0.02])
-        max_drawdown = 0.05
+        max_drawdown = 0.05  # 5% max drawdown
 
-        # Call function
+        # Calculate Calmar ratio
         calmar = calculate_calmar_ratio(returns, max_drawdown)
 
         # Check result
-        self.assertIsInstance(calmar, float)
+        assert isinstance(calmar, float)
 
         # Test with zero drawdown
         calmar = calculate_calmar_ratio(returns, 0)
-        self.assertEqual(calmar, 0.0)  # Should return 0 for zero drawdown
+        assert calmar == 0.0  # Should return 0 for zero drawdown
 
     def test_calculate_drawdowns(self):
+        """Test drawdown calculation."""
         # Create equity curve
         equity_curve = pd.Series(
             [10000, 10100, 10200, 10150, 10300, 10250, 10400],
             index=pd.date_range("2023-01-01", periods=7),
         )
 
-        # Call function
+        # Calculate drawdowns
         drawdowns = calculate_drawdowns(equity_curve)
 
         # Check result
-        self.assertIsInstance(drawdowns, pd.Series)
-        self.assertEqual(len(drawdowns), len(equity_curve))
-        self.assertTrue((drawdowns <= 0).all())  # All drawdowns should be <= 0
+        assert isinstance(drawdowns, pd.Series)
+        assert len(drawdowns) == len(equity_curve)
+        assert (drawdowns <= 0).all()  # All drawdowns should be <= 0
 
         # Check max drawdown
         max_dd = drawdowns.min()
-        self.assertLess(max_dd, 0)  # Should be negative
+        assert max_dd < 0  # Should be negative
 
         # Test with empty equity curve
         empty_equity = pd.Series([])
         drawdowns = calculate_drawdowns(empty_equity)
-        self.assertTrue(drawdowns.empty)  # Should return empty series
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert drawdowns.empty  # Should return empty series

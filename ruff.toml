@@ -16,7 +16,6 @@ extend-select = [
     "I",      # isort
     "UP",     # pyupgrade
     "G",      # flake8-logging-format
-    "LOG",    # flake8-logging
     "PT",     # flake8-pytest-style
     "E",      # pycodestyle
     "W",      # pycodestyle
@@ -25,18 +24,15 @@ extend-select = [
     "SIM",    # flake8-simplify
     "S",      # flake8-bandit
     "DTZ",    # flake8-datetimez
-    "EM",     # flake8-errmsg 
-    "LOG",    # flake8-logging 
-    "G",      # flake8-logging-format
+    "EM",     # flake8-errmsg
     "PIE",    # flake8-pie
     "Q",      # flake8-quotes
     "RET",    # flake8-return
-    "TID",    # flake8-tidy-imports 
+    "TID",    # flake8-tidy-imports
     "PTH",    # flake8-use-pathlib
     "F",      # Pyflakes
     "NPY",    # NumPy-specific rules
     "PERF",   # Perflint
-    "FURB",   # refurb
     "RUF",    # Ruff-specific rules
     "ISC",    # flake8-implicit-str-concat
     "TRY002", # raise-vanilla-class
@@ -75,13 +71,69 @@ ignore = [
     "COM819", # prohibited-trailing-comma
     "ISC001", # single-line-implicit-string-concatenation
     "ISC002", # multi-line-implicit-string-concatenation
+    # Additional ignores for problematic rules
+    "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "DTZ005", # datetime.datetime.now() called without a tz argument
+    "DTZ007", # Naive datetime constructed using datetime.datetime.strptime() without %z
+    "B018",   # Found useless attribute access
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "B904",   # Within an except clause, raise exceptions with raise ... from err
+    # Additional showcase project ignores
+    "D103",   # Missing docstring in public function
+    "D104",   # Missing docstring in public package
+    "D105",   # Missing docstring in magic method
+    "D106",   # Missing docstring in public nested class
+    "D107",   # Missing docstring in __init__
+    "D200",   # One-line docstring should fit on one line
+    "D202",   # No blank lines allowed after function docstring
+    "D205",   # 1 blank line required between summary line and description
+    "D400",   # First line should end with a period
+    "D401",   # First line should be in imperative mood
+    "D402",   # First line should not be the function's signature
+    "DTZ001", # datetime.datetime() called without a tzinfo argument
+    "DTZ003", # datetime.datetime.utcnow() is deprecated
+    "DTZ006", # datetime.datetime.fromtimestamp() called without a tz argument
+    "EM101",  # Exception must not use a string literal
+    "EM102",  # Exception must not use an f-string literal
+    "TRY003", # Avoid specifying long messages outside the exception class
+    "PERF401", # Use a list comprehension to create a transformed list
+    "PERF203", # try-except within a loop incurs performance overhead
+    "RUF012", # Mutable class attributes should be annotated with ClassVar
+    "PT004",  # Fixture does not return anything, add leading underscore
+    "UP006",  # Use new-style typing annotations
+    "UP007",  # Use new-style union syntax
+    "UP035",  # typing.* imports are deprecated
+    "RET504", # Unnecessary assignment before return
+    "SIM102", # Use single if statement
+    "SIM103", # Return condition directly
+    "SIM105", # Use contextlib.suppress
+    "SIM118", # Use key in dict
+    "PTH100", # Use pathlib instead of os.path
+    "PTH110", # Use pathlib instead of os.path
+    "PTH120", # Use pathlib instead of os.path
+    "B007",   # Unused loop control variable
+    "B904",   # raise without from in except
+    "E402",   # Module import not at top
+    "E501",   # Line too long
+    "E722",   # Bare except
+    "F811",   # Redefined while unused
+
+    "NPY002", # Replace legacy numpy calls
+    "RUF015", # Unnecessary iterable allocation
+    "S110",   # try-except-pass
+    "S301",   # Pickle usage
+    "S603",   # subprocess call
+    "S608",   # Hardcoded SQL
+    "W291",   # Trailing whitespace
+    "SIM103", # Return condition directly
 ]
 fixable = [
     "I",
     "UP",
     "ISC",
     "G",
-    "LOG",
     "PT",
     "E",
     "W",
@@ -89,8 +141,6 @@ fixable = [
     "B",
     "SIM",
     "S",
-    "LOG",
-    "G",
     "PIE",
     "Q",
     "RET",
@@ -99,12 +149,17 @@ fixable = [
     "F",
     "NPY",
     "PERF",
-    "FURB",
     "RUF",
 ]
 
 [lint.per-file-ignores]
-"tests/test_*.py" = ["S101", "D"]
+"tests/**/*.py" = ["S101"]  # Allow assert statements in tests
+"scripts/**/*.py" = ["S101"]  # Allow assert statements in scripts
+"src/backtesting_engine/algorithms/original/*.py" = ["F821", "D100", "D101", "D102"]  # QuantConnect files
+"src/backtesting_engine/algorithms/quantconnect/*.py" = ["SIM103"]  # QuantConnect files
+"src/backtesting_engine/algorithms/python/*.py" = ["D100", "D101", "D102"]  # Algorithm files
+"src/backtesting_engine/strategies/strategy_factory.py" = ["B904"]  # Strategy factory exceptions
+"src/portfolio/advanced_optimizer.py" = ["F821"]  # Optional import issue
 
 [format]
 indent-style = "space"

@@ -1,11 +1,9 @@
 """Unit tests for PortfolioManager."""
 
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, Mock
+from __future__ import annotations
 
-import numpy as np
+from unittest.mock import Mock
+
 import pandas as pd
 import pytest
 
@@ -244,7 +242,7 @@ class TestPortfolioManager:
         assert isinstance(allocations, dict)
         assert sum(allocations.values()) == pytest.approx(1.0, rel=1e-2)
 
-        for symbol, allocation in allocations.items():
+        for allocation in allocations.values():
             assert 0 <= allocation <= 1
 
     def test_generate_investment_plan(self, portfolio_manager):
@@ -288,7 +286,7 @@ class TestPortfolioManager:
         assert rankings[0][0] == "portfolio_2"  # Should be ranked higher
 
     @pytest.mark.parametrize(
-        "risk_tolerance,expected_weights",
+        ("risk_tolerance", "expected_weights"),
         [
             ("conservative", {"return": 0.2, "sharpe": 0.3, "drawdown": 0.5}),
             ("moderate", {"return": 0.4, "sharpe": 0.4, "drawdown": 0.2}),
@@ -315,13 +313,13 @@ class TestPortfolioManager:
         }
 
         is_valid = portfolio_manager._validate_portfolio_config(valid_config)
-        assert is_valid == True
+        assert is_valid
 
         # Invalid config - missing symbols
         invalid_config = {"strategies": ["rsi"], "name": "Test Portfolio"}
 
         is_valid = portfolio_manager._validate_portfolio_config(invalid_config)
-        assert is_valid == False
+        assert not is_valid
 
     def test_calculate_correlation_matrix(
         self, portfolio_manager, sample_backtest_results

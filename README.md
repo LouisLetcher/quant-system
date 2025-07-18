@@ -8,7 +8,7 @@ A comprehensive, production-ready quantitative analysis system with multi-asset 
 - **Stocks**: Individual stocks, ETFs, indices (5 specialized TraderFox portfolios)
 - **Forex**: 72+ major, minor, and exotic currency pairs
 - **Crypto**: 220+ Bybit perpetual futures with real-time data
-- **Commodities**: 46+ CFD/rolling futures contracts  
+- **Commodities**: 46+ CFD/rolling futures contracts
 - **Bonds**: 30+ government and corporate bond ETFs
 - **Indices**: 114+ global country and sector ETFs
 
@@ -83,7 +83,7 @@ Complete containerization with docker-compose:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/quant-system.git
+   git clone https://github.com/LouisLetcher/quant-system.git
    cd quant-system
    ```
 
@@ -218,7 +218,7 @@ docker-compose --profile database --profile api --profile monitoring up
 
 ### Available Profiles
 - `dev`: Development environment
-- `test`: Testing environment  
+- `test`: Testing environment
 - `api`: Web API service
 - `database`: PostgreSQL database
 - `cache`: Redis caching

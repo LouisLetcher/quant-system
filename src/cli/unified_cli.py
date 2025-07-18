@@ -3,28 +3,83 @@ Unified CLI - Restructured command-line interface using unified components.
 Removes duplication and provides comprehensive functionality.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import logging
-import os
-import sys
 import time
+from dataclasses import asdict
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List
 
-from src.core import (
-    PortfolioManager,
-    UnifiedBacktestEngine,
-    UnifiedCacheManager,
-    UnifiedDataManager,
-    UnifiedResultAnalyzer,
-)
+from src.core import PortfolioManager, UnifiedBacktestEngine, UnifiedCacheManager, UnifiedDataManager
 from src.core.backtest_engine import BacktestConfig, BacktestResult
-from src.core.strategy import list_available_strategies, StrategyFactory
-from src.reporting.advanced_reporting import AdvancedReportGenerator
+from src.core.strategy import StrategyFactory, list_available_strategies
 
 
-def setup_logging(level: str = "INFO"):
+def get_earliest_data_date(portfolio_path: str) -> datetime:
+    """
+    Get the earliest data date based on portfolio configuration.
+
+    Args:
+        portfolio_path: Path to portfolio configuration file
+
+    Returns:
+        Earliest reasonable data date
+    """
+    # Default fallback date
+    default_date = datetime(2015, 1, 1)
+
+    try:
+        if not portfolio_path:
+            return default_date
+
+        portfolio_file = Path(portfolio_path)
+        if not portfolio_file.exists():
+            return default_date
+
+        with portfolio_file.open("r") as f:
+            portfolio_config = json.load(f)
+
+        # Get the first portfolio config (since file contains nested portfolio)
+        portfolio_key = list(portfolio_config.keys())[0]
+        config = portfolio_config[portfolio_key]
+
+        # Check metadata for best_data_coverage
+        metadata = config.get("metadata", {})
+        data_coverage = metadata.get("best_data_coverage", "")
+
+        if data_coverage and "-present" in data_coverage:
+            year_str = data_coverage.split("-")[0]
+            try:
+                year = int(year_str)
+                return datetime(year, 1, 1)
+            except ValueError:
+                pass
+
+        # Asset type specific defaults
+        asset_type = config.get("asset_type", "")
+        if asset_type == "crypto":
+            return datetime(2017, 1, 1)  # Crypto data typically starts around 2017
+        if asset_type == "stocks":
+            return datetime(1990, 1, 1)  # Stock data goes back further
+        if asset_type == "forex":
+            return datetime(2000, 1, 1)  # Forex data availability
+        if asset_type == "commodities":
+            return datetime(2006, 1, 1)  # Commodity data availability
+        if asset_type == "bonds":
+            return datetime(2003, 1, 1)  # Bond data availability
+
+    except Exception as e:
+        logging.warning(
+            "Could not determine earliest data date from portfolio config: %s", e
+        )
+
+    return default_date
+
+
+def setup_logging(level: str = "INFO") -> None:
     """Setup logging configuration."""
     log_level = getattr(logging, level.upper(), logging.INFO)
     logging.basicConfig(
@@ -32,7 +87,7 @@ def setup_logging(level: str = "INFO"):
     )
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     """Create the main argument parser."""
     parser = argparse.ArgumentParser(
         description="Unified Quant Trading System",
@@ -107,9 +162,7 @@ def add_data_commands(subparsers):
     )
 
     # Sources command
-    sources_parser = data_subparsers.add_parser(
-        "sources", help="Show available data sources"
-    )
+    data_subparsers.add_parser("sources", help="Show available data sources")
 
     # Symbols command
     symbols_parser = data_subparsers.add_parser(
@@ -125,24 +178,32 @@ def add_data_commands(subparsers):
 
 def add_strategy_commands(subparsers):
     """Add strategy management commands."""
-    strategy_parser = subparsers.add_parser("strategy", help="Strategy management commands")
+    strategy_parser = subparsers.add_parser(
+        "strategy", help="Strategy management commands"
+    )
     strategy_subparsers = strategy_parser.add_subparsers(dest="strategy_command")
 
     # List strategies
-    list_parser = strategy_subparsers.add_parser("list", help="List available strategies")
+    list_parser = strategy_subparsers.add_parser(
+        "list", help="List available strategies"
+    )
     list_parser.add_argument(
-        "--type", 
-        choices=["builtin", "external", "all"], 
+        "--type",
+        choices=["builtin", "external", "all"],
         default="all",
-        help="Filter by strategy type"
+        help="Filter by strategy type",
     )
 
     # Strategy info
-    info_parser = strategy_subparsers.add_parser("info", help="Get strategy information")
+    info_parser = strategy_subparsers.add_parser(
+        "info", help="Get strategy information"
+    )
     info_parser.add_argument("name", help="Strategy name")
 
     # Test strategy
-    test_parser = strategy_subparsers.add_parser("test", help="Test strategy with sample data")
+    test_parser = strategy_subparsers.add_parser(
+        "test", help="Test strategy with sample data"
+    )
     test_parser.add_argument("name", help="Strategy name")
     test_parser.add_argument("--symbol", default="AAPL", help="Symbol for testing")
     test_parser.add_argument("--start-date", default="2023-01-01", help="Start date")
@@ -422,7 +483,7 @@ def add_cache_commands(subparsers):
     cache_subparsers = cache_parser.add_subparsers(dest="cache_command")
 
     # Cache stats
-    stats_parser = cache_subparsers.add_parser("stats", help="Show cache statistics")
+    cache_subparsers.add_parser("stats", help="Show cache statistics")
 
     # Clear cache
     clear_parser = cache_subparsers.add_parser("clear", help="Clear cache")
@@ -445,7 +506,7 @@ def add_reports_commands(subparsers):
     reports_subparsers = reports_parser.add_subparsers(dest="reports_command")
 
     # Organize existing reports
-    organize_parser = reports_subparsers.add_parser(
+    reports_subparsers.add_parser(
         "organize", help="Organize existing reports into quarterly structure"
     )
 
@@ -489,7 +550,7 @@ def handle_data_command(args):
 def handle_data_download(args, data_manager: UnifiedDataManager):
     """Handle data download command."""
     logger = logging.getLogger(__name__)
-    logger.info(f"Downloading data for {len(args.symbols)} symbols")
+    logger.info("Downloading data for %s symbols", len(args.symbols))
 
     successful = 0
     failed = 0
@@ -516,16 +577,16 @@ def handle_data_download(args, data_manager: UnifiedDataManager):
 
             if data is not None and not data.empty:
                 successful += 1
-                logger.info(f"✅ {symbol}: {len(data)} data points")
+                logger.info("✅ %s: %s data points", symbol, len(data))
             else:
                 failed += 1
-                logger.warning(f"❌ {symbol}: No data")
+                logger.warning("❌ %s: No data", symbol)
 
         except Exception as e:
             failed += 1
-            logger.error(f"❌ {symbol}: {e}")
+            logger.error("❌ %s: %s", symbol, e)
 
-    logger.info(f"Download complete: {successful} successful, {failed} failed")
+    logger.info("Download complete: %s successful, %s failed", successful, failed)
 
 
 def handle_data_sources(args, data_manager: UnifiedDataManager):
@@ -592,7 +653,7 @@ def handle_single_backtest(args):
         try:
             custom_params = json.loads(args.parameters)
         except json.JSONDecodeError as e:
-            logger.error(f"Invalid parameters JSON: {e}")
+            logger.error("Invalid parameters JSON: %s", e)
             return
 
     # Create config
@@ -609,7 +670,7 @@ def handle_single_backtest(args):
     )
 
     # Run backtest
-    logger.info(f"Running backtest: {args.symbol}/{args.strategy}")
+    logger.info("Running backtest: %s/%s", args.symbol, args.strategy)
     start_time = time.time()
 
     result = engine.run_backtest(args.symbol, args.strategy, config, custom_params)
@@ -618,7 +679,7 @@ def handle_single_backtest(args):
 
     # Display results
     if result.error:
-        logger.error(f"Backtest failed: {result.error}")
+        logger.error("Backtest failed: %s", result.error)
         return
 
     print(f"\nBacktest Results for {args.symbol}/{args.strategy}")
@@ -628,7 +689,7 @@ def handle_single_backtest(args):
 
     metrics = result.metrics
     if metrics:
-        print(f"\nPerformance Metrics:")
+        print("\nPerformance Metrics:")
         print(f"  Total Return: {metrics.get('total_return', 0):.2f}%")
         print(f"  Sharpe Ratio: {metrics.get('sharpe_ratio', 0):.3f}")
         print(f"  Max Drawdown: {metrics.get('max_drawdown', 0):.2f}%")
@@ -667,7 +728,9 @@ def handle_batch_backtest(args):
 
     # Run batch backtests
     logger.info(
-        f"Running batch backtests: {len(args.symbols)} symbols, {len(args.strategies)} strategies"
+        "Running batch backtests: %s symbols, %s strategies",
+        len(args.symbols),
+        len(args.strategies),
     )
 
     results = engine.run_batch_backtests(config)
@@ -676,7 +739,7 @@ def handle_batch_backtest(args):
     successful = [r for r in results if not r.error]
     failed = [r for r in results if r.error]
 
-    print(f"\nBatch Backtest Summary")
+    print("\nBatch Backtest Summary")
     print("=" * 30)
     print(f"Total: {len(results)}")
     print(f"Successful: {len(successful)}")
@@ -684,8 +747,8 @@ def handle_batch_backtest(args):
 
     if successful:
         returns = [r.metrics.get("total_return", 0) for r in successful]
-        print(f"\nPerformance Summary:")
-        print(f"  Average Return: {sum(returns)/len(returns):.2f}%")
+        print("\nPerformance Summary:")
+        print(f"  Average Return: {sum(returns) / len(returns):.2f}%")
         print(f"  Best Return: {max(returns):.2f}%")
         print(f"  Worst Return: {min(returns):.2f}%")
 
@@ -693,18 +756,18 @@ def handle_batch_backtest(args):
         top_performers = sorted(
             successful, key=lambda x: x.metrics.get("total_return", 0), reverse=True
         )[:5]
-        print(f"\nTop 5 Performers:")
+        print("\nTop 5 Performers:")
         for i, result in enumerate(top_performers):
             print(
-                f"  {i+1}. {result.symbol}/{result.strategy}: {result.metrics.get('total_return', 0):.2f}%"
+                f"  {i + 1}. {result.symbol}/{result.strategy}: {result.metrics.get('total_return', 0):.2f}%"
             )
 
     # Save results if output specified
     if args.output:
         output_data = [asdict(result) for result in results]
-        with open(args.output, "w") as f:
+        with Path(args.output).open("w") as f:
             json.dump(output_data, f, indent=2, default=str)
-        logger.info(f"Results saved to {args.output}")
+        logger.info("Results saved to %s", args.output)
 
 
 def handle_portfolio_command(args):
@@ -724,7 +787,7 @@ def handle_portfolio_command(args):
 def handle_portfolio_test_all(args):
     """Handle testing portfolio with all strategies."""
     import webbrowser
-    from datetime import datetime, timedelta
+    from datetime import datetime
 
     from src.reporting.detailed_portfolio_report import DetailedPortfolioReporter
 
@@ -732,14 +795,14 @@ def handle_portfolio_test_all(args):
 
     # Load portfolio definition
     try:
-        with open(args.portfolio, "r") as f:
+        with Path(args.portfolio).open() as f:
             portfolio_data = json.load(f)
 
         # Get the first (and likely only) portfolio from the file
-        portfolio_name = list(portfolio_data.keys())[0]
+        portfolio_name = next(iter(portfolio_data.keys()))
         portfolio_config = portfolio_data[portfolio_name]
     except Exception as e:
-        logger.error(f"Error loading portfolio: {e}")
+        logger.error("Error loading portfolio: %s", e)
         return
 
     # Calculate date range based on period
@@ -750,7 +813,7 @@ def handle_portfolio_test_all(args):
     )
 
     if args.period == "max":
-        start_date = datetime(2015, 1, 1)  # Go back to earliest reasonable data
+        start_date = get_earliest_data_date(args.portfolio)
     elif args.period == "10y":
         start_date = end_date - timedelta(days=365 * 10)
     elif args.period == "5y":
@@ -758,7 +821,7 @@ def handle_portfolio_test_all(args):
     elif args.period == "2y":
         start_date = end_date - timedelta(days=365 * 2)
     else:  # default to max
-        start_date = datetime(2015, 1, 1)
+        start_date = get_earliest_data_date(args.portfolio)
 
     # Use provided dates if available
     if hasattr(args, "start_date") and args.start_date:
@@ -774,7 +837,7 @@ def handle_portfolio_test_all(args):
         all_strategies = strategy_factory.get_available_strategies()
         print(f"🔍 Found {len(all_strategies)} available strategies")
     except Exception as e:
-        logger.warning(f"Could not load strategy factory: {e}")
+        logger.warning("Could not load strategy factory: %s", e)
         # Fallback to basic strategies
         all_strategies = ["rsi", "macd", "bollinger_bands", "sma_crossover"]
         print(f"🔍 Using fallback strategies: {len(all_strategies)} strategies")
@@ -793,9 +856,10 @@ def handle_portfolio_test_all(args):
     print(
         f"📅 Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
     )
-    print(
-        f"📊 Symbols: {', '.join(portfolio_config['symbols'][:5])}{'...' if len(portfolio_config['symbols']) > 5 else ''}"
-    )
+    symbols_display = ", ".join(portfolio_config["symbols"][:5])
+    if len(portfolio_config["symbols"]) > 5:
+        symbols_display += "..."
+    print(f"📊 Symbols: {symbols_display}")
     print(f"⚙️  Strategies: {', '.join(all_strategies)}")
     print(f"⏰ Timeframes: {', '.join(timeframes_to_test)}")
     print(f"🔢 Total Combinations: {total_combinations:,}")
@@ -807,7 +871,7 @@ def handle_portfolio_test_all(args):
 
     # Setup components (single-threaded to avoid multiprocessing issues)
     data_manager = UnifiedDataManager()
-    cache_manager = UnifiedCacheManager()
+    UnifiedCacheManager()
 
     # Download data for all symbols
     for symbol in portfolio_config["symbols"]:
@@ -822,9 +886,9 @@ def handle_portfolio_test_all(args):
             else:
                 print(f"  ❌ {symbol}: No data available")
         except Exception as e:
-            print(f"  ❌ {symbol}: Error - {str(e)}")
+            print(f"  ❌ {symbol}: Error - {e!s}")
 
-    print(f"\n📊 Generating comprehensive report...")
+    print("\n📊 Generating comprehensive report...")
     print(
         "⚠️  Note: Using simulated backtesting results due to multiprocessing limitations"
     )
@@ -879,15 +943,15 @@ def handle_portfolio_test_all(args):
 
     print(f"\n🏆 Best Overall Strategy: {sorted_strategies[0][0]}")
     print(
-        f"\n📊 Each asset analyzed with detailed KPIs, order history, and equity curves"
+        "\n📊 Each asset analyzed with detailed KPIs, order history, and equity curves"
     )
-    print(f"💾 Report size optimized with compression")
+    print("💾 Report size optimized with compression")
 
     if args.open_browser:
         import os
 
         webbrowser.open(f"file://{os.path.abspath(report_path)}")
-        print(f"📱 Detailed report opened in browser")
+        print("📱 Detailed report opened in browser")
 
 
 def handle_portfolio_backtest(args):
@@ -900,7 +964,7 @@ def handle_portfolio_backtest(args):
         try:
             weights = json.loads(args.weights)
         except json.JSONDecodeError as e:
-            logger.error(f"Invalid weights JSON: {e}")
+            logger.error("Invalid weights JSON: %s", e)
             return
 
     # Setup components
@@ -920,16 +984,16 @@ def handle_portfolio_backtest(args):
     )
 
     # Run portfolio backtest
-    logger.info(f"Running portfolio backtest: {len(args.symbols)} symbols")
+    logger.info("Running portfolio backtest: %s symbols", len(args.symbols))
 
     result = engine.run_portfolio_backtest(config, weights)
 
     # Display results
     if result.error:
-        logger.error(f"Portfolio backtest failed: {result.error}")
+        logger.error("Portfolio backtest failed: %s", result.error)
         return
 
-    print(f"\nPortfolio Backtest Results")
+    print("\nPortfolio Backtest Results")
     print("=" * 30)
 
     metrics = result.metrics
@@ -946,10 +1010,10 @@ def handle_portfolio_compare(args):
 
     # Load portfolio definitions
     try:
-        with open(args.portfolios, "r") as f:
+        with Path(args.portfolios).open() as f:
             portfolio_definitions = json.load(f)
     except Exception as e:
-        logger.error(f"Error loading portfolios: {e}")
+        logger.error("Error loading portfolios: %s", e)
         return
 
     # Setup components
@@ -965,7 +1029,7 @@ def handle_portfolio_compare(args):
     portfolio_results = {}
 
     for portfolio_name, portfolio_config in portfolio_definitions.items():
-        logger.info(f"Backtesting portfolio: {portfolio_name}")
+        logger.info("Backtesting portfolio: %s", portfolio_name)
 
         # Use strategies from config if provided, otherwise use all strategies
         strategies_to_test = portfolio_config.get("strategies", all_strategies)
@@ -985,7 +1049,7 @@ def handle_portfolio_compare(args):
     analysis = portfolio_manager.analyze_portfolios(portfolio_results)
 
     # Display comparison
-    print(f"\nPortfolio Comparison Analysis")
+    print("\nPortfolio Comparison Analysis")
     print("=" * 40)
 
     for portfolio_name, summary in analysis["portfolio_summaries"].items():
@@ -997,7 +1061,7 @@ def handle_portfolio_compare(args):
         print(f"  Overall Score: {summary['overall_score']:.1f}")
 
     # Show investment recommendations
-    print(f"\nInvestment Recommendations:")
+    print("\nInvestment Recommendations:")
     for rec in analysis["investment_recommendations"]:
         print(f"\n{rec['priority_rank']}. {rec['portfolio_name']}")
         print(f"   Allocation: {rec['recommended_allocation_pct']:.1f}%")
@@ -1006,9 +1070,9 @@ def handle_portfolio_compare(args):
 
     # Save results if output specified
     if args.output:
-        with open(args.output, "w") as f:
+        with Path(args.output).open("w") as f:
             json.dump(analysis, f, indent=2, default=str)
-        logger.info(f"Analysis saved to {args.output}")
+        logger.info("Analysis saved to %s", args.output)
 
 
 def handle_investment_plan(args):
@@ -1017,10 +1081,10 @@ def handle_investment_plan(args):
 
     # Load portfolio results
     try:
-        with open(args.portfolios, "r") as f:
+        with Path(args.portfolios).open() as f:
             portfolio_results_data = json.load(f)
     except Exception as e:
-        logger.error(f"Error loading portfolio results: {e}")
+        logger.error("Error loading portfolio results: %s", e)
         return
 
     # Convert to BacktestResult objects (simplified)
@@ -1046,19 +1110,19 @@ def handle_investment_plan(args):
     )
 
     # Display investment plan
-    print(f"\nInvestment Plan")
+    print("\nInvestment Plan")
     print("=" * 20)
     print(f"Total Capital: ${args.capital:,.2f}")
     print(f"Risk Tolerance: {args.risk_tolerance.title()}")
 
-    print(f"\nCapital Allocations:")
+    print("\nCapital Allocations:")
     for allocation in investment_plan["allocations"]:
         print(
             f"  {allocation['portfolio_name']}: ${allocation['allocation_amount']:,.2f} "
             f"({allocation['allocation_percentage']:.1f}%)"
         )
 
-    print(f"\nExpected Portfolio Metrics:")
+    print("\nExpected Portfolio Metrics:")
     expected = investment_plan["expected_portfolio_metrics"]
     print(f"  Expected Return: {expected.get('expected_annual_return', 0):.2f}%")
     print(f"  Expected Volatility: {expected.get('expected_volatility', 0):.2f}%")
@@ -1066,9 +1130,9 @@ def handle_investment_plan(args):
 
     # Save plan if output specified
     if args.output:
-        with open(args.output, "w") as f:
+        with Path(args.output).open("w") as f:
             json.dump(investment_plan, f, indent=2, default=str)
-        logger.info(f"Investment plan saved to {args.output}")
+        logger.info("Investment plan saved to %s", args.output)
 
 
 def handle_cache_command(args):
@@ -1087,20 +1151,20 @@ def handle_cache_stats(args, cache_manager: UnifiedCacheManager):
     """Handle cache stats command."""
     stats = cache_manager.get_cache_stats()
 
-    print(f"\nCache Statistics")
+    print("\nCache Statistics")
     print("=" * 20)
     print(
         f"Total Size: {stats['total_size_gb']:.2f} GB / {stats['max_size_gb']:.2f} GB"
     )
     print(f"Utilization: {stats['utilization_percent']:.1f}%")
 
-    print(f"\nBy Type:")
+    print("\nBy Type:")
     for cache_type, type_stats in stats["by_type"].items():
         print(f"  {cache_type.title()}:")
         print(f"    Count: {type_stats['count']}")
         print(f"    Size: {type_stats['total_size_mb']:.1f} MB")
 
-    print(f"\nBy Source:")
+    print("\nBy Source:")
     for source, source_stats in stats["by_source"].items():
         print(f"  {source.title()}:")
         print(f"    Count: {source_stats['count']}")
@@ -1133,17 +1197,17 @@ def handle_strategy_command(args):
     if args.strategy_command == "list":
         strategies = list_available_strategies()
         strategy_type = args.type
-        
+
         if strategy_type == "all":
             print("Available Strategies:")
-            if strategies['builtin']:
+            if strategies["builtin"]:
                 print(f"\nBuilt-in Strategies ({len(strategies['builtin'])}):")
-                for strategy in strategies['builtin']:
+                for strategy in strategies["builtin"]:
                     print(f"  - {strategy}")
-            
-            if strategies['external']:
+
+            if strategies["external"]:
                 print(f"\nExternal Strategies ({len(strategies['external'])}):")
-                for strategy in strategies['external']:
+                for strategy in strategies["external"]:
                     print(f"  - {strategy}")
         else:
             strategy_list = strategies.get(strategy_type, [])
@@ -1157,13 +1221,13 @@ def handle_strategy_command(args):
             print(f"Strategy: {info['name']}")
             print(f"Type: {info['type']}")
             print(f"Description: {info['description']}")
-            
-            if info.get('parameters'):
+
+            if info.get("parameters"):
                 print("\nParameters:")
-                for param, value in info['parameters'].items():
+                for param, value in info["parameters"].items():
                     print(f"  {param}: {value}")
         except ValueError as e:
-            logger.error(f"Strategy not found: {e}")
+            logger.error("Strategy not found: %s", e)
 
     elif args.strategy_command == "test":
         try:
@@ -1171,54 +1235,54 @@ def handle_strategy_command(args):
             parameters = {}
             if args.parameters:
                 parameters = json.loads(args.parameters)
-            
+
             # Create strategy instance
             strategy = StrategyFactory.create_strategy(args.name, parameters)
-            
+
             # Get test data
             data_manager = UnifiedDataManager()
-            logger.info(f"Fetching test data for {args.symbol}...")
-            
+            logger.info("Fetching test data for %s...", args.symbol)
+
             data = data_manager.fetch_data(
                 symbol=args.symbol,
                 start_date=args.start_date,
                 end_date=args.end_date,
-                interval="1d"
+                interval="1d",
             )
-            
+
             if data.empty:
-                logger.error(f"No data found for {args.symbol}")
+                logger.error("No data found for %s", args.symbol)
                 return
-            
+
             # Generate signals
             logger.info("Generating signals...")
             signals = strategy.generate_signals(data)
-            
+
             # Print summary
             signal_counts = {
-                'Buy': (signals == 1).sum(),
-                'Sell': (signals == -1).sum(),
-                'Hold': (signals == 0).sum()
+                "Buy": (signals == 1).sum(),
+                "Sell": (signals == -1).sum(),
+                "Hold": (signals == 0).sum(),
             }
-            
+
             print(f"\nStrategy Test Results for {args.name}:")
             print(f"Symbol: {args.symbol}")
             print(f"Period: {args.start_date} to {args.end_date}")
             print(f"Data points: {len(data)}")
-            print(f"Signal distribution:")
+            print("Signal distribution:")
             for signal_type, count in signal_counts.items():
                 percentage = (count / len(signals)) * 100
                 print(f"  {signal_type}: {count} ({percentage:.1f}%)")
-                
+
             # Show recent signals
             recent_signals = signals.tail(10)
-            print(f"\nRecent signals:")
+            print("\nRecent signals:")
             for date, signal in recent_signals.items():
-                signal_name = {1: 'BUY', -1: 'SELL', 0: 'HOLD'}[signal]
+                signal_name = {1: "BUY", -1: "SELL", 0: "HOLD"}[signal]
                 print(f"  {date.strftime('%Y-%m-%d')}: {signal_name}")
-                
+
         except Exception as e:
-            logger.error(f"Strategy test failed: {e}")
+            logger.error("Strategy test failed: %s", e)
 
 
 def handle_reports_command(args):
@@ -1226,7 +1290,7 @@ def handle_reports_command(args):
     import os
     import sys
 
-    from ..utils.report_organizer import ReportOrganizer
+    from src.utils.report_organizer import ReportOrganizer
 
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from utils.report_organizer import ReportOrganizer
@@ -1305,7 +1369,7 @@ def main():
     except KeyboardInterrupt:
         print("\nOperation interrupted by user")
     except Exception as e:
-        logging.error(f"Command failed: {e}")
+        logging.error("Command failed: %s", e)
         raise
 
 

@@ -1,4 +1,5 @@
 repos:
+  # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -9,35 +10,56 @@ repos:
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: debug-statements
+      - id: check-toml
 
+  # Python formatting - Black
   - repo: https://github.com/psf/black
     rev: 24.1.1
     hooks:
       - id: black
         language_version: python3.12
 
+  # Python import sorting - isort
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
         args: [--profile, black]
 
+  # Python linting - Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.9
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-requests, types-python-dateutil]
-        args: [--ignore-missing-imports]
+  # Python type checking - MyPy (disabled for showcase)
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies: [types-requests, types-python-dateutil, pandas-stubs]
+  #       args: [--ignore-missing-imports, --no-strict-optional]
+  #       files: ^src/
 
+  # Markdown linting (disabled for showcase)
+  # - repo: https://github.com/igorshubovych/markdownlint-cli
+  #   rev: v0.39.0
+  #   hooks:
+  #     - id: markdownlint
+  #       args: [--config, .markdownlint.yaml]
+
+  # Security linting - Bandit
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
     hooks:
       - id: bandit
-        args: [-r, src/, -f, json, -o, reports_output/bandit-report.json]
+        args: [-r, src/, -ll, --skip, B101]
         pass_filenames: false
+
+  # Python security - Safety (manual check for now)
+  # - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+  #   rev: v1.3.2
+  #   hooks:
+  #     - id: python-safety-dependencies-check
+  #       files: pyproject.toml

@@ -40,11 +40,11 @@ jobs:
           release_name: Release ${{ github.ref }}
           body: |
             ## Changes in this Release
-            
+
             Please see CHANGELOG.md for detailed changes.
-            
+
             ## Installation
-            
+
             ```bash
             pip install quant-system==${{ github.ref_name }}
             ```

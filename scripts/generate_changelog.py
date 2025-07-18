@@ -11,6 +11,7 @@ This script automatically generates a CHANGELOG.md file by:
 Usage:
     python scripts/generate_changelog.py [--since TAG] [--version VERSION]
 """
+from __future__ import annotations
 
 import argparse
 import os
@@ -18,6 +19,7 @@ import re
 import subprocess
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 
 # Configure commit types and their display names
 COMMIT_TYPES = {
@@ -153,7 +155,7 @@ def update_changelog_file(new_content, filename="CHANGELOG.md"):
 
     # Read existing content if file exists
     if os.path.exists(filename):
-        with open(filename, "r") as f:
+        with Path(filename).open() as f:
             existing_content = f.read()
 
     # Combine new and existing content
@@ -167,7 +169,7 @@ def update_changelog_file(new_content, filename="CHANGELOG.md"):
             full_content += "\n\n" + existing_content
 
     # Write back to file
-    with open(filename, "w") as f:
+    with Path(filename).open("w") as f:
         f.write(full_content)
 
     print(f"✅ Updated {filename}")

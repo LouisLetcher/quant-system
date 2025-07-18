@@ -1,12 +1,10 @@
-"""
-Report organizer utility for quarterly report management.
-"""
+"""Report organizer utility for quarterly report management."""
 
-import os
+from __future__ import annotations
+
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Optional
 
 
 class ReportOrganizer:
@@ -25,7 +23,7 @@ class ReportOrganizer:
         """Get the quarterly directory path."""
         return self.base_reports_dir / f"{year}" / f"Q{quarter}"
 
-    def get_portfolio_name_from_filename(self, filename: str) -> Optional[str]:
+    def get_portfolio_name_from_filename(self, filename: str) -> str | None:
         """Extract portfolio name from report filename."""
         if filename.startswith("portfolio_report_"):
             # Format: portfolio_report_{portfolio_name}_{timestamp}.html
@@ -36,10 +34,7 @@ class ReportOrganizer:
         return None
 
     def organize_report(
-        self,
-        report_path: str,
-        portfolio_name: str,
-        report_date: Optional[datetime] = None,
+        self, report_path: str, portfolio_name: str, report_date: datetime | None = None
     ) -> Path:
         """
         Organize a report into quarterly structure.
@@ -53,7 +48,7 @@ class ReportOrganizer:
             Path to the organized report
         """
         if report_date is None:
-            report_date = datetime.now()
+            report_date = datetime.now(timezone.utc)
 
         year, quarter = self.get_quarter_from_date(report_date)
         quarterly_dir = self.get_quarterly_dir(year, quarter)
@@ -85,7 +80,7 @@ class ReportOrganizer:
 
         return target_path
 
-    def organize_existing_reports(self):
+    def organize_existing_reports(self) -> None:
         """Organize all existing reports in reports_output."""
         print("Organizing existing reports...")
 
@@ -102,13 +97,15 @@ class ReportOrganizer:
                     # Parse timestamp (format: YYYYMMDD_HHMMSS)
                     if len(timestamp_part) >= 8:
                         date_part = timestamp_part[:8]  # YYYYMMDD
-                        report_date = datetime.strptime(date_part, "%Y%m%d")
+                        report_date = datetime.strptime(date_part, "%Y%m%d").replace(
+                            tzinfo=timezone.utc
+                        )
                     else:
-                        report_date = datetime.now()
+                        report_date = datetime.now(timezone.utc)
 
                 except (ValueError, IndexError):
                     # If parsing fails, use current date
-                    report_date = datetime.now()
+                    report_date = datetime.now(timezone.utc)
 
                 # Organize the report
                 self.organize_report(str(report_file), portfolio_name, report_date)
@@ -121,7 +118,7 @@ class ReportOrganizer:
                 if compressed_file.exists():
                     compressed_file.unlink()
 
-    def get_latest_report(self, portfolio_name: str) -> Optional[Path]:
+    def get_latest_report(self, portfolio_name: str) -> Path | None:
         """Get the latest report for a portfolio."""
         clean_portfolio_name = portfolio_name.replace(" ", "_").replace("/", "_")
 
@@ -140,7 +137,9 @@ class ReportOrganizer:
                         if report_path.exists():
                             year = int(year_dir.name)
                             quarter = int(quarter_dir.name[1])
-                            date = datetime(year, (quarter - 1) * 3 + 1, 1)
+                            date = datetime(
+                                year, (quarter - 1) * 3 + 1, 1, tzinfo=timezone.utc
+                            )
 
                             if latest_date is None or date > latest_date:
                                 latest_date = date
@@ -148,9 +147,11 @@ class ReportOrganizer:
 
         return latest_report
 
-    def list_quarterly_reports(self, year: Optional[int] = None) -> Dict[str, list]:
+    def list_quarterly_reports(
+        self, year: int | None = None
+    ) -> dict[str, dict[str, list]]:
         """List all quarterly reports, optionally filtered by year."""
-        reports = {}
+        reports: dict[str, dict[str, list]] = {}
 
         year_pattern = str(year) if year else "????"
 
@@ -169,9 +170,9 @@ class ReportOrganizer:
 
         return reports
 
-    def cleanup_old_reports(self, keep_quarters: int = 8):
+    def cleanup_old_reports(self, keep_quarters: int = 8) -> None:
         """Clean up old reports, keeping only the last N quarters."""
-        current_date = datetime.now()
+        current_date = datetime.now(timezone.utc)
         current_year, current_quarter = self.get_quarter_from_date(current_date)
 
         # Calculate cutoff date
