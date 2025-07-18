@@ -6,7 +6,11 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from src.cli.config.config_loader import get_default_parameters, get_portfolio_config, load_assets_config
+from src.cli.config.config_loader import (
+    get_default_parameters,
+    get_portfolio_config,
+    load_assets_config,
+)
 
 
 class TestConfigLoader:
