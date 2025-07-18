@@ -77,7 +77,7 @@ class TestFullWorkflow:
             index=dates,
         )
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_complete_single_asset_workflow(
         self, data_manager, backtest_engine, sample_data
     ):
@@ -107,7 +107,7 @@ class TestFullWorkflow:
             assert isinstance(result.sharpe_ratio, float)
             assert isinstance(result.equity_curve, pd.Series)
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_complete_portfolio_workflow(
         self, portfolio_manager, data_manager, sample_data
     ):
@@ -149,7 +149,7 @@ class TestFullWorkflow:
             assert "expected_return" in recommendations
             assert "investment_plan" in recommendations
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_cache_integration_workflow(self, cache_manager, data_manager, sample_data):
         """Test workflow with cache integration."""
         # First request - should cache the data
@@ -178,7 +178,7 @@ class TestFullWorkflow:
             assert isinstance(result1, pd.DataFrame)
             assert isinstance(result2, pd.DataFrame)
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_batch_processing_workflow(
         self, backtest_engine, data_manager, sample_data
     ):
@@ -208,7 +208,7 @@ class TestFullWorkflow:
             # Note: Results might be empty due to multiprocessing issues in tests
             # but the structure should be correct
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_optimization_workflow(self, backtest_engine, data_manager, sample_data):
         """Test strategy optimization workflow."""
         # Mock data fetching
@@ -241,7 +241,7 @@ class TestFullWorkflow:
                 # Optimization might fail in test environment, log but don't fail test
                 pytest.skip(f"Optimization test skipped due to: {e}")
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_risk_analysis_workflow(self, portfolio_manager, data_manager, sample_data):
         """Test risk analysis workflow."""
         # Mock data for risk analysis
@@ -282,7 +282,7 @@ class TestFullWorkflow:
             assert "rankings" in comparison
             assert "summary" in comparison
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_data_quality_workflow(self, data_manager, sample_data):
         """Test data quality validation workflow."""
         # Test with good data
@@ -303,7 +303,7 @@ class TestFullWorkflow:
             result2 = data_manager.fetch_data("AAPL", "2023-01-01", "2023-12-31")
             assert not data_manager._validate_data_quality(result2)
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_performance_monitoring_workflow(self, backtest_engine, cache_manager):
         """Test performance monitoring throughout workflow."""
         # Get initial cache stats
@@ -321,7 +321,7 @@ class TestFullWorkflow:
         assert "total_backtests" in engine_stats
         assert "cache_hits" in engine_stats
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_error_recovery_workflow(self, data_manager, backtest_engine):
         """Test error recovery and graceful degradation."""
         # Test data fetching with network error
@@ -350,8 +350,8 @@ class TestFullWorkflow:
             # Expected behavior for invalid config
             pass
 
-    @pytest.mark.integration()
-    @pytest.mark.slow()
+    @pytest.mark.integration
+    @pytest.mark.slow
     def test_large_scale_workflow(self, portfolio_manager, data_manager, sample_data):
         """Test workflow with large number of assets (marked as slow test)."""
         # Create large portfolio
@@ -381,7 +381,7 @@ class TestFullWorkflow:
 
             assert isinstance(recommendations, dict)
 
-    @pytest.mark.integration()
+    @pytest.mark.integration
     def test_concurrent_workflow(self, portfolio_manager, data_manager, sample_data):
         """Test concurrent operations workflow."""
         import threading

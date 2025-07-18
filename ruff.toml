@@ -105,6 +105,7 @@ ignore = [
     "UP006",  # Use new-style typing annotations
     "UP007",  # Use new-style union syntax
     "UP035",  # typing.* imports are deprecated
+    "UP045",  # Use new-style Optional annotations
     "RET504", # Unnecessary assignment before return
     "SIM102", # Use single if statement
     "SIM103", # Return condition directly
