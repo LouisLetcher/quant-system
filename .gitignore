@@ -70,6 +70,7 @@ coverage.xml
 .dmypy.json
 dmypy.json
 .pyre/
+.benchmarks/
 
 # macOS
 .DS_Store
@@ -95,3 +96,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .qodo
+
+# Submodules (track only committed versions)
+# Ignore local development changes in submodules
