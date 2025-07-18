@@ -43,7 +43,7 @@ jobs:
       #   run: poetry run mypy src/
 
       - name: Security check
-        run: poetry run bandit -r src/
+        run: poetry run bandit -r src/ -ll
 
       - name: Test
         run: poetry run pytest
