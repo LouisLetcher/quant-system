@@ -70,14 +70,13 @@ isort .
 # Lint code
 ruff check .
 
-# Type checking
-mypy src/
+# Essential code quality (aligned with simplified CI)
+poetry run black .
+poetry run isort .
+poetry run ruff check .
 
-# Security scanning
-bandit -r src/
-
-# Check for vulnerable dependencies
-safety check
+# Pre-commit hooks (GitHub provides security scanning)
+pre-commit run --all-files
 ```
 
 ### System Commands
@@ -221,18 +220,18 @@ poetry env remove python
 poetry install --with dev
 ```
 
-## CI/CD Pipeline
+## CI/CD Pipeline (Simplified for Showcase)
 
 ### GitHub Actions Workflows
-- **CI**: Lint, test, security checks on every push/PR
-- **Release**: Build and publish on git tags
-- **CodeQL**: Security analysis weekly
+- **CI**: Essential checks (format, lint, test, build) on every push/PR
+- **Release**: Build and create GitHub releases on git tags
+- **Built-in features**: CodeQL security scanning, Dependabot updates
 
 ### Pre-commit Hooks
 - Black formatting
 - isort import sorting
 - Ruff linting
-- Basic security checks
+- **Note**: GitHub provides security scanning automatically
 
 ## Performance Considerations
 
@@ -264,6 +263,6 @@ poetry install --with dev
 - Use type hints and runtime validation
 
 ### Dependency Management
-- Regular security audits with `safety check`
-- Keep dependencies updated
+- GitHub Dependabot provides automated security updates
+- Keep dependencies updated via automated PRs
 - Use lock files for reproducible builds
