@@ -31,7 +31,114 @@ graph TD
 
 ## 🎯 Critical Priority Features
 
-### 1. TradingView-Telegram Bridge (Short-term Solution)
+### 1. QuantConnect Portfolio Builder & Export (Immediate Priority)
+**Status**: Immediate Priority
+**Description**: Automated creation of optimized QuantConnect portfolios with strategy grouping and export to quant-portfolios repository.
+
+**Features**:
+- **Strategy Grouping Analysis**:
+  - Analyze backtest/optimization results to identify assets with matching strategies
+  - Group assets by identical strategy name and timeframe combinations
+  - Validate portfolio composition (maximum 5 strategies per portfolio)
+  - Asset correlation analysis within strategy groups
+- **Portfolio Optimization**:
+  - Risk-balanced asset allocation within strategy groups
+  - Maximum drawdown and volatility constraints
+  - Capital allocation optimization across strategies
+  - Portfolio diversification scoring and validation
+- **QuantConnect Export System**:
+  - Generate QuantConnect-compatible portfolio configurations
+  - Export to quant-portfolios repository as new branch
+  - Automated git branch creation and commit with portfolio metadata
+  - Portfolio performance tracking and comparison framework
+
+**Implementation**:
+```python
+# QuantConnect portfolio builder and exporter
+class QuantConnectPortfolioBuilder:
+    def __init__(self):
+        self.portfolio_analyzer = PortfolioAnalyzer()
+        self.strategy_grouper = StrategyGrouper()
+        self.qc_exporter = QuantConnectExporter()
+        self.git_manager = GitManager()
+
+    def build_optimized_portfolios(self, backtest_results):
+        # 1. Group assets by strategy and timeframe
+        strategy_groups = self.strategy_grouper.group_by_strategy_timeframe(backtest_results)
+
+        # 2. Create portfolios with max 5 strategies each
+        portfolios = []
+        for group_name, assets in strategy_groups.items():
+            if len(assets) >= 3:  # Minimum assets for diversification
+                portfolio = self.create_portfolio(group_name, assets[:20])  # Max 20 assets
+                portfolios.append(portfolio)
+
+        return portfolios
+
+    def create_portfolio(self, strategy_group, assets):
+        # Optimize asset weights within strategy group
+        optimized_weights = self.portfolio_analyzer.optimize_weights(
+            assets,
+            max_weight=0.15,  # Max 15% per asset
+            min_correlation=0.3  # Diversification threshold
+        )
+
+        return {
+            "name": f"QC_Portfolio_{strategy_group}",
+            "strategy_group": strategy_group,
+            "assets": assets,
+            "weights": optimized_weights,
+            "expected_sharpe": self.calculate_portfolio_sharpe(assets, optimized_weights),
+            "max_drawdown": self.calculate_max_drawdown(assets, optimized_weights)
+        }
+
+    async def export_to_quant_portfolios_repo(self, portfolios):
+        # Create new branch for portfolio batch
+        branch_name = f"portfolios_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        for portfolio in portfolios:
+            # Generate QuantConnect configuration
+            qc_config = self.qc_exporter.generate_config(portfolio)
+
+            # Export to quant-portfolios repo
+            await self.git_manager.create_branch_and_commit(
+                repo="quant-portfolios",
+                branch=branch_name,
+                portfolio_config=qc_config,
+                portfolio_name=portfolio["name"]
+            )
+
+        return branch_name
+```
+
+**Portfolio Grouping Logic**:
+```python
+# Strategy grouping for portfolio creation
+class StrategyGrouper:
+    def group_by_strategy_timeframe(self, backtest_results):
+        strategy_groups = {}
+
+        for asset, strategies in backtest_results.items():
+            best_strategy = max(strategies, key=lambda x: x.sharpe_ratio)
+
+            # Create group key from strategy name and timeframe
+            group_key = f"{best_strategy.name}_{best_strategy.timeframe}"
+
+            if group_key not in strategy_groups:
+                strategy_groups[group_key] = []
+
+            strategy_groups[group_key].append({
+                "symbol": asset,
+                "strategy": best_strategy,
+                "sharpe_ratio": best_strategy.sharpe_ratio,
+                "max_drawdown": best_strategy.max_drawdown
+            })
+
+        # Filter groups with minimum viable portfolio size
+        return {k: v for k, v in strategy_groups.items() if len(v) >= 3}
+```
+
+### 2. TradingView-Telegram Bridge (Short-term Solution)
 **Status**: Immediate Priority
 **Description**: Export winning strategies as PineScript with TradingView alerts routed to Telegram via webhooks.
 
