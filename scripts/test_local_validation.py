@@ -14,12 +14,13 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 def test_imports():
     """Test that all core modules can be imported."""
     try:
+        # Test core imports
 
         print("✅ All core modules import successfully")
-        return True
+        assert True
     except Exception as e:
         print(f"❌ Import error: {e}")
-        return False
+        assert False
 
 
 def test_strategy_creation():
@@ -36,10 +37,9 @@ def test_strategy_creation():
         assert strategy2.name == "Buy and Hold"
 
         print("✅ Strategy creation works correctly")
-        return True
     except Exception as e:
         print(f"❌ Strategy creation error: {e}")
-        return False
+        assert False
 
 
 def test_data_manager():
@@ -48,20 +48,19 @@ def test_data_manager():
         from src.core.data_manager import UnifiedDataManager
 
         dm = UnifiedDataManager()
-        assert dm is not None
+        assert isinstance(dm, UnifiedDataManager)
 
         # Test that it has the expected methods
         assert hasattr(dm, "get_data"), "get_data method missing"
         assert hasattr(dm, "cache_manager"), "cache_manager attribute missing"
 
         print("✅ Data manager initialization works correctly")
-        return True
     except Exception as e:
         print(f"❌ Data manager error: {e}")
         import traceback
 
         traceback.print_exc()
-        return False
+        assert False
 
 
 def test_cache_manager():
@@ -70,17 +69,16 @@ def test_cache_manager():
         from src.core.cache_manager import UnifiedCacheManager
 
         cm = UnifiedCacheManager()
-        assert cm is not None
+        assert isinstance(cm, UnifiedCacheManager)
 
         # Test stats
         stats = cm.get_cache_stats()
         assert isinstance(stats, dict)
 
         print("✅ Cache manager initialization works correctly")
-        return True
     except Exception as e:
         print(f"❌ Cache manager error: {e}")
-        return False
+        assert False
 
 
 def test_portfolio_manager():
@@ -89,13 +87,12 @@ def test_portfolio_manager():
         from src.core.portfolio_manager import PortfolioManager
 
         pm = PortfolioManager()
-        assert pm is not None
+        assert isinstance(pm, PortfolioManager)
 
         print("✅ Portfolio manager initialization works correctly")
-        return True
     except Exception as e:
         print(f"❌ Portfolio manager error: {e}")
-        return False
+        assert False
 
 
 def main():
@@ -116,11 +113,9 @@ def main():
 
     for test in tests:
         try:
-            if test():
-                passed += 1
-            else:
-                failed += 1
-        except Exception as e:
+            test()
+            passed += 1
+        except (AssertionError, Exception) as e:
             print(f"❌ Test {test.__name__} failed with exception: {e}")
             failed += 1
 
