@@ -85,21 +85,6 @@
       "BANF",
       "WAFD",
       "IBOC",
-      "BLK",
-      "SPGI",
-      "MCO",
-      "ICE",
-      "CME",
-      "NDAQ",
-      "CBOE",
-      "MSCI",
-      "COIN",
-      "HOOD",
-      "SOFI",
-      "AFRM",
-      "UPST",
-      "LC",
-      "BILL",
       "OPFI",
       "RBRK",
       "KRMN",
@@ -112,12 +97,8 @@
       "KR",
       "AEP",
       "SCHW",
-      "CME",
       "IBM",
-      "BLK",
-      "WFC",
       "RTX",
-      "V",
       "BMI",
       "GME",
       "LUMN",
@@ -133,7 +114,6 @@
       "AA",
       "CACI",
       "MLR",
-      "BR",
       "GRMN",
       "FIX",
       "FDX",
@@ -163,9 +143,7 @@
       "DT",
       "PR",
       "CRC",
-      "PR",
       "COR",
-      "SPGI",
       "VEEV",
       "TDY",
       "ITT",
@@ -176,18 +154,23 @@
       "PH",
       "GWW",
       "ALG",
-      "NRG",
-      "OPFI",
-      "RBRK",
-      "KRMN",
-      "T",
-      "BJ",
-      "AU"
+      "NRG"
     ],
     "data_sources": {
-      "primary": ["polygon", "alpha_vantage", "twelve_data"],
-      "fallback": ["yahoo_finance", "tiingo", "pandas_datareader"],
-      "excluded": ["bybit", "finnhub"]
+      "primary": [
+        "polygon",
+        "alpha_vantage",
+        "twelve_data"
+      ],
+      "fallback": [
+        "yahoo_finance",
+        "tiingo",
+        "pandas_datareader"
+      ],
+      "excluded": [
+        "bybit",
+        "finnhub"
+      ]
     },
     "initial_capital": 75000,
     "commission": 0.001,
@@ -198,7 +181,13 @@
     "take_profit": 0.12,
     "currency": "USD",
     "leverage": 3,
-    "intervals": ["15m", "30m", "1h", "4h", "1d"],
+    "intervals": [
+      "15m",
+      "30m",
+      "1h",
+      "4h",
+      "1d"
+    ],
     "risk_profile": "moderate_aggressive",
     "target_return": 0.18,
     "benchmark": "XLF",
@@ -206,15 +195,41 @@
     "rebalance_frequency": "monthly",
     "metadata": {
       "created_date": "2025-01-07",
-      "asset_classes": ["individual_stocks", "financials", "banks", "insurance", "asset_management", "payment_processors", "fintech", "regional_banks", "investment_banks"],
-      "regions": ["usa"],
-      "currency_exposure": ["USD"],
+      "asset_classes": [
+        "individual_stocks",
+        "financials",
+        "banks",
+        "insurance",
+        "asset_management",
+        "payment_processors",
+        "fintech",
+        "regional_banks",
+        "investment_banks"
+      ],
+      "regions": [
+        "usa"
+      ],
+      "currency_exposure": [
+        "USD"
+      ],
       "best_data_coverage": "1990-present",
-      "recommended_timeframes": ["15m", "30m", "1h", "4h", "1d"],
+      "recommended_timeframes": [
+        "15m",
+        "30m",
+        "1h",
+        "4h",
+        "1d"
+      ],
       "data_quality": "excellent",
       "market_hours": "9:30-16:00 EST",
       "research_source": "traderfox",
-      "selection_criteria": ["value_metrics", "dividend_yield", "book_value", "regulatory_compliance", "interest_rate_sensitivity"]
+      "selection_criteria": [
+        "value_metrics",
+        "dividend_yield",
+        "book_value",
+        "regulatory_compliance",
+        "interest_rate_sensitivity"
+      ]
     },
     "optimization": {
       "metric": "sharpe_ratio",
