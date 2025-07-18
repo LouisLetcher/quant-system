@@ -42,7 +42,10 @@ class TestConfigManager:
         """Test loading JSON configuration file."""
         # Create temporary JSON config file
         config_data = {
-            "data": {"default_interval": "1h", "cache_dir": "/tmp/custom_cache"},
+            "data": {
+                "default_interval": "1h",
+                "cache_dir": str(Path(tempfile.gettempdir()) / "custom_cache"),
+            },
             "backtest": {"initial_capital": 50000},
         }
 
@@ -55,13 +58,15 @@ class TestConfigManager:
 
             # Check that values were loaded and merged
             assert config.config["data"]["default_interval"] == "1h"
-            assert config.config["data"]["cache_dir"] == "/tmp/custom_cache"
+            assert config.config["data"]["cache_dir"] == str(
+                Path(tempfile.gettempdir()) / "custom_cache"
+            )
             assert config.config["backtest"]["initial_capital"] == 50000
             # Default commission should still be there
             assert config.config["backtest"]["default_commission"] == 0.001
 
         finally:
-            os.unlink(temp_file)
+            Path(temp_file).unlink()
 
     def test_load_yaml_config_file(self):
         """Test loading YAML configuration file."""
@@ -84,7 +89,7 @@ class TestConfigManager:
             assert config.config["logging"]["level"] == "DEBUG"
 
         finally:
-            os.unlink(temp_file)
+            Path(temp_file).unlink()
 
     def test_load_unsupported_file_format(self):
         """Test loading unsupported file format."""
@@ -98,7 +103,7 @@ class TestConfigManager:
             ):
                 ConfigManager(config_path=temp_file)
         finally:
-            os.unlink(temp_file)
+            Path(temp_file).unlink()
 
     def test_load_from_environment_variables(self):
         """Test loading configuration from environment variables."""
@@ -191,7 +196,7 @@ class TestConfigManager:
             config.save_to_file(temp_file)
 
             # Verify file was saved correctly
-            with open(temp_file) as f:
+            with Path(temp_file).open() as f:
                 saved_config = json.load(f)
 
             assert saved_config["test"]["value"] == "test_data"
@@ -199,7 +204,7 @@ class TestConfigManager:
             assert "backtest" in saved_config
 
         finally:
-            os.unlink(temp_file)
+            Path(temp_file).unlink()
 
     def test_save_to_yaml_file(self):
         """Test saving configuration to YAML file."""
@@ -213,14 +218,14 @@ class TestConfigManager:
             config.save_to_file(temp_file)
 
             # Verify file was saved correctly
-            with open(temp_file) as f:
+            with Path(temp_file).open() as f:
                 saved_config = yaml.safe_load(f)
 
             assert saved_config["test"]["yaml_value"] == "yaml_data"
             assert "data" in saved_config
 
         finally:
-            os.unlink(temp_file)
+            Path(temp_file).unlink()
 
     def test_save_unsupported_format(self):
         """Test saving to unsupported file format."""
@@ -344,7 +349,7 @@ class TestConfigManager:
             assert config2.config["data"]["default_interval"] == "1d"
 
         finally:
-            os.unlink(temp_file)
+            Path(temp_file).unlink()
 
 
 class TestIntegration:
@@ -407,10 +412,10 @@ class TestIntegration:
             config2 = ConfigManager(config_path=output_file)
             assert config2.get("runtime.test_run") is True
 
-            os.unlink(output_file)
+            Path(output_file).unlink()
 
         finally:
-            os.unlink(config_file)
+            Path(config_file).unlink()
             # Clean up environment
             os.environ.pop("QUANTPY_API_KEY", None)
             os.environ.pop("QUANTPY_DATA_PROVIDER", None)
@@ -466,4 +471,4 @@ class TestIntegration:
             )
 
         finally:
-            os.unlink(config_file)
+            Path(config_file).unlink()

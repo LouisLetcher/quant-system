@@ -17,10 +17,9 @@ def test_imports():
         # Test core imports
 
         print("✅ All core modules import successfully")
-        assert True
     except Exception as e:
         print(f"❌ Import error: {e}")
-        assert False
+        raise AssertionError("Import failed") from e
 
 
 def test_strategy_creation():
@@ -39,7 +38,7 @@ def test_strategy_creation():
         print("✅ Strategy creation works correctly")
     except Exception as e:
         print(f"❌ Strategy creation error: {e}")
-        assert False
+        raise AssertionError("Strategy creation failed") from e
 
 
 def test_data_manager():
@@ -60,7 +59,7 @@ def test_data_manager():
         import traceback
 
         traceback.print_exc()
-        assert False
+        raise AssertionError("Data manager test failed") from e
 
 
 def test_cache_manager():
@@ -78,7 +77,7 @@ def test_cache_manager():
         print("✅ Cache manager initialization works correctly")
     except Exception as e:
         print(f"❌ Cache manager error: {e}")
-        assert False
+        raise AssertionError("Cache manager test failed") from e
 
 
 def test_portfolio_manager():
@@ -92,7 +91,7 @@ def test_portfolio_manager():
         print("✅ Portfolio manager initialization works correctly")
     except Exception as e:
         print(f"❌ Portfolio manager error: {e}")
-        assert False
+        raise AssertionError("Portfolio manager test failed") from e
 
 
 def main():
