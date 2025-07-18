@@ -13,7 +13,12 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from src.core import PortfolioManager, UnifiedBacktestEngine, UnifiedCacheManager, UnifiedDataManager
+from src.core import (
+    PortfolioManager,
+    UnifiedBacktestEngine,
+    UnifiedCacheManager,
+    UnifiedDataManager,
+)
 from src.core.backtest_engine import BacktestConfig, BacktestResult
 from src.core.strategy import StrategyFactory, list_available_strategies
 
