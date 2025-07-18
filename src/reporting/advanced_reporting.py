@@ -5,27 +5,23 @@ Supports comprehensive portfolio analysis, strategy comparison, and optimization
 
 from __future__ import annotations
 
-import base64
-import io
 import json
 import logging
-import os
 import time
 import warnings
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader
 from plotly.subplots import make_subplots
 
 from src.core.backtest_engine import BacktestResult
-from src.core.cache_manager import UnifiedCacheManager
 from src.portfolio.advanced_optimizer import OptimizationResult
 
 warnings.filterwarnings("ignore")
@@ -46,7 +42,10 @@ class AdvancedReportGenerator:
         # Setup template environment
         template_dir = Path(__file__).parent / "templates"
         template_dir.mkdir(exist_ok=True)
-        self.template_env = Environment(loader=FileSystemLoader(str(template_dir)))
+        self.template_env = Environment(
+            loader=FileSystemLoader(str(template_dir)),
+            autoescape=True,  # Enable XSS protection
+        )
 
         # Ensure template files exist
         self._ensure_templates()
@@ -56,7 +55,7 @@ class AdvancedReportGenerator:
 
     def generate_portfolio_report(
         self,
-        results: List[BacktestResult],
+        results: list[BacktestResult],
         title: str = "Portfolio Analysis Report",
         include_charts: bool = True,
         format: str = "html",
@@ -85,7 +84,7 @@ class AdvancedReportGenerator:
                 self.logger.info("Using cached portfolio report")
                 return cached_report
 
-        self.logger.info(f"Generating portfolio report for {len(results)} results")
+        self.logger.info("Generating portfolio report for %s results", len(results))
 
         # Prepare data
         report_data = self._prepare_portfolio_data(results)
@@ -103,7 +102,8 @@ class AdvancedReportGenerator:
         elif format == "json":
             report_path = self._generate_json_portfolio_report(report_data, title)
         else:
-            raise ValueError(f"Unsupported format: {format}")
+            msg = f"Unsupported format: {format}"
+            raise ValueError(msg)
 
         # Cache report
         if self.cache_reports:
@@ -111,14 +111,14 @@ class AdvancedReportGenerator:
 
         generation_time = time.time() - start_time
         self.logger.info(
-            f"Portfolio report generated in {generation_time:.2f}s: {report_path}"
+            "Portfolio report generated in %ss: %s", generation_time, report_path
         )
 
         return str(report_path)
 
     def generate_strategy_comparison_report(
         self,
-        results: Dict[str, List[BacktestResult]],
+        results: dict[str, list[BacktestResult]],
         title: str = "Strategy Comparison Report",
         include_charts: bool = True,
         format: str = "html",
@@ -148,7 +148,7 @@ class AdvancedReportGenerator:
                 return cached_report
 
         self.logger.info(
-            f"Generating strategy comparison report for {len(results)} strategies"
+            "Generating strategy comparison report for %s strategies", len(results)
         )
 
         # Prepare data
@@ -169,7 +169,8 @@ class AdvancedReportGenerator:
                 comparison_data, title
             )
         else:
-            raise ValueError(f"Unsupported format: {format}")
+            msg = f"Unsupported format: {format}"
+            raise ValueError(msg)
 
         # Cache report
         if self.cache_reports:
@@ -177,14 +178,16 @@ class AdvancedReportGenerator:
 
         generation_time = time.time() - start_time
         self.logger.info(
-            f"Strategy comparison report generated in {generation_time:.2f}s: {report_path}"
+            "Strategy comparison report generated in %ss: %s",
+            generation_time,
+            report_path,
         )
 
         return str(report_path)
 
     def generate_optimization_report(
         self,
-        optimization_results: Dict[str, Dict[str, OptimizationResult]],
+        optimization_results: dict[str, dict[str, OptimizationResult]],
         title: str = "Optimization Analysis Report",
         include_charts: bool = True,
         format: str = "html",
@@ -233,7 +236,8 @@ class AdvancedReportGenerator:
                 optimization_data, title
             )
         else:
-            raise ValueError(f"Unsupported format: {format}")
+            msg = f"Unsupported format: {format}"
+            raise ValueError(msg)
 
         # Cache report
         if self.cache_reports:
@@ -241,12 +245,12 @@ class AdvancedReportGenerator:
 
         generation_time = time.time() - start_time
         self.logger.info(
-            f"Optimization report generated in {generation_time:.2f}s: {report_path}"
+            "Optimization report generated in %ss: %s", generation_time, report_path
         )
 
         return str(report_path)
 
-    def _prepare_portfolio_data(self, results: List[BacktestResult]) -> Dict[str, Any]:
+    def _prepare_portfolio_data(self, results: list[BacktestResult]) -> dict[str, Any]:
         """Prepare data for portfolio analysis."""
         # Create summary DataFrame
         rows = []
@@ -331,8 +335,8 @@ class AdvancedReportGenerator:
         }
 
     def _prepare_strategy_comparison_data(
-        self, results: Dict[str, List[BacktestResult]]
-    ) -> Dict[str, Any]:
+        self, results: dict[str, list[BacktestResult]]
+    ) -> dict[str, Any]:
         """Prepare data for strategy comparison."""
         comparison_stats = {}
         all_results = []
@@ -385,8 +389,8 @@ class AdvancedReportGenerator:
         }
 
     def _prepare_optimization_data(
-        self, optimization_results: Dict[str, Dict[str, OptimizationResult]]
-    ) -> Dict[str, Any]:
+        self, optimization_results: dict[str, dict[str, OptimizationResult]]
+    ) -> dict[str, Any]:
         """Prepare data for optimization analysis."""
         optimization_summary = {}
         convergence_data = []
@@ -433,7 +437,7 @@ class AdvancedReportGenerator:
             "generation_time": datetime.now().isoformat(),
         }
 
-    def _generate_portfolio_charts(self, data: Dict[str, Any]) -> Dict[str, str]:
+    def _generate_portfolio_charts(self, data: dict[str, Any]) -> dict[str, str]:
         """Generate interactive charts for portfolio analysis."""
         charts = {}
         df = data["summary_df"]
@@ -527,8 +531,8 @@ class AdvancedReportGenerator:
         return charts
 
     def _generate_strategy_comparison_charts(
-        self, data: Dict[str, Any]
-    ) -> Dict[str, str]:
+        self, data: dict[str, Any]
+    ) -> dict[str, str]:
         """Generate charts for strategy comparison."""
         charts = {}
         comparison_stats = data["comparison_stats"]
@@ -572,7 +576,7 @@ class AdvancedReportGenerator:
 
         return charts
 
-    def _generate_optimization_charts(self, data: Dict[str, Any]) -> Dict[str, str]:
+    def _generate_optimization_charts(self, data: dict[str, Any]) -> dict[str, str]:
         """Generate charts for optimization analysis."""
         charts = {}
         convergence_data = data["convergence_data"]
@@ -599,7 +603,7 @@ class AdvancedReportGenerator:
         return charts
 
     def _generate_html_portfolio_report(
-        self, data: Dict[str, Any], charts: Dict[str, str], title: str
+        self, data: dict[str, Any], charts: dict[str, str], title: str
     ) -> Path:
         """Generate HTML portfolio report."""
         template = self.template_env.get_template("portfolio_report.html")
@@ -618,7 +622,7 @@ class AdvancedReportGenerator:
         return report_path
 
     def _generate_html_strategy_comparison_report(
-        self, data: Dict[str, Any], charts: Dict[str, str], title: str
+        self, data: dict[str, Any], charts: dict[str, str], title: str
     ) -> Path:
         """Generate HTML strategy comparison report."""
         template = self.template_env.get_template("strategy_comparison_report.html")
@@ -637,7 +641,7 @@ class AdvancedReportGenerator:
         return report_path
 
     def _generate_html_optimization_report(
-        self, data: Dict[str, Any], charts: Dict[str, str], title: str
+        self, data: dict[str, Any], charts: dict[str, str], title: str
     ) -> Path:
         """Generate HTML optimization report."""
         template = self.template_env.get_template("optimization_report.html")
@@ -655,7 +659,7 @@ class AdvancedReportGenerator:
 
         return report_path
 
-    def _generate_json_portfolio_report(self, data: Dict[str, Any], title: str) -> Path:
+    def _generate_json_portfolio_report(self, data: dict[str, Any], title: str) -> Path:
         """Generate JSON portfolio report."""
         report_data = {
             "title": title,
@@ -667,13 +671,13 @@ class AdvancedReportGenerator:
         filename = f"portfolio_report_{int(time.time())}.json"
         report_path = self.output_dir / filename
 
-        with open(report_path, "w") as f:
+        with report_path.open("w") as f:
             json.dump(report_data, f, indent=2, default=str)
 
         return report_path
 
     def _generate_json_strategy_comparison_report(
-        self, data: Dict[str, Any], title: str
+        self, data: dict[str, Any], title: str
     ) -> Path:
         """Generate JSON strategy comparison report."""
         report_data = {
@@ -686,13 +690,13 @@ class AdvancedReportGenerator:
         filename = f"strategy_comparison_{int(time.time())}.json"
         report_path = self.output_dir / filename
 
-        with open(report_path, "w") as f:
+        with report_path.open("w") as f:
             json.dump(report_data, f, indent=2, default=str)
 
         return report_path
 
     def _generate_json_optimization_report(
-        self, data: Dict[str, Any], title: str
+        self, data: dict[str, Any], title: str
     ) -> Path:
         """Generate JSON optimization report."""
         report_data = {
@@ -705,7 +709,7 @@ class AdvancedReportGenerator:
         filename = f"optimization_report_{int(time.time())}.json"
         report_path = self.output_dir / filename
 
-        with open(report_path, "w") as f:
+        with report_path.open("w") as f:
             json.dump(report_data, f, indent=2, default=str)
 
         return report_path
@@ -720,7 +724,7 @@ class AdvancedReportGenerator:
 
         return f"{report_type}_{cache_key}"
 
-    def _get_cached_report(self, cache_key: str) -> Optional[str]:
+    def _get_cached_report(self, cache_key: str) -> str | None:
         """Get cached report if available."""
         # Implementation would check advanced_cache for cached report
         # For now, return None to always generate fresh reports
@@ -730,7 +734,7 @@ class AdvancedReportGenerator:
         """Cache generated report."""
         # Implementation would cache the report using advanced_cache
         # For now, just log that we would cache it
-        self.logger.debug(f"Would cache report {report_path} with key {cache_key}")
+        self.logger.debug("Would cache report %s with key %s", report_path, cache_key)
 
     def _ensure_templates(self):
         """Ensure HTML templates exist."""
@@ -758,7 +762,7 @@ class AdvancedReportGenerator:
         <h1>{{ title }}</h1>
         <p>Generated: {{ generation_time }}</p>
     </div>
-    
+
     <div class="stats">
         {% for key, value in data.portfolio_stats.items() %}
         <div class="stat-card">
@@ -767,7 +771,7 @@ class AdvancedReportGenerator:
         </div>
         {% endfor %}
     </div>
-    
+
     {% for chart_name, chart_html in charts.items() %}
     <div class="chart">
         <h2>{{ chart_name.replace('_', ' ').title() }}</h2>
@@ -812,16 +816,13 @@ class ReportScheduler:
     ):
         """Schedule daily portfolio report generation."""
         # Implementation for scheduling would go here
-        pass
 
     def schedule_weekly_optimization_report(
         self, optimization_function: Callable, title: str = "Weekly Optimization Report"
     ):
         """Schedule weekly optimization report generation."""
         # Implementation for scheduling would go here
-        pass
 
     def run_scheduled_reports(self):
         """Run all scheduled reports."""
         # Implementation for running scheduled reports would go here
-        pass

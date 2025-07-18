@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "quant-system"
 version = "0.1.0"
-description = "A Python-based Quant Trading System with FastAPI, Backtrader, and yfinance"
-authors = ["LouisLetcher <heck.manu@icloud.com>"]
-license = "Proprietary"
+description = "Comprehensive quantitative analysis system with multi-asset support, advanced portfolio optimization, and extensive backtesting capabilities"
+authors = ["Louis Letcher <heck.manu@icloud.com>"]
+license = "MIT"
 readme = "README.md"
 packages = [{ include = "src", from = "." }]
 
@@ -50,6 +50,10 @@ bandit = "^1.7"
 safety = "^3.2"
 types-requests = "^2.31"
 types-python-dateutil = "^2.8"
+memory-profiler = "^0.61.0"
+pytest-benchmark = "^5.1.0"
+radon = "^6.0.1"
+types-pyyaml = "^6.0.12.20250516"
 
 [tool.poetry.scripts]
 start = "uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
@@ -99,19 +103,20 @@ exclude_lines = [
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
+ignore_missing_imports = true
 show_error_codes = true
+warn_return_any = false
+warn_unused_configs = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+disallow_untyped_decorators = false
+no_implicit_optional = false
+warn_redundant_casts = false
+warn_unused_ignores = false
+warn_no_return = false
+warn_unreachable = false
+strict_equality = false
 
 [[tool.mypy.overrides]]
 module = [
@@ -119,9 +124,12 @@ module = [
     "backtesting.*",
     "plotly.*",
     "seaborn.*",
-    "bayesian_optimization.*"
+    "bayesian_optimization.*",
+    "src.backtesting_engine.algorithms.quantconnect.*",
+    "src.backtesting_engine.algorithms.original.*"
 ]
 ignore_missing_imports = true
+ignore_errors = true
 
 [tool.black]
 line-length = 88

@@ -34,6 +34,10 @@ cache/
 # reports_output/ - Now tracking quarterly reports
 backtests/results/
 exports/
+dist/
+build/
+*.tar.gz
+*.whl
 
 # QuantConnect Lean files
 lean_config.json
@@ -66,6 +70,7 @@ coverage.xml
 .dmypy.json
 dmypy.json
 .pyre/
+.benchmarks/
 
 # macOS
 .DS_Store
@@ -91,3 +96,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .qodo
+
+# Submodules (track only committed versions)
+# Ignore local development changes in submodules

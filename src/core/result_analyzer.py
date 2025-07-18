@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -26,8 +26,8 @@ class UnifiedResultAnalyzer:
         self.logger = logging.getLogger(__name__)
 
     def calculate_metrics(
-        self, backtest_result: Dict[str, Any], initial_capital: float
-    ) -> Dict[str, float]:
+        self, backtest_result: dict[str, Any], initial_capital: float
+    ) -> dict[str, float]:
         """
         Calculate comprehensive metrics for a single backtest result.
 
@@ -47,10 +47,11 @@ class UnifiedResultAnalyzer:
                 return self._get_zero_metrics()
 
             # Convert equity curve to pandas Series if needed
-            if isinstance(equity_curve, pd.DataFrame):
-                equity_values = equity_curve["equity"]
-            else:
-                equity_values = equity_curve
+            equity_values = (
+                equity_curve["equity"]
+                if isinstance(equity_curve, pd.DataFrame)
+                else equity_curve
+            )
 
             # Calculate returns
             returns = equity_values.pct_change().dropna()
@@ -99,12 +100,12 @@ class UnifiedResultAnalyzer:
             return metrics
 
         except Exception as e:
-            self.logger.error(f"Error calculating metrics: {e}")
+            self.logger.error("Error calculating metrics: %s", e)
             return self._get_zero_metrics()
 
     def calculate_portfolio_metrics(
-        self, portfolio_data: Dict[str, Any], initial_capital: float
-    ) -> Dict[str, float]:
+        self, portfolio_data: dict[str, Any], initial_capital: float
+    ) -> dict[str, float]:
         """
         Calculate metrics for portfolio backtests.
 
@@ -124,7 +125,7 @@ class UnifiedResultAnalyzer:
                 return self._get_zero_metrics()
 
             # Basic portfolio metrics
-            metrics = {
+            return {
                 "total_return": (
                     (equity_curve.iloc[-1] - initial_capital) / initial_capital
                 )
@@ -144,15 +145,13 @@ class UnifiedResultAnalyzer:
                 "diversification_ratio": self._calculate_diversification_ratio(weights),
             }
 
-            return metrics
-
         except Exception as e:
-            self.logger.error(f"Error calculating portfolio metrics: {e}")
+            self.logger.error("Error calculating portfolio metrics: %s", e)
             return self._get_zero_metrics()
 
     def calculate_optimization_metrics(
-        self, optimization_results: Dict[str, Any]
-    ) -> Dict[str, float]:
+        self, optimization_results: dict[str, Any]
+    ) -> dict[str, float]:
         """
         Calculate metrics for optimization results.
 
@@ -175,7 +174,7 @@ class UnifiedResultAnalyzer:
                 entry.get("best_score", 0) for entry in history if "best_score" in entry
             ]
 
-            metrics = {
+            return {
                 "convergence_speed": self._calculate_convergence_speed(best_scores),
                 "final_diversity": self._calculate_population_diversity(
                     final_population
@@ -190,13 +189,11 @@ class UnifiedResultAnalyzer:
                 "score_std": np.std(scores) if scores else 0,
             }
 
-            return metrics
-
         except Exception as e:
-            self.logger.error(f"Error calculating optimization metrics: {e}")
+            self.logger.error("Error calculating optimization metrics: %s", e)
             return {}
 
-    def compare_results(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def compare_results(self, results: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Compare multiple backtest results.
 
@@ -213,7 +210,7 @@ class UnifiedResultAnalyzer:
             # Extract metrics from all results
             all_metrics = []
             for result in results:
-                if "metrics" in result and result["metrics"]:
+                if result.get("metrics"):
                     all_metrics.append(result["metrics"])
 
             if not all_metrics:
@@ -243,7 +240,7 @@ class UnifiedResultAnalyzer:
             return comparison
 
         except Exception as e:
-            self.logger.error(f"Error comparing results: {e}")
+            self.logger.error("Error comparing results: %s", e)
             return {}
 
     def _calculate_annualized_return(
@@ -263,8 +260,7 @@ class UnifiedResultAnalyzer:
         if years <= 0:
             return 0
 
-        annualized_return = ((1 + total_return) ** (1 / years) - 1) * 100
-        return annualized_return
+        return ((1 + total_return) ** (1 / years) - 1) * 100
 
     def _calculate_volatility(self, returns: pd.Series) -> float:
         """Calculate annualized volatility."""
@@ -376,7 +372,7 @@ class UnifiedResultAnalyzer:
 
         return stats.kurtosis(returns)
 
-    def _calculate_trade_metrics(self, trades: pd.DataFrame) -> Dict[str, float]:
+    def _calculate_trade_metrics(self, trades: pd.DataFrame) -> dict[str, float]:
         """Calculate trade-specific metrics."""
         if trades.empty:
             return {
@@ -414,7 +410,7 @@ class UnifiedResultAnalyzer:
         losing_trades = pnl_values[pnl_values < 0]
 
         num_winning = len(winning_trades)
-        num_losing = len(losing_trades)
+        len(losing_trades)
         total_trades = len(pnl_values)
 
         win_rate = (num_winning / total_trades * 100) if total_trades > 0 else 0
@@ -444,7 +440,7 @@ class UnifiedResultAnalyzer:
 
     def _calculate_risk_metrics(
         self, returns: pd.Series, equity_curve: pd.Series
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Calculate additional risk metrics."""
         if len(returns) < 2:
             return {}
@@ -467,7 +463,7 @@ class UnifiedResultAnalyzer:
             "information_ratio": information_ratio,
         }
 
-    def _calculate_effective_number_assets(self, weights: Dict[str, float]) -> float:
+    def _calculate_effective_number_assets(self, weights: dict[str, float]) -> float:
         """Calculate effective number of assets (Herfindahl index)."""
         if not weights:
             return 0
@@ -476,7 +472,7 @@ class UnifiedResultAnalyzer:
         sum_squared_weights = sum(w**2 for w in weight_values)
         return 1 / sum_squared_weights if sum_squared_weights > 0 else 0
 
-    def _calculate_diversification_ratio(self, weights: Dict[str, float]) -> float:
+    def _calculate_diversification_ratio(self, weights: dict[str, float]) -> float:
         """Calculate diversification ratio."""
         if not weights:
             return 0
@@ -487,11 +483,9 @@ class UnifiedResultAnalyzer:
 
         # Calculate deviation from equal weighting
         weight_values = list(weights.values())
-        diversification = 1 - sum(abs(w - equal_weight) for w in weight_values) / 2
+        return 1 - sum(abs(w - equal_weight) for w in weight_values) / 2
 
-        return diversification
-
-    def _calculate_convergence_speed(self, best_scores: List[float]) -> float:
+    def _calculate_convergence_speed(self, best_scores: list[float]) -> float:
         """Calculate how quickly optimization converged."""
         if len(best_scores) < 2:
             return 0
@@ -507,7 +501,7 @@ class UnifiedResultAnalyzer:
 
         return 1.0
 
-    def _calculate_population_diversity(self, population: List[Dict]) -> float:
+    def _calculate_population_diversity(self, population: list[dict]) -> float:
         """Calculate diversity in final population."""
         if len(population) < 2:
             return 0
@@ -519,7 +513,7 @@ class UnifiedResultAnalyzer:
 
         return np.std(scores) / np.mean(scores) if np.mean(scores) > 0 else 0
 
-    def _calculate_improvement_rate(self, best_scores: List[float]) -> float:
+    def _calculate_improvement_rate(self, best_scores: list[float]) -> float:
         """Calculate rate of improvement over optimization."""
         if len(best_scores) < 2:
             return 0
@@ -531,7 +525,7 @@ class UnifiedResultAnalyzer:
 
         return len(positive_improvements) / len(improvements) if improvements else 0
 
-    def _calculate_stability_ratio(self, best_scores: List[float]) -> float:
+    def _calculate_stability_ratio(self, best_scores: list[float]) -> float:
         """Calculate stability of optimization (low variance in later generations)."""
         if len(best_scores) < 10:
             return 0
@@ -546,7 +540,7 @@ class UnifiedResultAnalyzer:
 
         return 1 - (second_half_var / first_half_var)
 
-    def _calculate_exploration_ratio(self, all_scores: List[float]) -> float:
+    def _calculate_exploration_ratio(self, all_scores: list[float]) -> float:
         """Calculate how well the optimization explored the search space."""
         if len(all_scores) < 2:
             return 0
@@ -557,7 +551,7 @@ class UnifiedResultAnalyzer:
 
         return unique_scores / total_scores
 
-    def _get_zero_metrics(self) -> Dict[str, float]:
+    def _get_zero_metrics(self) -> dict[str, float]:
         """Return dictionary of zero metrics for failed calculations."""
         return {
             "total_return": 0,

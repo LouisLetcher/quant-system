@@ -71,12 +71,14 @@ Pre-commit hooks run automatically on git commit:
 
 ```
 src/
+├── backtesting_engine/   # Strategies submodule (quant-strategies repo)
+│   └── algorithms/python/ # Python strategy implementations (40+ strategies)
 ├── core/                 # Core system components
 │   ├── data_manager.py   # Data fetching and management
-│   ├── portfolio.py      # Portfolio management
+│   ├── portfolio_manager.py # Portfolio management
 │   └── strategy.py       # Trading strategies
 ├── cli/                  # Command-line interface
-├── api/                  # FastAPI web interface
+├── portfolio/            # Portfolio optimization
 ├── reporting/            # Report generation
 └── utils/                # Utility functions
 
@@ -102,11 +104,8 @@ docker build .      # Build Docker image
 # CLI commands
 python -m src.cli.unified_cli portfolio list
 
-# API server
-uvicorn src.api.main:app --reload
-
 # Docker development
-docker-compose up dev
+docker-compose up --build
 ```
 
 ## 📝 Contributing

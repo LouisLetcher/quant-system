@@ -13,7 +13,7 @@ import time
 import warnings
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -32,8 +32,8 @@ warnings.filterwarnings("ignore")
 class BacktestConfig:
     """Configuration for backtest runs."""
 
-    symbols: List[str]
-    strategies: List[str]
+    symbols: list[str]
+    strategies: list[str]
     start_date: str
     end_date: str
     initial_capital: float = 10000
@@ -55,17 +55,17 @@ class BacktestResult:
 
     symbol: str
     strategy: str
-    parameters: Dict[str, Any]
-    metrics: Dict[str, float]
+    parameters: dict[str, Any]
+    metrics: dict[str, float]
     config: BacktestConfig
-    equity_curve: Optional[pd.DataFrame] = None
-    trades: Optional[pd.DataFrame] = None
+    equity_curve: pd.DataFrame | None = None
+    trades: pd.DataFrame | None = None
     start_date: str = None
     end_date: str = None
     duration_seconds: float = 0
     data_points: int = 0
-    error: Optional[str] = None
-    source: Optional[str] = None
+    error: str | None = None
+    source: str | None = None
 
 
 class UnifiedBacktestEngine:
@@ -78,7 +78,7 @@ class UnifiedBacktestEngine:
         self,
         data_manager: UnifiedDataManager = None,
         cache_manager: UnifiedCacheManager = None,
-        max_workers: int = None,
+        max_workers: int | None = None,
         memory_limit_gb: float = 8.0,
     ):
         self.data_manager = data_manager or UnifiedDataManager()
@@ -102,7 +102,7 @@ class UnifiedBacktestEngine:
         symbol: str,
         strategy: str,
         config: BacktestConfig,
-        custom_parameters: Dict[str, Any] = None,
+        custom_parameters: dict[str, Any] | None = None,
     ) -> BacktestResult:
         """
         Run backtest for a single symbol/strategy combination.
@@ -129,7 +129,7 @@ class UnifiedBacktestEngine:
                 )
                 if cached_result:
                     self.stats["cache_hits"] += 1
-                    self.logger.debug(f"Cache hit for {symbol}/{strategy}")
+                    self.logger.debug("Cache hit for %s/%s", symbol, strategy)
                     return self._dict_to_result(
                         cached_result, symbol, strategy, parameters, config
                     )
@@ -137,7 +137,6 @@ class UnifiedBacktestEngine:
             self.stats["cache_misses"] += 1
 
             # Get market data
-            data_kwargs = {}
             if config.futures_mode:
                 data = self.data_manager.get_crypto_futures_data(
                     symbol,
@@ -183,7 +182,7 @@ class UnifiedBacktestEngine:
 
         except Exception as e:
             self.stats["errors"] += 1
-            self.logger.error(f"Backtest failed for {symbol}/{strategy}: {e}")
+            self.logger.error("Backtest failed for %s/%s: %s", symbol, strategy, e)
             return BacktestResult(
                 symbol=symbol,
                 strategy=strategy,
@@ -194,7 +193,7 @@ class UnifiedBacktestEngine:
                 duration_seconds=time.time() - start_time,
             )
 
-    def run_batch_backtests(self, config: BacktestConfig) -> List[BacktestResult]:
+    def run_batch_backtests(self, config: BacktestConfig) -> list[BacktestResult]:
         """
         Run backtests for multiple symbols and strategies in parallel.
 
@@ -206,8 +205,9 @@ class UnifiedBacktestEngine:
         """
         start_time = time.time()
         self.logger.info(
-            f"Starting batch backtest: {len(config.symbols)} symbols, "
-            f"{len(config.strategies)} strategies"
+            "Starting batch backtest: %d symbols, %d strategies",
+            len(config.symbols),
+            len(config.strategies),
         )
 
         # Generate all symbol/strategy combinations
@@ -217,7 +217,7 @@ class UnifiedBacktestEngine:
             for strategy in config.strategies
         ]
 
-        self.logger.info(f"Total combinations: {len(combinations)}")
+        self.logger.info("Total combinations: %d", len(combinations))
 
         # Process in batches to manage memory
         batch_size = self._calculate_batch_size(
@@ -228,7 +228,9 @@ class UnifiedBacktestEngine:
         for i in range(0, len(combinations), batch_size):
             batch = combinations[i : i + batch_size]
             self.logger.info(
-                f"Processing batch {i//batch_size + 1}/{(len(combinations)-1)//batch_size + 1}"
+                "Processing batch %d/%d",
+                i // batch_size + 1,
+                (len(combinations) - 1) // batch_size + 1,
             )
 
             batch_results = self._process_batch(batch, config)
@@ -243,7 +245,7 @@ class UnifiedBacktestEngine:
         return results
 
     def run_portfolio_backtest(
-        self, config: BacktestConfig, weights: Dict[str, float] = None
+        self, config: BacktestConfig, weights: dict[str, float] | None = None
     ) -> BacktestResult:
         """
         Run portfolio backtest with multiple assets.
@@ -285,7 +287,7 @@ class UnifiedBacktestEngine:
 
             # Calculate equal weights if not provided
             if not weights:
-                weights = {symbol: 1.0 / len(all_data) for symbol in all_data.keys()}
+                weights = {symbol: 1.0 / len(all_data) for symbol in all_data}
 
             # Normalize weights
             total_weight = sum(weights.values())
@@ -300,7 +302,7 @@ class UnifiedBacktestEngine:
             return portfolio_result
 
         except Exception as e:
-            self.logger.error(f"Portfolio backtest failed: {e}")
+            self.logger.error("Portfolio backtest failed: %s", e)
             return BacktestResult(
                 symbol="PORTFOLIO",
                 strategy=strategy,
@@ -316,8 +318,8 @@ class UnifiedBacktestEngine:
         symbol: str,
         strategy: str,
         config: BacktestConfig,
-        last_update: datetime = None,
-    ) -> Optional[BacktestResult]:
+        last_update: datetime | None = None,
+    ) -> BacktestResult | None:
         """
         Run incremental backtest - only process new data since last run.
 
@@ -337,7 +339,7 @@ class UnifiedBacktestEngine:
         )
 
         if cached_result and not last_update:
-            self.logger.info(f"Using cached result for {symbol}/{strategy}")
+            self.logger.info("Using cached result for %s/%s", symbol, strategy)
             return self._dict_to_result(
                 cached_result, symbol, strategy, parameters, config
             )
@@ -368,7 +370,7 @@ class UnifiedBacktestEngine:
                 cached_result.get("end_date", config.start_date)
             )
             if data.index[-1] <= last_data_point:
-                self.logger.info(f"No new data for {symbol}/{strategy}")
+                self.logger.info("No new data for %s/%s", symbol, strategy)
                 return self._dict_to_result(
                     cached_result, symbol, strategy, parameters, config
                 )
@@ -381,7 +383,7 @@ class UnifiedBacktestEngine:
         symbol: str,
         strategy: str,
         data: pd.DataFrame,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
         config: BacktestConfig,
     ) -> BacktestResult:
         """Execute the actual backtest logic."""
@@ -438,9 +440,9 @@ class UnifiedBacktestEngine:
 
     def _execute_portfolio_backtest(
         self,
-        data_dict: Dict[str, pd.DataFrame],
+        data_dict: dict[str, pd.DataFrame],
         strategy: str,
-        weights: Dict[str, float],
+        weights: dict[str, float],
         config: BacktestConfig,
     ) -> BacktestResult:
         """Execute portfolio backtest."""
@@ -500,8 +502,8 @@ class UnifiedBacktestEngine:
             )
 
     def _process_batch(
-        self, batch: List[Tuple[str, str]], config: BacktestConfig
-    ) -> List[BacktestResult]:
+        self, batch: list[tuple[str, str]], config: BacktestConfig
+    ) -> list[BacktestResult]:
         """Process batch of symbol/strategy combinations."""
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.max_workers
@@ -521,7 +523,7 @@ class UnifiedBacktestEngine:
                     results.append(result)
                 except Exception as e:
                     self.logger.error(
-                        f"Batch backtest failed for {symbol}/{strategy}: {e}"
+                        "Batch backtest failed for %s/%s: %s", symbol, strategy, e
                     )
                     self.stats["errors"] += 1
                     results.append(
@@ -592,7 +594,7 @@ class UnifiedBacktestEngine:
 
     def _simulate_trading(
         self, data: pd.DataFrame, strategy_instance, config: BacktestConfig
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Simulate trading based on strategy signals."""
         trades = []
         equity_curve = []
@@ -675,22 +677,20 @@ class UnifiedBacktestEngine:
         """Get trading signal from strategy."""
         if hasattr(strategy_instance, "generate_signal"):
             return strategy_instance.generate_signal(data)
-        else:
-            # Fallback simple strategy
-            if len(data) < 20:
-                return 0
+        # Fallback simple strategy
+        if len(data) < 20:
+            return 0
 
-            current_price = data["close"].iloc[-1]
-            sma_20 = data["close"].rolling(20).mean().iloc[-1]
+        current_price = data["close"].iloc[-1]
+        sma_20 = data["close"].rolling(20).mean().iloc[-1]
 
-            if current_price > sma_20:
-                return 1  # Buy
-            elif current_price < sma_20:
-                return -1  # Sell
-            else:
-                return 0  # Hold
+        if current_price > sma_20:
+            return 1  # Buy
+        if current_price < sma_20:
+            return -1  # Sell
+        return 0  # Hold
 
-    def _align_portfolio_data(self, data_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    def _align_portfolio_data(self, data_dict: dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Align multiple asset data to common date range."""
         if not data_dict:
             return pd.DataFrame()
@@ -698,10 +698,11 @@ class UnifiedBacktestEngine:
         # Find common date range
         all_dates = None
         for symbol, data in data_dict.items():
-            if all_dates is None:
-                all_dates = set(data.index)
-            else:
-                all_dates = all_dates.intersection(set(data.index))
+            all_dates = (
+                set(data.index)
+                if all_dates is None
+                else all_dates.intersection(set(data.index))
+            )
 
         if not all_dates:
             return pd.DataFrame()
@@ -716,7 +717,7 @@ class UnifiedBacktestEngine:
         return aligned_data.dropna()
 
     def _calculate_portfolio_returns(
-        self, aligned_data: pd.DataFrame, weights: Dict[str, float]
+        self, aligned_data: pd.DataFrame, weights: dict[str, float]
     ) -> pd.Series:
         """Calculate portfolio returns."""
         returns = pd.Series(index=aligned_data.index, dtype=float)
@@ -770,7 +771,7 @@ class UnifiedBacktestEngine:
     # @jit(nopython=True)  # Removed for compatibility
     def _calculate_macd(
         prices: np.ndarray, fast: int = 12, slow: int = 26, signal: int = 9
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Fast MACD calculation using Numba."""
         ema_fast = np.full_like(prices, np.nan)
         ema_slow = np.full_like(prices, np.nan)
@@ -814,13 +815,13 @@ class UnifiedBacktestEngine:
         max_batch_size = int(available_memory_mb / estimated_memory_per_symbol_mb)
         return min(max_batch_size, num_symbols, 100)
 
-    def _get_strategy_class(self, strategy_name: str) -> Optional[type]:
+    def _get_strategy_class(self, strategy_name: str) -> type | None:
         """Get strategy class by name."""
         # This would be implemented based on your strategy registry
         # For now, return a placeholder
         return None
 
-    def _get_default_parameters(self, strategy_name: str) -> Dict[str, Any]:
+    def _get_default_parameters(self, strategy_name: str) -> dict[str, Any]:
         """Get default parameters for a strategy."""
         default_params = {
             "rsi": {"period": 14, "overbought": 70, "oversold": 30},
@@ -832,10 +833,10 @@ class UnifiedBacktestEngine:
 
     def _dict_to_result(
         self,
-        cached_dict: Dict,
+        cached_dict: dict,
         symbol: str,
         strategy: str,
-        parameters: Dict,
+        parameters: dict,
         config: BacktestConfig,
     ) -> BacktestResult:
         """Convert cached dictionary to BacktestResult object."""
@@ -854,20 +855,20 @@ class UnifiedBacktestEngine:
 
     def _log_stats(self):
         """Log performance statistics."""
-        self.logger.info(f"Batch backtest completed:")
-        self.logger.info(f"  Total backtests: {self.stats['backtests_run']}")
-        self.logger.info(f"  Cache hits: {self.stats['cache_hits']}")
-        self.logger.info(f"  Cache misses: {self.stats['cache_misses']}")
-        self.logger.info(f"  Errors: {self.stats['errors']}")
-        self.logger.info(f"  Total time: {self.stats['total_time']:.2f}s")
+        self.logger.info("Batch backtest completed:")
+        self.logger.info("  Total backtests: %s", self.stats["backtests_run"])
+        self.logger.info("  Cache hits: %s", self.stats["cache_hits"])
+        self.logger.info("  Cache misses: %s", self.stats["cache_misses"])
+        self.logger.info("  Errors: %s", self.stats["errors"])
+        self.logger.info("  Total time: %.2fs", self.stats["total_time"])
         if self.stats["backtests_run"] > 0:
             avg_time = self.stats["total_time"] / self.stats["backtests_run"]
-            self.logger.info(f"  Avg time per backtest: {avg_time:.2f}s")
+            self.logger.info("  Avg time per backtest: %.2fs", avg_time)
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get engine performance statistics."""
         return self.stats.copy()
 
-    def clear_cache(self, symbol: str = None, strategy: str = None):
+    def clear_cache(self, symbol: str | None = None, strategy: str | None = None):
         """Clear cached results."""
         self.cache_manager.clear_cache(cache_type="backtest", symbol=symbol)

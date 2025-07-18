@@ -49,7 +49,6 @@
       "ING",
       "PHIA",
       "UNA",
-      "RDSA",
       "MT",
       "ARCE",
       "AMS",
@@ -65,8 +64,6 @@
       "BFIT",
       "CTAC",
       "DG",
-      "OR",
-      "AI",
       "STMPA",
       "ENX",
       "PRX",
@@ -75,33 +72,33 @@
       "IBAB",
       "FRVIA",
       "AD",
-      "MC",
-      "SAN",
       "AC",
-      "ASML",
-      "CS",
       "SCR",
-      "NESN",
-      "NOVN",
       "UBSG",
       "LOTB",
       "BVI",
       "INGA",
-      "ADYEN",
-      "AIR",
-      "SAF",
-      "FLOW",
       "ETL",
       "HO",
       "PUB",
       "SU",
-      "WKL",
       "KPN"
     ],
     "data_sources": {
-      "primary": ["polygon", "alpha_vantage", "twelve_data"],
-      "fallback": ["yahoo_finance", "tiingo", "pandas_datareader"],
-      "excluded": ["bybit", "finnhub"]
+      "primary": [
+        "polygon",
+        "alpha_vantage",
+        "twelve_data"
+      ],
+      "fallback": [
+        "yahoo_finance",
+        "tiingo",
+        "pandas_datareader"
+      ],
+      "excluded": [
+        "bybit",
+        "finnhub"
+      ]
     },
     "initial_capital": 50000,
     "commission": 0.0015,
@@ -112,7 +109,13 @@
     "take_profit": 0.12,
     "currency": "EUR",
     "leverage": 2,
-    "intervals": ["15m", "30m", "1h", "4h", "1d"],
+    "intervals": [
+      "15m",
+      "30m",
+      "1h",
+      "4h",
+      "1d"
+    ],
     "risk_profile": "moderate",
     "target_return": 0.15,
     "benchmark": "EWU",
@@ -120,15 +123,54 @@
     "rebalance_frequency": "monthly",
     "metadata": {
       "created_date": "2025-01-07",
-      "asset_classes": ["individual_stocks", "large_cap", "blue_chip", "technology", "financials", "consumer_goods", "energy", "healthcare", "industrials", "luxury"],
-      "regions": ["netherlands", "france", "switzerland", "uk", "italy", "spain", "scandinavia", "europe"],
-      "currency_exposure": ["EUR", "GBP", "CHF", "SEK", "NOK", "DKK"],
+      "asset_classes": [
+        "individual_stocks",
+        "large_cap",
+        "blue_chip",
+        "technology",
+        "financials",
+        "consumer_goods",
+        "energy",
+        "healthcare",
+        "industrials",
+        "luxury"
+      ],
+      "regions": [
+        "netherlands",
+        "france",
+        "switzerland",
+        "uk",
+        "italy",
+        "spain",
+        "scandinavia",
+        "europe"
+      ],
+      "currency_exposure": [
+        "EUR",
+        "GBP",
+        "CHF",
+        "SEK",
+        "NOK",
+        "DKK"
+      ],
       "best_data_coverage": "1990-present",
-      "recommended_timeframes": ["15m", "30m", "1h", "4h", "1d"],
+      "recommended_timeframes": [
+        "15m",
+        "30m",
+        "1h",
+        "4h",
+        "1d"
+      ],
       "data_quality": "excellent",
       "market_hours": "9:00-17:30 CET",
       "research_source": "traderfox",
-      "selection_criteria": ["fundamental_analysis", "dividend_yield", "market_leadership", "esg_metrics", "european_focus"]
+      "selection_criteria": [
+        "fundamental_analysis",
+        "dividend_yield",
+        "market_leadership",
+        "esg_metrics",
+        "european_focus"
+      ]
     },
     "optimization": {
       "metric": "sharpe_ratio",

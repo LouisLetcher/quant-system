@@ -22,7 +22,7 @@ if [ -f "$CUSTOM_HOOKS_DIR/pre-commit-changelog" ]; then
     echo "Installing changelog pre-commit hook..."
     cp "$CUSTOM_HOOKS_DIR/pre-commit-changelog" "$HOOKS_DIR/pre-commit-changelog"
     chmod +x "$HOOKS_DIR/pre-commit-changelog"
-    
+
     # Add to pre-commit if not already included
     if ! grep -q "pre-commit-changelog" "$HOOKS_DIR/pre-commit"; then
         echo -e "\n# Run changelog generator\n.git/hooks/pre-commit-changelog" >> "$HOOKS_DIR/pre-commit"

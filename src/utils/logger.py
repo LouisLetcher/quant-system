@@ -1,22 +1,24 @@
+"""Centralized logging utility for the quant system."""
+
 from __future__ import annotations
 
 import logging
-import os
 import sys
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, ClassVar
 
 from src.utils.config_manager import ConfigManager
 
 
 class Logger:
-    """
-    Centralized logging utility for the quant system.
+    """Centralized logging utility for the quant system.
+
     Provides consistent logging across all modules and CLI commands.
     """
 
     # Log levels mapping
-    LOG_LEVELS = {
+    LOG_LEVELS: ClassVar[dict[str, int]] = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
         "WARNING": logging.WARNING,
@@ -28,9 +30,11 @@ class Logger:
     _initialized = False
     _config = None
     _cli_log_file = None
+    _orig_stdout = None
+    _orig_stderr = None
 
     @classmethod
-    def initialize(cls, config: Optional[ConfigManager] = None):
+    def initialize(cls, config: ConfigManager | None = None) -> None:
         """Initialize the logging system with configuration."""
         if cls._initialized:
             return
@@ -42,12 +46,12 @@ class Logger:
             cls._config = config
 
         # Create log directory if it doesn't exist
-        log_dir = os.path.dirname(cls._config.config["logging"]["log_file"])
-        os.makedirs(log_dir, exist_ok=True)
+        log_dir = Path(cls._config.config["logging"]["log_file"]).parent
+        log_dir.mkdir(parents=True, exist_ok=True)
 
         # Create CLI logs directory
-        cli_log_dir = os.path.join(log_dir, "cli")
-        os.makedirs(cli_log_dir, exist_ok=True)
+        cli_log_dir = log_dir / "cli"
+        cli_log_dir.mkdir(parents=True, exist_ok=True)
 
         # Configure root logger
         root_logger = logging.getLogger()
@@ -85,15 +89,15 @@ class Logger:
 
     @classmethod
     def setup_cli_logging(cls, command_name: str) -> str:
-        """Set up logging for CLI commands"""
+        """Set up logging for CLI commands."""
         if not cls._initialized:
             cls.initialize()
 
         # Create logs directory if it doesn't exist
-        os.makedirs("logs", exist_ok=True)
+        Path("logs").mkdir(exist_ok=True)
 
         # Generate log filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         log_file = f"logs/{command_name}_{timestamp}.log"
 
         # Create file handler with UTF-8 encoding
@@ -115,8 +119,8 @@ class Logger:
 
     @classmethod
     def capture_stdout(cls) -> None:
-        """
-        Capture stdout and stderr to the logger.
+        """Capture stdout and stderr to the logger.
+
         Call this after setup_cli_logging for full CLI output capture.
         """
         if not cls._initialized or not cls._cli_log_file:
@@ -124,12 +128,12 @@ class Logger:
 
         # Create stdout/stderr redirectors
         class LoggerWriter:
-            def __init__(self, logger, level):
+            def __init__(self, logger: Any, level: Any) -> None:
                 self.logger = logger
                 self.level = level
-                self.buffer = ""
+                self.buffer: str = ""
 
-            def write(self, message):
+            def write(self, message: str) -> None:
                 if message and not message.isspace():
                     try:
                         self.buffer += message
@@ -144,7 +148,7 @@ class Logger:
                         if "\n" in self.buffer:
                             self.flush()
 
-            def flush(self):
+            def flush(self) -> None:
                 if self.buffer:
                     try:
                         for line in self.buffer.rstrip().splitlines():
@@ -157,21 +161,6 @@ class Logger:
                         for line in safe_buffer.rstrip().splitlines():
                             self.level(line)
                     self.buffer = ""
-                    self.flush()
-
-            def flush(self):
-                if self.buffer:
-                    try:
-                        for line in self.buffer.rstrip().splitlines():
-                            self.level(line)
-                    except UnicodeEncodeError:
-                        # Handle Unicode encoding errors by replacing problematic characters
-                        safe_buffer = self.buffer.encode("ascii", "replace").decode(
-                            "ascii"
-                        )
-                        for line in safe_buffer.rstrip().splitlines():
-                            self.level(line)
-                    self.buffer = ""  # Get the root logger
 
         logger = logging.getLogger()
 
@@ -197,8 +186,8 @@ def get_logger(name: str) -> logging.Logger:
     return Logger.get_logger(name)
 
 
-def setup_command_logging(args):
-    """Set up logging based on command arguments"""
+def setup_command_logging(args: Any) -> str | None:
+    """Set up logging based on command arguments."""
     if hasattr(args, "log") and args.log:
         # Initialize logger if needed
         Logger.initialize()
