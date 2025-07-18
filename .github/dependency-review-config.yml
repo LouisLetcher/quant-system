@@ -9,7 +9,7 @@ fail-on-scopes:
   - runtime
   - development
 
-# Allow these licenses
+# Allow these licenses (do not use both allow-licenses and deny-licenses)
 allow-licenses:
   - MIT
   - Apache-2.0
@@ -24,31 +24,10 @@ allow-licenses:
   - MPL-2.0
   - CC0-1.0
 
-# Deny these licenses
-deny-licenses:
-  - AGPL-1.0
-  - AGPL-3.0
-  - GPL-2.0-only
-  - GPL-3.0-only
-  - LGPL-2.0
-  - LGPL-2.1-only
-  - LGPL-3.0-only
-  - EUPL-1.1
-  - EUPL-1.2
-
 # Allow these vulnerabilities (use with caution)
 allow-vulnerabilities:
   # Example: allow specific CVEs if they don't affect your use case
   # - GHSA-xxxx-xxxx-xxxx
-
-# Allow these dependency changes
-allow-dependencies-licenses:
-  - MIT
-  - Apache-2.0
-  - BSD-2-Clause
-  - BSD-3-Clause
-  - ISC
-  - Python-2.0
 
 # Comment configuration
 comment-summary-in-pr: true
