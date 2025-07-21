@@ -90,11 +90,17 @@ python -m src.cli.unified_cli reports organize
 
 ### Test Crypto Portfolio
 ```bash
+# Using Sortino ratio (default - superior to Sharpe)
 python -m src.cli.unified_cli portfolio test crypto \
-  --metric sharpe_ratio \
+  --metric sortino_ratio \
   --period 1y \
   --test-timeframes \
   --open-browser
+
+# Traditional Sharpe ratio (for comparison)
+python -m src.cli.unified_cli portfolio test crypto \
+  --metric sharpe_ratio \
+  --period 1y
 ```
 
 ### Download Forex Data
@@ -110,8 +116,8 @@ python -m src.cli.unified_cli data download \
 # Check cache status
 python -m src.cli.unified_cli cache stats
 
-# Test all portfolios
-python -m src.cli.unified_cli portfolio test-all --period 1d --open-browser
+# Test all portfolios (Sortino ratio default)
+python -m src.cli.unified_cli portfolio test-all --metric sortino_ratio --period 1d --open-browser
 
 # Organize reports
 python -m src.cli.unified_cli reports organize

@@ -1,118 +1,5 @@
-version: '3.8'
-
 services:
-  # Production quant system
-  quant-system:
-    build:
-      context: .
-      target: production
-    image: quant-system:latest
-    container_name: quant-system-prod
-    environment:
-      - ENVIRONMENT=production
-      - CACHE_DIR=/app/cache
-      - LOG_LEVEL=INFO
-    volumes:
-      - ./cache:/app/cache
-      - ./exports:/app/exports
-      - ./reports_output:/app/reports_output
-      - ./logs:/app/logs
-      - ./config:/app/config:ro
-    networks:
-      - quant-network
-    restart: unless-stopped
-    command: ["python", "-m", "src.cli.unified_cli", "cache", "stats"]
-
-  # Development environment
-  quant-dev:
-    build:
-      context: .
-      target: development
-    image: quant-system:dev
-    container_name: quant-system-dev
-    environment:
-      - ENVIRONMENT=development
-      - CACHE_DIR=/app/cache
-      - LOG_LEVEL=DEBUG
-    volumes:
-      - .:/app
-      - dev-cache:/app/cache
-    networks:
-      - quant-network
-    profiles:
-      - dev
-    command: ["bash"]
-
-  # Testing environment
-  quant-test:
-    build:
-      context: .
-      target: testing
-    image: quant-system:test
-    container_name: quant-system-test
-    environment:
-      - ENVIRONMENT=testing
-      - CACHE_DIR=/tmp/cache
-    volumes:
-      - ./tests:/app/tests:ro
-      - ./coverage.xml:/app/coverage.xml
-    networks:
-      - quant-network
-    profiles:
-      - test
-    command: ["poetry", "run", "pytest", "tests/", "-v", "--cov=src", "--cov-report=xml"]
-
-  # Jupyter notebook for analysis
-  jupyter:
-    build:
-      context: .
-      target: jupyter
-    image: quant-system:jupyter
-    container_name: quant-jupyter
-    environment:
-      - ENVIRONMENT=development
-      - JUPYTER_ENABLE_LAB=yes
-    ports:
-      - "8888:8888"
-    volumes:
-      - .:/app
-      - jupyter-data:/app/notebooks
-    networks:
-      - quant-network
-    profiles:
-      - jupyter
-    restart: unless-stopped
-
-  # API service
-  api:
-    build:
-      context: .
-      target: api
-    image: quant-system:api
-    container_name: quant-api
-    environment:
-      - ENVIRONMENT=production
-      - CACHE_DIR=/app/cache
-      - LOG_LEVEL=INFO
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./cache:/app/cache
-      - ./exports:/app/exports
-      - ./config:/app/config:ro
-    networks:
-      - quant-network
-    profiles:
-      - api
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # PostgreSQL database for advanced features
+  # PostgreSQL database
   postgres:
     image: postgres:15-alpine
     container_name: quant-postgres
@@ -121,64 +8,40 @@ services:
       - POSTGRES_USER=quantuser
       - POSTGRES_PASSWORD=quantpass
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    networks:
-      - quant-network
-    profiles:
-      - database
     restart: unless-stopped
 
-  # Redis for caching and task queue
-  redis:
-    image: redis:7-alpine
-    container_name: quant-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    networks:
-      - quant-network
-    profiles:
-      - cache
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-
-  # Task worker for background processing
-  worker:
+  # Local quant system with production features
+  quant:
     build:
       context: .
-      target: production
-    image: quant-system:latest
-    container_name: quant-worker
+      dockerfile: DOCKERFILE
+      target: development
+    image: quant-system:local
+    container_name: quant-system
     environment:
-      - ENVIRONMENT=production
+      - ENVIRONMENT=local
       - CACHE_DIR=/app/cache
-      - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=INFO
+      - DATABASE_URL=postgresql://quantuser:quantpass@postgres:5432/quant_system
     volumes:
       - ./cache:/app/cache
       - ./exports:/app/exports
+      - ./reports_output:/app/reports_output
       - ./logs:/app/logs
-    networks:
-      - quant-network
-    profiles:
-      - worker
-    restart: unless-stopped
+      - ./config:/app/config:ro
     depends_on:
-      - redis
-    command: ["python", "-m", "src.worker.main"]
-
-
+      - postgres
+    stdin_open: true
+    tty: true
+    command: ["bash"]
 
 networks:
-  quant-network:
+  default:
     driver: bridge
 
 volumes:
   postgres-data:
-  redis-data:
-  jupyter-data:
-  dev-cache:
