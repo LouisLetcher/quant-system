@@ -1,0 +1,23 @@
+{
+  "simple_crypto": {
+    "name": "Simple Crypto Test",
+    "description": "Basic crypto portfolio for testing",
+    "asset_type": "crypto",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT"
+    ],
+    "initial_capital": 10000,
+    "commission": 0.001,
+    "strategy": {
+      "name": "BuyAndHold",
+      "parameters": {}
+    },
+    "optimization": {
+      "metric": "sortino_ratio",
+      "secondary_metrics": ["sharpe_ratio", "calmar_ratio"],
+      "lookback_period": 180,
+      "walk_forward": true
+    }
+  }
+}

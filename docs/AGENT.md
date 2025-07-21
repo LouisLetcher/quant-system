@@ -1,112 +1,64 @@
 # Agent Development Guide
 
-This file contains essential commands, conventions, and development practices for the Quant Trading System.
+Essential commands and conventions for the Quant Trading System (Docker-only setup).
 
 ## Project Structure
 
 ```
 quant-system/
-├── src/                           # Main source code
-│   ├── backtesting_engine/       # Strategies submodule (quant-strategies repo)
-│   │   └── algorithms/python/    # Python strategy implementations (40+ strategies)
-│   ├── core/                     # Core trading logic
-│   ├── cli/                      # Command-line interface
-│   ├── portfolio/                # Portfolio management
-│   ├── reporting/                # Report generation
-│   └── utils/                    # Utility functions
-├── config/                       # Configuration files
-│   └── portfolios/               # Portfolio configurations
-├── tests/                        # Test suite
-├── docs/                         # Documentation
-├── scripts/                      # Utility scripts
-├── cache/                        # Data cache
-├── exports/                      # Export outputs
-└── reports_output/               # Generated reports
+├── src/                     # Core source code
+│   ├── core/               # Trading logic & backtesting
+│   ├── cli/                # Command-line interface
+│   └── utils/              # Utilities & data management
+├── config/portfolios/      # Portfolio configurations (220+ crypto symbols)
+├── exports/               # Generated reports (Docker mounted)
+├── cache/                 # Data cache (Docker mounted)
+└── logs/                  # System logs (Docker mounted)
 ```
 
 ## Essential Commands
 
-### Development Setup
+### Docker Commands (Primary)
 ```bash
-# Install dependencies
-poetry install --with dev
+# Build and run
+docker-compose up --build
 
-# Activate virtual environment
-poetry shell
+# Interactive shell
+docker-compose run --rm quant bash
 
-# Install pre-commit hooks
-pre-commit install
+# Run backtest
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
+  --symbols BTCUSDT ETHUSDT SOLUSDT \
+  --strategy BuyAndHold \
+  --start-date 2023-01-01 \
+  --end-date 2024-12-31
+
+# Test all portfolios (Sortino ratio default)
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/crypto.json \
+  --metric sortino_ratio \
+  --period max
+
+# Cache management
+docker-compose run --rm quant python -m src.cli.unified_cli cache stats
+docker-compose run --rm quant python -m src.cli.unified_cli cache clear
 ```
 
 ### Testing
 ```bash
-# Run all tests with coverage
-pytest
-
-# Run only unit tests
-pytest -m "not integration"
-
-# Run only integration tests
-pytest -m "integration"
-
-# Run tests with verbose output
-pytest -v
-
-# Run specific test file
-pytest tests/test_data_manager.py
-
-# Run tests in parallel
-pytest -n auto
+# Run tests in Docker
+docker-compose run --rm quant pytest
 ```
 
-### Code Quality
+### Code Quality (Development)
 ```bash
-# Format code
+# Format code (if developing locally)
 black .
-
-# Sort imports
 isort .
-
-# Lint code
 ruff check .
 
-# Essential code quality (aligned with simplified CI)
-poetry run black .
-poetry run isort .
-poetry run ruff check .
-
-# Pre-commit hooks (GitHub provides security scanning)
-pre-commit run --all-files
-```
-
-### System Commands
-```bash
-# List all portfolios
-python -m src.cli.unified_cli portfolio list
-
-# Test a specific portfolio
-python -m src.cli.unified_cli portfolio test <portfolio_name>
-
-# Test all portfolios
-python -m src.cli.unified_cli portfolio test-all
-
-# Generate reports
-python -m src.cli.unified_cli reports generate <portfolio_name>
-
-# Run with Docker
-docker-compose up --build
-```
-
-### Build and Deployment
-```bash
-# Build package
-poetry build
-
-# Build Docker image
-docker build -t quant-system .
-
-# Run production Docker stack
-docker-compose -f docker-compose.yml up -d
+# Lint markdown
+markdownlint **/*.md
 ```
 
 ## Code Conventions
@@ -125,11 +77,23 @@ docker-compose -f docker-compose.yml up -d
 - **Files**: snake_case (e.g., `data_manager.py`)
 
 ### Project-Specific Patterns
+- **Performance Metrics**: Sortino ratio is the default (superior to Sharpe)
 - **Data sources**: Always use fallback mechanisms
 - **Symbol transformation**: Handle different data source formats
 - **Error handling**: Use try-catch with appropriate logging
 - **Configuration**: Store in JSON files under `config/`
 - **Caching**: Use file-based caching for market data
+
+### Performance Metrics Hierarchy
+1. **Sortino Ratio** (primary) - Downside risk-adjusted returns
+2. **Calmar Ratio** (secondary) - Annual return / Max drawdown
+3. **Sharpe Ratio** (tertiary) - Traditional risk-adjusted returns
+4. **Profit Factor** (supplementary) - Gross profit/loss ratio
+
+**Why Sortino over Sharpe:**
+- **Sortino** only penalizes **downside volatility** (what investors actually care about)
+- **Sharpe** penalizes all volatility, including upside moves (which aren't really "risk")
+- **Hedge funds prefer Sortino** because upside volatility is desirable
 
 ### Testing Guidelines
 - **Unit tests**: Mock external dependencies
@@ -195,7 +159,11 @@ LOG_LEVEL=INFO
     "stop_loss": 0.05,
     "take_profit": 0.15
   },
-  "benchmark": "^GSPC"
+  "benchmark": "^GSPC",
+  "optimization": {
+    "metric": "sortino_ratio",
+    "secondary_metrics": ["calmar_ratio", "sharpe_ratio", "profit_factor"]
+  }
 }
 ```
 
@@ -231,6 +199,7 @@ poetry install --with dev
 - Black formatting
 - isort import sorting
 - Ruff linting
+- Markdownlint
 - **Note**: GitHub provides security scanning automatically
 
 ## Performance Considerations

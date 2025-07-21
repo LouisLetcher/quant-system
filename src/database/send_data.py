@@ -7,7 +7,7 @@ from typing import Any
 import requests
 from sqlalchemy.orm import Session
 
-# from src.database.db_connection import get_db_session  # TODO: Implement DB connection
+from src.database.db_connection import get_db_session
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,8 +37,8 @@ class DataSender:
     ):
         """Saves data to a database table using SQLAlchemy."""
         if session is None:
-            msg = "Database session is required but not provided"
-            raise ValueError(msg)
+            session = get_db_session()
+            
         try:
             record = table_model(**data)
             session.add(record)
