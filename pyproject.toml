@@ -10,7 +10,7 @@ packages = [{ include = "src", from = "." }]
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
 fastapi = "^0.115"
-uvicorn = "^0.34"
+uvicorn = "^0.35"
 pydantic = "^2.11"
 yfinance = "^0.2"
 yfinance-cache = "^0.7"
