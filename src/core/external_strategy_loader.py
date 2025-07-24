@@ -33,9 +33,9 @@ class ExternalStrategyLoader:
                            (defaults to ../quant-strategies relative to project root)
         """
         if strategies_path is None:
-            # Default to ../quant-strategies relative to project root
+            # Default to external_strategies directory (mounted in Docker)
             project_root = Path(__file__).parent.parent.parent
-            default_strategies_path = project_root.parent / "quant-strategies"
+            default_strategies_path = project_root / "external_strategies"
             self.strategies_path = default_strategies_path
         else:
             self.strategies_path = Path(strategies_path)
@@ -48,11 +48,59 @@ class ExternalStrategyLoader:
             logger.warning("Strategies path does not exist: %s", self.strategies_path)
             return
 
+        # Look for Python strategy files
+        for strategy_file in self.strategies_path.glob("*.py"):
+            if not strategy_file.name.startswith("_") and strategy_file.name != "README.py":
+                self._load_strategy_file(strategy_file)
+
+        # Also look for directory-based strategies with adapters
         for strategy_dir in self.strategies_path.iterdir():
             if strategy_dir.is_dir() and not strategy_dir.name.startswith("."):
-                self._load_strategy(strategy_dir)
+                self._load_strategy_dir(strategy_dir)
 
-    def _load_strategy(self, strategy_dir: Path) -> None:
+    def _load_strategy_file(self, strategy_file: Path) -> None:
+        """
+        Load a single strategy from a Python file
+
+        Args:
+            strategy_file: Path to strategy Python file
+        """
+        try:
+            # Load the strategy module
+            strategy_name = strategy_file.stem
+            spec = importlib.util.spec_from_file_location(
+                f"external_strategy_{strategy_name}", strategy_file
+            )
+            if spec is None or spec.loader is None:
+                logger.error("Could not load spec for %s", strategy_name)
+                return
+
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[f"external_strategy_{strategy_name}"] = module
+            spec.loader.exec_module(module)
+
+            # Look for strategy class in the module
+            strategy_class = None
+            for attr_name in dir(module):
+                attr = getattr(module, attr_name)
+                if (
+                    isinstance(attr, type)
+                    and attr_name.lower().endswith("strategy")
+                    and attr_name != "BaseStrategy"
+                ):
+                    strategy_class = attr
+                    break
+
+            if strategy_class:
+                self.loaded_strategies[strategy_name] = strategy_class
+                logger.info("Loaded external strategy: %s", strategy_name)
+            else:
+                logger.warning("No strategy class found in %s", strategy_file.name)
+
+        except Exception as e:
+            logger.error("Failed to load strategy %s: %s", strategy_file.name, e)
+
+    def _load_strategy_dir(self, strategy_dir: Path) -> None:
         """
         Load a single strategy from directory
 
