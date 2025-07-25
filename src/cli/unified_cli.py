@@ -897,22 +897,24 @@ def handle_portfolio_test_all(args):
             print(f"  ❌ {symbol}: Error - {e!s}")
 
     print("\n📊 Running backtests and generating comprehensive report...")
-    
+
     # Setup backtesting engine
     cache_manager = UnifiedCacheManager()
     backtest_engine = UnifiedBacktestEngine(data_manager, cache_manager, max_workers=2)
-    
+
     # Run actual backtests for each symbol-strategy combination
     backtest_results = {}
     total_tests = len(portfolio_config["symbols"]) * len(all_strategies)
     current_test = 0
-    
+
     for symbol in portfolio_config["symbols"]:
         backtest_results[symbol] = {}
         for strategy in all_strategies:
             current_test += 1
-            print(f"  🔄 Testing {symbol} with {strategy} ({current_test}/{total_tests})")
-            
+            print(
+                f"  🔄 Testing {symbol} with {strategy} ({current_test}/{total_tests})"
+            )
+
             try:
                 config = BacktestConfig(
                     symbols=[symbol],
@@ -922,10 +924,10 @@ def handle_portfolio_test_all(args):
                     initial_capital=portfolio_config.get("initial_capital", 10000),
                     commission=portfolio_config.get("commission", 0.001),
                 )
-                
+
                 result = backtest_engine.run_backtest(symbol, strategy, config)
                 backtest_results[symbol][strategy] = result
-                
+
             except Exception as e:
                 print(f"    ❌ Error testing {symbol} with {strategy}: {e}")
                 # Create a failed result
@@ -967,16 +969,16 @@ def handle_portfolio_test_all(args):
     for strategy in all_strategies:
         total_score = 0
         count = 0
-        
+
         for symbol_results in backtest_results.values():
-            if strategy in symbol_results and symbol_results[strategy]:
+            if symbol_results.get(strategy):
                 result = symbol_results[strategy]
                 if hasattr(result, args.metric):
                     value = getattr(result, args.metric)
                     if value is not None:
                         total_score += float(value)
                         count += 1
-        
+
         # Calculate average score for this strategy
         if count > 0:
             strategy_results[strategy] = total_score / count

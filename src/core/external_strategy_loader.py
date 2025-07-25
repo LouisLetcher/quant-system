@@ -50,7 +50,10 @@ class ExternalStrategyLoader:
 
         # Look for Python strategy files
         for strategy_file in self.strategies_path.glob("*.py"):
-            if not strategy_file.name.startswith("_") and strategy_file.name != "README.py":
+            if (
+                not strategy_file.name.startswith("_")
+                and strategy_file.name != "README.py"
+            ):
                 self._load_strategy_file(strategy_file)
 
         # Also look for directory-based strategies with adapters

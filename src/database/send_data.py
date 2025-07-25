@@ -38,7 +38,7 @@ class DataSender:
         """Saves data to a database table using SQLAlchemy."""
         if session is None:
             session = get_db_session()
-            
+
         try:
             record = table_model(**data)
             session.add(record)
