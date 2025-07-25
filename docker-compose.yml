@@ -33,7 +33,7 @@ services:
       - ./reports_output:/app/reports_output
       - ./logs:/app/logs
       - ./config:/app/config:ro
-      - ../quant-strategies/algorithms/python:/app/external_strategies:ro
+      - ./quant-strategies/algorithms/general/python:/app/external_strategies:ro
     depends_on:
       - postgres
     stdin_open: true
