@@ -785,12 +785,12 @@ class DetailedPortfolioReporter:
                 y: {json.dumps(benchmark_values)},
                 type: 'scatter',
                 mode: 'lines',
-                name: 'Benchmark',
+                name: 'Buy and Hold',
                 line: {{color: '#6c757d', width: 2, dash: 'dash'}}
             }};
 
             const layout_{safe_symbol} = {{
-                title: '{symbol} - Equity Curve vs Benchmark',
+                title: '{symbol} - Equity Curve vs Buy and Hold',
                 xaxis: {{title: 'Date'}},
                 yaxis: {{title: 'Portfolio Value ($)'}},
                 hovermode: 'x unified',

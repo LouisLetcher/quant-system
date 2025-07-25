@@ -26,11 +26,12 @@ RUN pip install poetry==$POETRY_VERSION
 WORKDIR /app
 
 # Copy dependency files
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml ./
 
 # Configure poetry and install dependencies
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-root \
+    && poetry lock --no-update \
+    && poetry install --only main --no-root \
     && rm -rf $POETRY_CACHE_DIR
 
 # Production stage
@@ -60,8 +61,7 @@ COPY --from=base /usr/local/bin /usr/local/bin
 COPY src/ ./src/
 COPY config/ ./config/
 COPY scripts/ ./scripts/
-COPY examples/ ./examples/
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml ./
 
 # Create necessary directories
 RUN mkdir -p cache exports reports_output logs \

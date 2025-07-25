@@ -157,7 +157,7 @@ fixable = [
 
 [lint.per-file-ignores]
 "tests/**/*.py" = ["S101"]  # Allow assert statements in tests
-"scripts/**/*.py" = ["S101"]  # Allow assert statements in scripts
+"scripts/**/*.py" = ["S101", "S602"]  # Allow assert statements and subprocess shell=True in scripts
 "src/portfolio/advanced_optimizer.py" = ["F821"]  # Optional import issue
 
 [format]
