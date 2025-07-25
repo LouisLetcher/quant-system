@@ -836,11 +836,14 @@ def handle_portfolio_test_all(args):
 
     # Get all available strategies dynamically
     try:
-        from src.backtesting_engine.strategies.strategy_factory import StrategyFactory
+        from src.core.strategy import StrategyFactory
 
         strategy_factory = StrategyFactory()
-        all_strategies = strategy_factory.get_available_strategies()
+        strategies_dict = strategy_factory.list_strategies()
+        all_strategies = strategies_dict["all"]
         print(f"🔍 Found {len(all_strategies)} available strategies")
+        print(f"   - Built-in: {strategies_dict['builtin']}")
+        print(f"   - External: {strategies_dict['external']}")
     except Exception as e:
         logger.warning("Could not load strategy factory: %s", e)
         # Fallback to basic strategies
@@ -893,14 +896,59 @@ def handle_portfolio_test_all(args):
         except Exception as e:
             print(f"  ❌ {symbol}: Error - {e!s}")
 
-    print("\n📊 Generating comprehensive report...")
-    print(
-        "⚠️  Note: Using simulated backtesting results due to multiprocessing limitations"
-    )
-    print("   The actual backtesting infrastructure is ready but needs the")
-    print("   multiprocessing pickle issue resolved for parallel execution.")
+    print("\n📊 Running backtests and generating comprehensive report...")
 
-    # Generate detailed report
+    # Setup backtesting engine
+    cache_manager = UnifiedCacheManager()
+    backtest_engine = UnifiedBacktestEngine(data_manager, cache_manager, max_workers=2)
+
+    # Run actual backtests for each symbol-strategy combination
+    backtest_results = {}
+    total_tests = len(portfolio_config["symbols"]) * len(all_strategies)
+    current_test = 0
+
+    for symbol in portfolio_config["symbols"]:
+        backtest_results[symbol] = {}
+        for strategy in all_strategies:
+            current_test += 1
+            print(
+                f"  🔄 Testing {symbol} with {strategy} ({current_test}/{total_tests})"
+            )
+
+            try:
+                config = BacktestConfig(
+                    symbols=[symbol],
+                    strategies=[strategy],
+                    start_date=start_date.strftime("%Y-%m-%d"),
+                    end_date=end_date.strftime("%Y-%m-%d"),
+                    initial_capital=portfolio_config.get("initial_capital", 10000),
+                    commission=portfolio_config.get("commission", 0.001),
+                )
+
+                result = backtest_engine.run_backtest(symbol, strategy, config)
+                backtest_results[symbol][strategy] = result
+
+            except Exception as e:
+                print(f"    ❌ Error testing {symbol} with {strategy}: {e}")
+                # Create a failed result
+                backtest_results[symbol][strategy] = BacktestResult(
+                    symbol=symbol,
+                    strategy=strategy,
+                    parameters={},
+                    metrics={
+                        "total_return": 0.0,
+                        "final_value": portfolio_config.get("initial_capital", 10000),
+                        "sortino_ratio": 0.0,
+                        "sharpe_ratio": 0.0,
+                        "max_drawdown": 0.0,
+                    },
+                    config=config,
+                    start_date=start_date.strftime("%Y-%m-%d"),
+                    end_date=end_date.strftime("%Y-%m-%d"),
+                    error=str(e),
+                )
+
+    # Generate detailed report with actual results
     reporter = DetailedPortfolioReporter()
     report_path = reporter.generate_comprehensive_report(
         portfolio_config=portfolio_config,
@@ -912,23 +960,30 @@ def handle_portfolio_test_all(args):
 
     print(f"\n📱 Comprehensive report generated: {report_path}")
 
-    # Quick summary for CLI
+    # Quick summary for CLI using actual results
     print(f"\n📊 Quick Summary by {args.metric.replace('_', ' ').title()}:")
     print("-" * 50)
 
-    # Simulate quick results for CLI display
+    # Calculate actual strategy performance averages
     strategy_results = {}
     for strategy in all_strategies:
-        if args.metric == "sharpe_ratio":
-            score = 1.2 + (hash(strategy) % 100) / 200  # Simulate 1.2-1.7 range
-        elif args.metric == "total_return":
-            score = 15.0 + (hash(strategy) % 100) / 2  # Simulate 15-65% range
-        elif args.metric == "profit_factor":
-            score = 1.5 + (hash(strategy) % 100) / 100  # Simulate 1.5-2.5 range
-        else:  # max_drawdown
-            score = -(5.0 + (hash(strategy) % 100) / 10)  # Simulate -5% to -15%
+        total_score = 0
+        count = 0
 
-        strategy_results[strategy] = score
+        for symbol_results in backtest_results.values():
+            if symbol_results.get(strategy):
+                result = symbol_results[strategy]
+                if hasattr(result, args.metric):
+                    value = getattr(result, args.metric)
+                    if value is not None:
+                        total_score += float(value)
+                        count += 1
+
+        # Calculate average score for this strategy
+        if count > 0:
+            strategy_results[strategy] = total_score / count
+        else:
+            strategy_results[strategy] = 0.0
 
     # Sort by metric (ascending for drawdown, descending for others)
     reverse_sort = args.metric != "max_drawdown"

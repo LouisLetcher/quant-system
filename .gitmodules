@@ -1,4 +1,0 @@
-[submodule "src/backtesting_engine"]
-	path = src/backtesting_engine
-	url = https://github.com/LouisLetcher/quant-strategies.git
-	ignore = dirty
