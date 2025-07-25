@@ -37,7 +37,7 @@ jobs:
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v18
         with:
-          globs: '**/*.md'
+          globs: '**/*.md !.venv/**/*.md !node_modules/**/*.md'
 
       - name: Test
         run: poetry run pytest
