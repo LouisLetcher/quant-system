@@ -38,7 +38,7 @@ click = "^8.1.0"
 # Essential dev tools only
 black = "^25.1"
 isort = "^6.0"
-ruff = "^0.11"
+ruff = "^0.12"
 pytest = "^8.4"
 pytest-cov = "^6.2"
 pre-commit = "^4.2"
