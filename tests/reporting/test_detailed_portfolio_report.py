@@ -1,4 +1,5 @@
 """Simple tests for detailed portfolio reporting."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -19,24 +20,21 @@ class TestDetailedPortfolioReporter:
         assert reporter.rng is not None
 
     @patch.object(DetailedPortfolioReporter, "_analyze_asset_with_timeframes")
-    @patch.object(DetailedPortfolioReporter, "_generate_html_report")
+    @patch.object(DetailedPortfolioReporter, "_create_html_report")
     def test_generate_comprehensive_report_basic(
         self, mock_generate_html, mock_analyze
     ):
         """Test basic comprehensive report generation."""
         # Setup mocks
         mock_analyze.return_value = (
-            {"strategy": "BuyAndHold", "timeframe": "1d"},
+            {"strategy": "BuyAndHold", "timeframe": "1d", "score": 1.5},
             {"metrics": {"sharpe": 1.2}},
         )
         mock_generate_html.return_value = "<html>Test Report</html>"
 
         reporter = DetailedPortfolioReporter()
 
-        portfolio_config = {
-            "symbols": ["AAPL", "MSFT"],
-            "portfolio_name": "Test Portfolio",
-        }
+        portfolio_config = {"symbols": ["AAPL", "MSFT"], "name": "Test Portfolio"}
 
         result = reporter.generate_comprehensive_report(
             portfolio_config=portfolio_config,
@@ -53,12 +51,12 @@ class TestDetailedPortfolioReporter:
         """Test report generation with custom timeframes."""
         reporter = DetailedPortfolioReporter()
 
-        portfolio_config = {"symbols": ["AAPL"], "portfolio_name": "Test Portfolio"}
+        portfolio_config = {"symbols": ["AAPL"], "name": "Test Portfolio"}
 
         with patch.object(reporter, "_analyze_asset_with_timeframes") as mock_analyze:
-            with patch.object(reporter, "_generate_html_report") as mock_generate:
+            with patch.object(reporter, "_create_html_report") as mock_generate:
                 mock_analyze.return_value = (
-                    {"strategy": "BuyAndHold", "timeframe": "1h"},
+                    {"strategy": "BuyAndHold", "timeframe": "1h", "score": 1.2},
                     {"metrics": {}},
                 )
                 mock_generate.return_value = "<html>Report</html>"
@@ -79,7 +77,7 @@ class TestDetailedPortfolioReporter:
         reporter = DetailedPortfolioReporter()
 
         portfolio_config = {
-            "portfolio_name": "Test Portfolio"
+            "name": "Test Portfolio"
             # Missing symbols key
         }
 
@@ -115,12 +113,12 @@ class TestDetailedPortfolioReporter:
         # Check that the method exists (even if we don't call it)
         assert hasattr(reporter, "_analyze_asset_with_timeframes")
 
-    def test_generate_html_method_exists(self):
-        """Test that the HTML generation method exists."""
+    def test_create_html_method_exists(self):
+        """Test that the HTML creation method exists."""
         reporter = DetailedPortfolioReporter()
 
         # Check that the method exists (even if we don't call it)
-        assert hasattr(reporter, "_generate_html_report")
+        assert hasattr(reporter, "_create_html_report")
 
 
 class TestReportOrganizer:
@@ -142,7 +140,7 @@ class TestIntegration:
     """Integration tests for the complete reporting workflow."""
 
     @patch.object(DetailedPortfolioReporter, "_analyze_asset_with_timeframes")
-    @patch.object(DetailedPortfolioReporter, "_generate_html_report")
+    @patch.object(DetailedPortfolioReporter, "_create_html_report")
     def test_complete_workflow_single_asset(self, mock_generate_html, mock_analyze):
         """Test complete workflow with single asset."""
         # Setup detailed mocks
@@ -150,6 +148,7 @@ class TestIntegration:
             {
                 "strategy": "BuyAndHold",
                 "timeframe": "1d",
+                "score": 1.5,
                 "sharpe_ratio": 1.5,
                 "total_return": 0.15,
             },
@@ -169,7 +168,7 @@ class TestIntegration:
 
         portfolio_config = {
             "symbols": ["AAPL"],
-            "portfolio_name": "Single Asset Portfolio",
+            "name": "Single Asset Portfolio",
             "allocation": {"AAPL": 1.0},
         }
 
@@ -188,14 +187,23 @@ class TestIntegration:
         mock_generate_html.assert_called_once()
 
     @patch.object(DetailedPortfolioReporter, "_analyze_asset_with_timeframes")
-    @patch.object(DetailedPortfolioReporter, "_generate_html_report")
+    @patch.object(DetailedPortfolioReporter, "_create_html_report")
     def test_complete_workflow_multiple_assets(self, mock_generate_html, mock_analyze):
         """Test complete workflow with multiple assets."""
         # Setup mocks for multiple assets
         mock_analyze.side_effect = [
-            ({"strategy": "BuyAndHold", "timeframe": "1d"}, {"metrics": {}}),
-            ({"strategy": "MeanReversion", "timeframe": "4h"}, {"metrics": {}}),
-            ({"strategy": "Momentum", "timeframe": "1h"}, {"metrics": {}}),
+            (
+                {"strategy": "BuyAndHold", "timeframe": "1d", "score": 1.2},
+                {"metrics": {}},
+            ),
+            (
+                {"strategy": "MeanReversion", "timeframe": "4h", "score": 0.8},
+                {"metrics": {}},
+            ),
+            (
+                {"strategy": "Momentum", "timeframe": "1h", "score": 1.5},
+                {"metrics": {}},
+            ),
         ]
         mock_generate_html.return_value = "<html>Multi-Asset Report</html>"
 
@@ -203,7 +211,7 @@ class TestIntegration:
 
         portfolio_config = {
             "symbols": ["AAPL", "MSFT", "GOOGL"],
-            "portfolio_name": "Diversified Portfolio",
+            "name": "Diversified Portfolio",
         }
 
         result = reporter.generate_comprehensive_report(

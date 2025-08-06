@@ -1,4 +1,5 @@
 """Simple tests for database connection manager."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -76,13 +77,14 @@ class TestDatabaseManager:
 class TestGetDbSession:
     """Test cases for get_db_session convenience function."""
 
-    @patch("src.database.db_connection.DatabaseManager")
-    def test_get_db_session_creation(self, mock_db_manager_class):
+    @patch("src.database.db_connection.create_engine")
+    def test_get_db_session_creation(self, mock_create_engine):
         """Test that get_db_session creates proper session."""
         from src.database.db_connection import get_db_session
 
-        mock_db_manager = MagicMock()
-        mock_db_manager_class.return_value = mock_db_manager
+        # Mock the engine creation to avoid psycopg2 dependency
+        mock_engine = MagicMock(spec=Engine)
+        mock_create_engine.return_value = mock_engine
 
         # Test function exists and can be called
         session_generator = get_db_session()

@@ -36,12 +36,12 @@ repos:
         args: [--fix]
         # Auto-fix in pre-commit, but GitHub runs without --fix
 
-  # Tests (temporarily disabled due to import issues)
+  # Tests (temporarily disabled due to numpy import conflicts in conftest.py)
   # - repo: local
   #   hooks:
   #     - id: pytest
   #       name: pytest
-  #       entry: poetry run pytest
+  #       entry: poetry run pytest --tb=short
   #       language: system
   #       types: [python]
   #       pass_filenames: false
