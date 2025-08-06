@@ -11,12 +11,24 @@ quant-system/
 │   ├── cli/                # Command-line interface
 │   └── utils/              # Utilities & data management
 ├── config/portfolios/      # Portfolio configurations (220+ crypto symbols)
-├── exports/               # Generated reports (Docker mounted)
+├── exports/               # Organized exports (reports/alerts by quarter)
 ├── cache/                 # Data cache (Docker mounted)
 └── logs/                  # System logs (Docker mounted)
 ```
 
 ## Essential Commands
+
+### Report & Export Generation
+```bash
+# Generate TradingView alerts (auto-organized by quarter)
+poetry run python src/utils/tradingview_alert_exporter.py --output "my_alerts.md"
+
+# Export with custom path
+poetry run python src/utils/tradingview_alert_exporter.py --output "exports/tradingview_alerts/custom_alerts.md"
+
+# Export alerts for specific symbol
+poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
+```
 
 ### Docker Commands (Primary)
 ```bash

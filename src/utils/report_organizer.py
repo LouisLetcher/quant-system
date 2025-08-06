@@ -10,7 +10,7 @@ from pathlib import Path
 class ReportOrganizer:
     """Organizes reports by quarter and year, ensuring single report per portfolio per quarter."""
 
-    def __init__(self, base_reports_dir: str = "reports_output"):
+    def __init__(self, base_reports_dir: str = "exports/reports"):
         self.base_reports_dir = Path(base_reports_dir)
         self.base_reports_dir.mkdir(exist_ok=True)
 

@@ -33,7 +33,9 @@ cache/
 # Output files and reports
 reports_output/
 backtests/results/
-exports/
+exports/*
+!exports/*/
+!exports/*/.gitkeep
 dist/
 build/
 *.tar.gz

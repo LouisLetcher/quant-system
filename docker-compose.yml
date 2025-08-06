@@ -30,7 +30,6 @@ services:
     volumes:
       - ./cache:/app/cache
       - ./exports:/app/exports
-      - ./reports_output:/app/reports_output
       - ./logs:/app/logs
       - ./config:/app/config:ro
       - ./quant-strategies/algorithms/general/python:/app/external_strategies:ro

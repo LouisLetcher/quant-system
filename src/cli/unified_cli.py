@@ -463,7 +463,7 @@ def add_analysis_commands(subparsers):
         "--format", choices=["html", "json"], default="html", help="Output format"
     )
     report_parser.add_argument(
-        "--output-dir", default="reports", help="Output directory"
+        "--output-dir", default="exports/reports", help="Output directory"
     )
     report_parser.add_argument(
         "--no-charts", action="store_true", help="Disable charts"

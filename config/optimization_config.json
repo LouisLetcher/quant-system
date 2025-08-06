@@ -150,7 +150,7 @@
     }
   },
   "reporting": {
-    "default_output_dir": "reports_output",
+    "default_output_dir": "exports/reports",
     "cache_reports": true,
     "default_format": "html",
     "include_charts_by_default": true,

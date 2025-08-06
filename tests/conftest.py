@@ -25,7 +25,7 @@ def test_data_dir():
 @pytest.fixture(scope="session")
 def reports_dir():
     """Fixture for reports output directory."""
-    reports_dir = Path(__file__).parent.parent / "reports_output"
+    reports_dir = Path(__file__).parent.parent / "exports" / "reports"
     reports_dir.mkdir(exist_ok=True)
     return reports_dir
 
