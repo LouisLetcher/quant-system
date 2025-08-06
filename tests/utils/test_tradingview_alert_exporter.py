@@ -83,7 +83,7 @@ class TestTradingViewAlertExporter:
             "metrics": {"Sharpe Ratio": "1.2", "Net Profit": "15%", "Win Rate": "65%"},
         }
 
-        alert = exporter.generate_alert_message(asset_data)
+        alert = exporter.generate_tradingview_alert(asset_data)
 
         assert isinstance(alert, str)
         assert "AAPL" in alert
