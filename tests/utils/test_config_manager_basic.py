@@ -18,7 +18,11 @@ class TestConfigManagerBasic:
         assert hasattr(config, "config")
         assert isinstance(config.config, dict)
 
-    @patch("builtins.open", new_callable=mock_open, read_data='{"test": "value"}')
+    @patch(
+        "src.utils.config_manager.Path.open",
+        new_callable=mock_open,
+        read_data='{"test": "value"}',
+    )
     @patch("src.utils.config_manager.Path.exists")
     def test_load_json_config(self, mock_exists, mock_file):
         """Test loading JSON configuration."""
@@ -28,7 +32,9 @@ class TestConfigManagerBasic:
         assert config.config.get("test") == "value"
 
     @patch(
-        "builtins.open", new_callable=mock_open, read_data="test: value\nother: data"
+        "src.utils.config_manager.Path.open",
+        new_callable=mock_open,
+        read_data="test: value\nother: data",
     )
     @patch("src.utils.config_manager.Path.exists")
     def test_load_yaml_config(self, mock_exists, mock_file):
@@ -55,17 +61,17 @@ class TestConfigManagerBasic:
         config.set("test.nested", "value")
         assert config.get("test.nested") == "value"
 
-    @patch("builtins.open", new_callable=mock_open)
+    @patch("src.utils.config_manager.Path.open", new_callable=mock_open)
     @patch("src.utils.config_manager.Path.mkdir")
     def test_save_json_format(self, mock_mkdir, mock_file):
         """Test saving configuration in JSON format."""
         config = ConfigManager()
         config.config = {"test": "value"}
 
-        config.save("test_output.json")
+        config.save_to_file("test_output.json")
         mock_file.assert_called_once()
 
-    @patch("builtins.open", new_callable=mock_open)
+    @patch("src.utils.config_manager.Path.open", new_callable=mock_open)
     @patch("src.utils.config_manager.Path.mkdir")
     def test_save_yaml_format(self, mock_mkdir, mock_file):
         """Test saving configuration in YAML format."""
@@ -73,23 +79,23 @@ class TestConfigManagerBasic:
         config.config = {"test": "value"}
 
         with patch("src.utils.config_manager.yaml.dump") as mock_yaml_dump:
-            config.save("test_output.yaml")
+            config.save_to_file("test_output.yaml")
             mock_yaml_dump.assert_called_once()
 
     def test_environment_variable_loading(self):
         """Test loading configuration from environment variables."""
         with patch.dict("os.environ", {"TEST_CONFIG_VAR": "test_value"}):
             config = ConfigManager()
-            config._load_from_environment("TEST_CONFIG_")
+            config._load_from_env()
 
             # Check that environment variables were processed
             assert hasattr(config, "config")
 
     def test_unsupported_file_format(self):
         """Test handling of unsupported file formats."""
+        config = ConfigManager()
         with pytest.raises(ValueError, match="Unsupported file format"):
-            config = ConfigManager()
-            config.save("test.txt")
+            config.save_to_file("test.txt")
 
     def test_nested_dict_operations(self):
         """Test nested dictionary operations."""
@@ -108,7 +114,7 @@ class TestConfigManagerIntegration:
     """Integration tests for ConfigManager."""
 
     @patch(
-        "builtins.open",
+        "src.utils.config_manager.Path.open",
         new_callable=mock_open,
         read_data='{"app": {"name": "test", "version": "1.0"}}',
     )

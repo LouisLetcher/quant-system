@@ -1,6 +1,6 @@
 {
   "crypto_portfolio": {
-    "name": "Crypto Portfolio", 
+    "name": "Crypto Portfolio",
     "description": "Bybit perpetual futures portfolio covering all major cryptocurrencies, DeFi tokens, Layer 1/2 protocols, meme coins, and emerging altcoins",
     "asset_type": "crypto",
     "symbols": [

@@ -137,3 +137,6 @@ class TestIntegration:
         with patch.object(exporter, "extract_asset_data", return_value=[]):
             result = exporter.process_html_file(html_files[0])
             assert isinstance(result, list)
+
+
+# Test comment

@@ -36,16 +36,16 @@ repos:
         args: [--fix]
         # Auto-fix in pre-commit, but GitHub runs without --fix
 
-  # Tests (temporarily disabled due to numpy import conflicts in conftest.py)
-  # - repo: local
-  #   hooks:
-  #     - id: pytest
-  #       name: pytest
-  #       entry: poetry run pytest --tb=short
-  #       language: system
-  #       types: [python]
-  #       pass_filenames: false
-  #       # Run tests fast - no coverage report in pre-commit
+  # Tests
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: poetry run pytest --tb=short -x
+        language: system
+        types: [python]
+        pass_filenames: false
+        # Run tests fast - no coverage report in pre-commit
 
   # Markdown linting (aligned with GitHub workflow)
   - repo: https://github.com/DavidAnson/markdownlint-cli2

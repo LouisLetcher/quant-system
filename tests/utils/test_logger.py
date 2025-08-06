@@ -8,33 +8,30 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-import logging
-
 
 class TestLoggerConfiguration:
     """Test cases for logger configuration functions."""
 
     def test_setup_logging_function_exists(self):
-        """Test that setup_logging function exists."""
+        """Test that setup_command_logging function exists."""
         # Check if the function is available in the module
-        assert "setup_logging" in globals() or hasattr(logging, "setup_logging")
+        from src.utils.logger import setup_command_logging
+
+        assert callable(setup_command_logging)
 
     def test_get_logger_function_exists(self):
         """Test that get_logger function exists."""
         # Check if the function is available in the module
-        assert "get_logger" in globals() or hasattr(logging, "get_logger")
+        from src.utils.logger import get_logger
+
+        assert callable(get_logger)
 
     @patch("src.utils.logger.logging.basicConfig")
     def test_basic_logging_setup(self, mock_basic_config):
         """Test basic logging configuration."""
         # Test that logging configuration can be called
-        if "setup_logging" in globals():
-            setup_logging()
-            mock_basic_config.assert_called_once()
-        else:
-            # Just test that logging module works
-            logger = logging.getLogger("test")
-            assert logger is not None
+        logger = logging.getLogger("test")
+        assert logger is not None
 
     def test_logger_creation(self):
         """Test logger creation."""
@@ -57,19 +54,12 @@ class TestLoggerConfiguration:
         mock_handler = MagicMock()
         mock_file_handler.return_value = mock_handler
 
-        # Test that file handlers can be created
-        if "setup_file_logging" in globals():
-            setup_file_logging("test.log")
-            mock_file_handler.assert_called_once()
-        else:
-            # Test basic file handler creation
-            handler = logging.FileHandler("test.log")
-            assert handler is not None
+        # Test basic file handler creation
+        handler = logging.FileHandler("test.log")
+        assert handler is not None
 
     def test_log_levels(self):
         """Test different log levels."""
-        logger = logging.getLogger("test_levels")
-
         # Test that all log levels are available
         assert hasattr(logging, "DEBUG")
         assert hasattr(logging, "INFO")
@@ -181,14 +171,10 @@ class TestLoggerIntegration:
     @patch("src.utils.logger.Path.mkdir")
     def test_log_directory_creation(self, mock_mkdir):
         """Test log directory creation."""
-        if "ensure_log_directory" in globals():
-            ensure_log_directory("logs/test.log")
-            mock_mkdir.assert_called_once()
-        else:
-            # Test basic path operations
-            log_path = Path("logs/test.log")
-            parent_dir = log_path.parent
-            assert parent_dir.name == "logs"
+        # Test basic path operations
+        log_path = Path("logs/test.log")
+        parent_dir = log_path.parent
+        assert parent_dir.name == "logs"
 
     def test_configuration_persistence(self):
         """Test that logger configuration persists."""
