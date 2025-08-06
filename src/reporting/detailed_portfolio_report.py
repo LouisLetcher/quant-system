@@ -386,59 +386,64 @@ class DetailedPortfolioReporter:
         return curve
 
     def _generate_benchmark_curve(
-        self, symbol: str, start_date: datetime, end_date: datetime, initial_value: float
+        self,
+        symbol: str,
+        start_date: datetime,
+        end_date: datetime,
+        initial_value: float,
     ) -> list[dict]:
         """Generate actual Buy & Hold benchmark curve data using real backtest."""
-        from src.core.backtest_engine import UnifiedBacktestEngine, BacktestConfig
-        from src.core.data_manager import UnifiedDataManager
+        from src.core.backtest_engine import BacktestConfig, UnifiedBacktestEngine
         from src.core.cache_manager import UnifiedCacheManager
-        
+        from src.core.data_manager import UnifiedDataManager
+
         try:
             # Run actual Buy & Hold backtest for this symbol
             data_manager = UnifiedDataManager()
             cache_manager = UnifiedCacheManager()
             engine = UnifiedBacktestEngine(data_manager, cache_manager)
-            
+
             config = BacktestConfig(
                 symbols=[symbol],
                 strategies=["BuyAndHold"],
                 start_date=start_date.strftime("%Y-%m-%d"),
                 end_date=end_date.strftime("%Y-%m-%d"),
                 initial_capital=initial_value,
-                use_cache=True
+                use_cache=True,
             )
-            
+
             # Run the actual Buy & Hold backtest
             result = engine.run_backtest(symbol, "BuyAndHold", config)
-            
+
             # Convert backtest equity curve to benchmark format
-            if hasattr(result, 'equity_curve') and result.equity_curve:
+            if hasattr(result, "equity_curve") and result.equity_curve:
                 curve = []
                 for date_str, value in result.equity_curve.items():
-                    curve.append({
-                        "date": date_str, 
-                        "benchmark": round(float(value), 2)
-                    })
+                    curve.append(
+                        {"date": date_str, "benchmark": round(float(value), 2)}
+                    )
                 return curve
-                
+
         except Exception as e:
-            self.logger.warning(f"Failed to generate actual Buy & Hold benchmark for {symbol}: {e}")
-            
+            self.logger.warning(
+                f"Failed to generate actual Buy & Hold benchmark for {symbol}: {e}"
+            )
+
         # Fallback to simple simulation if backtest fails
         days = (end_date - start_date).days
         curve = []
-        
+
         # Use conservative market returns as fallback
         annual_return = 0.08  # 8% annual return (market average)
         daily_return = annual_return / 365
-        
+
         for i in range(days):
             date = start_date + timedelta(days=i)
             value = initial_value * (1 + daily_return) ** i
             curve.append(
                 {"date": date.strftime("%Y-%m-%d"), "benchmark": round(value, 2)}
             )
-            
+
         return curve
 
     def _create_html_report(
