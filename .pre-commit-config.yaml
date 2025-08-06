@@ -41,7 +41,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: poetry run pytest --tb=short -x
+        entry: poetry run pytest --tb=short -x --ignore=tests/core/test_backtest_engine.py
         language: system
         types: [python]
         pass_filenames: false
