@@ -5,6 +5,7 @@ TradingView Alert Exporter
 Extracts asset strategies and timeframes from HTML reports and generates
 TradingView alert messages with appropriate placeholders.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -119,14 +120,14 @@ Time: {{{{timenow}}}}
 Action: {{{{strategy.order.action}}}}
 Qty: {{{{strategy.order.contracts}}}}
 
-#QuantTrading #{symbol} #{strategy.replace(' ', '')}"""
+#QuantTrading #{symbol} #{strategy.replace(" ", "")}"""
 
         return alert_message
 
     def process_html_file(self, file_path: Path) -> List[Dict]:
         """Process single HTML file and extract asset data"""
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 content = f.read()
 
             assets = self.extract_asset_data(content)
@@ -150,7 +151,7 @@ Qty: {{{{strategy.order.contracts}}}}
                     html_files.append(Path(root) / file)
         return html_files
 
-    def export_alerts(self, output_file: str = None) -> Dict:
+    def export_alerts(self, output_file: str | None = None) -> Dict:
         """Export all TradingView alerts"""
         html_files = self.find_html_reports()
         all_alerts = {}
@@ -180,7 +181,7 @@ Qty: {{{{strategy.order.contracts}}}}
                 # Full path provided, create parent directories
                 output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(output_path, "w", encoding="utf-8") as f:
+            with output_path.open("w", encoding="utf-8") as f:
                 f.write("# TradingView Alert Messages\n\n")
 
                 for symbol, alerts in all_alerts.items():
@@ -189,7 +190,7 @@ Qty: {{{{strategy.order.contracts}}}}
                     for i, alert_data in enumerate(alerts):
                         asset = alert_data["asset_data"]
                         f.write(
-                            f"### Alert {i+1} - {asset['strategy']} ({asset['timeframe']})\n"
+                            f"### Alert {i + 1} - {asset['strategy']} ({asset['timeframe']})\n"
                         )
                         f.write(f"**Source:** {asset['source_file']}\n\n")
                         f.write("```\n")

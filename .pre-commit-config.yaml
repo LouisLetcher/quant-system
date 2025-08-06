@@ -12,26 +12,27 @@ repos:
       - id: debug-statements
       - id: check-toml
 
-  # Python formatting - Black (check mode to match CI)
+  # Python formatting - Black (auto-fix mode)
   - repo: https://github.com/psf/black
     rev: 25.1.0
     hooks:
       - id: black
         language_version: python3.12
-        args: [--check]
 
-  # Python import sorting - isort (check mode to match CI)
+  # Python import sorting - isort (auto-fix mode)
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
       - id: isort
-        args: [--profile, black, --check-only]
+        args: [--profile, black]
 
-  # Python linting - Ruff (check mode to match CI)
+  # Python linting - Ruff (auto-fix mode)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.4
     hooks:
       - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
 
   # Markdown linting
   - repo: https://github.com/igorshubovych/markdownlint-cli

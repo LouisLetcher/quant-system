@@ -272,9 +272,9 @@ class DetailedPortfolioReporter:
             ),
             1,
         )
-        base_metrics["overview"][
-            "combination_rank"
-        ] = f"{best_combo_rank}/{len(all_combinations)}"
+        base_metrics["overview"]["combination_rank"] = (
+            f"{best_combo_rank}/{len(all_combinations)}"
+        )
 
         return base_metrics
 
@@ -426,7 +426,7 @@ class DetailedPortfolioReporter:
 
         except Exception as e:
             self.logger.warning(
-                f"Failed to generate actual Buy & Hold benchmark for {symbol}: {e}"
+                "Failed to generate actual Buy & Hold benchmark for %s: %s", symbol, e
             )
 
         # Fallback to simple simulation if backtest fails
