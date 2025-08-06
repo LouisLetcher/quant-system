@@ -36,6 +36,17 @@ repos:
         args: [--fix]
         # Auto-fix in pre-commit, but GitHub runs without --fix
 
+  # Tests (temporarily disabled due to import issues)
+  # - repo: local
+  #   hooks:
+  #     - id: pytest
+  #       name: pytest
+  #       entry: poetry run pytest
+  #       language: system
+  #       types: [python]
+  #       pass_filenames: false
+  #       # Run tests fast - no coverage report in pre-commit
+
   # Markdown linting (aligned with GitHub workflow)
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.15.0

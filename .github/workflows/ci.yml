@@ -39,8 +39,17 @@ jobs:
         with:
           globs: '**/*.md !.venv/**/*.md !node_modules/**/*.md !exports/**/*.md'
 
-      - name: Test
-        run: poetry run pytest
+      - name: Test with Coverage
+        run: |
+          poetry run pytest --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=15
+          echo "Coverage report generated"
+
+      - name: Upload Coverage to Codecov
+        if: success()
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
 
       - name: Build
         run: poetry build
