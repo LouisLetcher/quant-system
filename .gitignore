@@ -106,3 +106,6 @@ Desktop.ini
 
 # Submodules (track only committed versions)
 # Ignore local development changes in submodules
+
+# Local agent configuration (hidden from repo)
+.agent.md

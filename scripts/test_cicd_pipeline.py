@@ -2,6 +2,7 @@
 """
 Test script to simulate the CI/CD pipeline steps locally.
 """
+
 from __future__ import annotations
 
 import os

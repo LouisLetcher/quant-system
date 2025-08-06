@@ -11,6 +11,7 @@ This script automatically generates a CHANGELOG.md file by:
 Usage:
     python scripts/generate_changelog.py [--since TAG] [--version VERSION]
 """
+
 from __future__ import annotations
 
 import argparse

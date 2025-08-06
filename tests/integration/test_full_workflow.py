@@ -40,8 +40,7 @@ class TestFullWorkflow:
     def backtest_engine(self, data_manager, cache_manager):
         """Create backtest engine instance."""
         return UnifiedBacktestEngine(
-            data_manager=data_manager,
-            cache_manager=cache_manager,
+            data_manager=data_manager, cache_manager=cache_manager
         )
 
     @pytest.fixture

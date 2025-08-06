@@ -8,37 +8,40 @@ repos:
       - id: check-yaml
       - id: check-json
       - id: check-added-large-files
+        exclude: '^exports/'
       - id: check-merge-conflict
       - id: debug-statements
       - id: check-toml
 
-  # Python formatting - Black (auto-fix mode)
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
+  # Python formatting - Ruff (matches GitHub workflow check)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.4
     hooks:
-      - id: black
-        language_version: python3.12
+      - id: ruff-format
+        # Auto-fix in pre-commit, but GitHub runs --check
 
-  # Python import sorting - isort (auto-fix mode)
+  # Python import sorting - isort (matches GitHub workflow)
   - repo: https://github.com/pycqa/isort
     rev: 6.0.1
     hooks:
       - id: isort
-        args: [--profile, black]
+        args: [--profile, black, --skip, quant-strategies]
+        # Auto-fix in pre-commit, but GitHub runs --check-only
 
-  # Python linting - Ruff (auto-fix mode)
+  # Python linting - Ruff (matches GitHub workflow)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.4
     hooks:
       - id: ruff-check
         args: [--fix]
-      - id: ruff-format
+        # Auto-fix in pre-commit, but GitHub runs without --fix
 
-  # Markdown linting
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.43.0
+  # Markdown linting (aligned with GitHub workflow)
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.15.0
     hooks:
-      - id: markdownlint
+      - id: markdownlint-cli2
+        args: ["**/*.md", "!.venv/**/*.md", "!node_modules/**/*.md", "!exports/**/*.md"]
 
   # Additional checks disabled - GitHub provides these automatically:
   # - MyPy (type checking)

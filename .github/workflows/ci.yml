@@ -26,10 +26,10 @@ jobs:
         run: poetry install
 
       - name: Format check
-        run: poetry run black --check .
+        run: poetry run ruff format --check .
 
       - name: Import sort check
-        run: poetry run isort --check-only .
+        run: poetry run isort --check-only . --skip quant-strategies
 
       - name: Lint
         run: poetry run ruff check .
@@ -37,7 +37,7 @@ jobs:
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v20
         with:
-          globs: '**/*.md !.venv/**/*.md !node_modules/**/*.md'
+          globs: '**/*.md !.venv/**/*.md !node_modules/**/*.md !exports/**/*.md'
 
       - name: Test
         run: poetry run pytest
