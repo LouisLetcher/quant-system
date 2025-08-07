@@ -64,7 +64,7 @@ COPY scripts/ ./scripts/
 COPY pyproject.toml ./
 
 # Create necessary directories
-RUN mkdir -p cache exports reports_output logs \
+RUN mkdir -p cache exports logs \
     && chown -R quantuser:quantuser /app
 
 # Switch to non-root user
@@ -87,7 +87,7 @@ RUN poetry install --no-root
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p cache exports reports_output logs tests
+RUN mkdir -p cache exports logs tests
 
 # Set development environment
 ENV ENVIRONMENT=development

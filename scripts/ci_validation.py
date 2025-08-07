@@ -3,6 +3,7 @@
 Local CI validation script that mimics GitHub Actions workflow.
 Validates core functionality without requiring dev dependencies.
 """
+
 from __future__ import annotations
 
 import importlib.util

@@ -2,6 +2,7 @@
 """
 Local validation script to test the basic functionality before CI/CD.
 """
+
 from __future__ import annotations
 
 import sys

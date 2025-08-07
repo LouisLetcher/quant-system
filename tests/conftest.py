@@ -6,12 +6,19 @@ import os
 import sys
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
+# Add src to path for imports first
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
 import pytest
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Import numpy and pandas after path setup
+try:
+    import numpy as np
+    import pandas as pd
+except ImportError:
+    # If numpy/pandas aren't available, use mocks for tests that don't need them
+    np = None
+    pd = None
 
 
 @pytest.fixture(scope="session")
@@ -25,7 +32,7 @@ def test_data_dir():
 @pytest.fixture(scope="session")
 def reports_dir():
     """Fixture for reports output directory."""
-    reports_dir = Path(__file__).parent.parent / "reports_output"
+    reports_dir = Path(__file__).parent.parent / "exports" / "reports"
     reports_dir.mkdir(exist_ok=True)
     return reports_dir
 
@@ -33,6 +40,9 @@ def reports_dir():
 @pytest.fixture
 def sample_ohlcv_data():
     """Create sample OHLCV data for testing."""
+    if pd is None or np is None:
+        pytest.skip("numpy/pandas not available")
+
     dates = pd.date_range("2024-01-01", periods=100, freq="D")
     rng = np.random.default_rng(42)  # For reproducible tests
 

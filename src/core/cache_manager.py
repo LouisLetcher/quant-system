@@ -481,9 +481,7 @@ class UnifiedCacheManager:
 
                 # Remove metadata
                 if conditions:
-                    delete_query = (
-                        f"DELETE FROM cache_entries WHERE {where_clause}"  # nosec B608
-                    )
+                    delete_query = f"DELETE FROM cache_entries WHERE {where_clause}"  # nosec B608
                 else:
                     delete_query = "DELETE FROM cache_entries"
                 conn.execute(delete_query, params)
