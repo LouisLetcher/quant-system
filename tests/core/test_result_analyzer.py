@@ -380,7 +380,7 @@ class TestUnifiedResultAnalyzer:
 
         # All metrics should be numerical
         for key, value in metrics.items():
-            assert isinstance(
-                value, (int, float, np.number)
-            ), f"Metric {key} is not numerical: {value}"
+            assert isinstance(value, (int, float, np.number)), (
+                f"Metric {key} is not numerical: {value}"
+            )
             assert not np.isnan(value), f"Metric {key} is NaN"

@@ -156,19 +156,25 @@ class ConfigManager:
 
         return result
 
-    def set(self, section: str, key: str, value: Any) -> None:
+    def set(self, path: str, value: Any) -> None:
         """
-        Set a configuration value.
+        Set a configuration value using dot notation for nested dictionaries.
 
         Args:
-            section: Configuration section
-            key: Configuration key
+            path: Path to the configuration value using dot notation (e.g., 'data.cache_dir')
             value: Value to set
         """
-        if section not in self.config:
-            self.config[section] = {}
+        keys = path.split(".")
+        current = self.config
 
-        self.config[section][key] = value
+        # Navigate to the parent of the target key, creating nested dicts as needed
+        for key in keys[:-1]:
+            if key not in current or not isinstance(current[key], dict):
+                current[key] = {}
+            current = current[key]
+
+        # Set the final value
+        current[keys[-1]] = value
 
     def save_to_file(self, file_path: str) -> None:
         """

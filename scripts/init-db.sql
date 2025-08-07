@@ -79,8 +79,8 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_portfolios_updated_at 
-    BEFORE UPDATE ON portfolios.configurations 
+CREATE TRIGGER update_portfolios_updated_at
+    BEFORE UPDATE ON portfolios.configurations
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert default crypto portfolio
