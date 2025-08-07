@@ -53,24 +53,26 @@ class TestDetailedPortfolioReporter:
 
         portfolio_config = {"symbols": ["AAPL"], "name": "Test Portfolio"}
 
-        with patch.object(reporter, "_analyze_asset_with_timeframes") as mock_analyze:
-            with patch.object(reporter, "_create_html_report") as mock_generate:
-                mock_analyze.return_value = (
-                    {"strategy": "BuyAndHold", "timeframe": "1h", "score": 1.2},
-                    {"metrics": {}},
-                )
-                mock_generate.return_value = "<html>Report</html>"
+        with (
+            patch.object(reporter, "_analyze_asset_with_timeframes") as mock_analyze,
+            patch.object(reporter, "_create_html_report") as mock_generate,
+        ):
+            mock_analyze.return_value = (
+                {"strategy": "BuyAndHold", "timeframe": "1h", "score": 1.2},
+                {"metrics": {}},
+            )
+            mock_generate.return_value = "<html>Report</html>"
 
-                result = reporter.generate_comprehensive_report(
-                    portfolio_config=portfolio_config,
-                    start_date="2023-01-01",
-                    end_date="2023-12-31",
-                    strategies=["BuyAndHold"],
-                    timeframes=["1h", "4h", "1d"],
-                )
+            result = reporter.generate_comprehensive_report(
+                portfolio_config=portfolio_config,
+                start_date="2023-01-01",
+                end_date="2023-12-31",
+                strategies=["BuyAndHold"],
+                timeframes=["1h", "4h", "1d"],
+            )
 
-                assert isinstance(result, str)
-                mock_analyze.assert_called()
+            assert isinstance(result, str)
+            mock_analyze.assert_called()
 
     def test_generate_comprehensive_report_missing_symbols(self):
         """Test report generation with missing symbols in config."""
