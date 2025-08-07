@@ -33,7 +33,7 @@ class AdvancedReportGenerator:
     Supports multiple output formats and comprehensive analysis.
     """
 
-    def __init__(self, output_dir: str = "reports_output", cache_reports: bool = True):
+    def __init__(self, output_dir: str = "exports/reports", cache_reports: bool = True):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         self.cache_reports = cache_reports

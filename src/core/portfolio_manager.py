@@ -521,7 +521,9 @@ class PortfolioManager:
             "market_sentiment": (
                 "Bullish"
                 if np.mean(all_returns) > 5
-                else "Bearish" if np.mean(all_returns) < -2 else "Neutral"
+                else "Bearish"
+                if np.mean(all_returns) < -2
+                else "Neutral"
             ),
             "average_market_return": np.mean(all_returns),
             "market_volatility": np.std(all_returns),

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Remove duplicate symbols from portfolio configuration files."""
+
 from __future__ import annotations
 
 import sys

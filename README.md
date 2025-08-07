@@ -32,7 +32,7 @@ docker-compose run --rm quant bash
 - **Backtesting Engine**: Performance analysis with comprehensive metrics
 - **Portfolio Analysis**: Risk metrics, drawdown analysis, return attribution
 - **Data Integration**: Yahoo Finance, Bybit, Alpha Vantage with fallback support
-- **Report Generation**: Automated export to local `/exports` folder
+- **Report Generation**: Automated quarterly-organized export system
 
 ### Data Sources
 - **Primary**: Yahoo Finance, Bybit (crypto)
@@ -47,7 +47,7 @@ quant-system/
 │   ├── cli/                # Command-line interface
 │   └── utils/              # Utilities & data management
 ├── config/portfolios/      # Portfolio configurations (220+ crypto symbols)
-├── exports/               # Generated reports (Docker mounted)
+├── exports/               # Organized exports (reports/alerts by quarter)
 ├── cache/                 # Data cache (Docker mounted)
 └── logs/                  # System logs (Docker mounted)
 ```
@@ -135,6 +135,23 @@ FINNHUB_API_KEY=your_key
 docker-compose run --rm quant pytest
 ```
 
+## 🚀 TradingView Alert Export
+
+Generate organized TradingView alerts from your backtest reports:
+
+```bash
+# Auto-organized by quarter/year (recommended)
+poetry run python src/utils/tradingview_alert_exporter.py --output "alerts.md"
+
+# Export for specific symbol
+poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
+
+# Custom path
+poetry run python src/utils/tradingview_alert_exporter.py --output "exports/tradingview_alerts/custom.md"
+```
+
+**Alert Format**: Includes strategy, timeframe, Sharpe ratio, profit metrics, and TradingView placeholders like `{{close}}`, `{{timenow}}`, `{{strategy.order.action}}`.
+
 ## 📁 Output & Storage
 
 **PostgreSQL Database (Primary Storage):**
@@ -142,10 +159,13 @@ docker-compose run --rm quant pytest
 - Backtest results with comprehensive performance metrics
 - Portfolio configurations with Sortino-first optimization
 
-**Local Files:**
-- `/exports` - Generated reports and analysis
-- `/cache` - Temporary files and quick access data  
-- `/logs` - System logs
+**Local Files (Organized by Quarter/Year):**
+- `exports/reports/YYYY/QX/` - Generated portfolio reports
+- `exports/tradingview_alerts/YYYY/QX/` - TradingView alert exports
+- `exports/data_exports/` - Raw data exports
+- `exports/strategies/` - Strategy analysis exports
+- `cache/` - Temporary files and quick access data
+- `logs/` - System logs
 
 ## 🔒 Security
 

@@ -131,8 +131,7 @@ The Docker setup includes several volume mounts:
 volumes:
   - ./config:/app/config           # Configuration files
   - ./cache:/app/cache             # Data cache
-  - ./reports_output:/app/reports_output  # Generated reports
-  - ./exports:/app/exports         # Data exports
+  - ./exports:/app/exports         # Organized exports (reports/alerts by quarter)
   - postgres_data:/var/lib/postgresql/data  # Database
   - redis_data:/data               # Cache storage
 ```
@@ -202,7 +201,7 @@ print(response.status_code, response.json())
 2. **Permission Issues**
    ```bash
    # Fix file permissions
-   sudo chown -R $USER:$USER ./cache ./reports_output
+   sudo chown -R $USER:$USER ./cache ./exports
 
    # Or use Docker user
    export UID=$(id -u)
@@ -316,7 +315,7 @@ docker-compose exec -T postgres psql -U quant_user quant_db < backup.sql
 ### Data Backup
 ```bash
 # Backup cache and reports
-tar -czf backup.tar.gz cache/ reports_output/ config/
+tar -czf backup.tar.gz cache/ exports/ config/
 
 # Restore data
 tar -xzf backup.tar.gz

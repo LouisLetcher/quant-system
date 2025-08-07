@@ -177,17 +177,17 @@ class TestConfigManager:
         config = ConfigManager()
 
         # Set new value in existing section
-        config.set("data", "new_key", "new_value")
+        config.set("data.new_key", "new_value")
         assert config.config["data"]["new_key"] == "new_value"
 
         # Set value in new section
-        config.set("new_section", "test_key", 123)
+        config.set("new_section.test_key", 123)
         assert config.config["new_section"]["test_key"] == 123
 
     def test_save_to_json_file(self):
         """Test saving configuration to JSON file."""
         config = ConfigManager()
-        config.set("test", "value", "test_data")
+        config.set("test.value", "test_data")
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             temp_file = f.name
@@ -209,7 +209,7 @@ class TestConfigManager:
     def test_save_to_yaml_file(self):
         """Test saving configuration to YAML file."""
         config = ConfigManager()
-        config.set("test", "yaml_value", "yaml_data")
+        config.set("test.yaml_value", "yaml_data")
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             temp_file = f.name
@@ -321,15 +321,15 @@ class TestConfigManager:
         assert config.get("") is None
 
         # Test path that goes through non-dict value
-        config.set("test", "simple_value", "not_a_dict")
+        config.set("test.simple_value", "not_a_dict")
         assert config.get("test.simple_value.nonexistent") is None
 
     def test_configuration_persistence(self):
         """Test that configuration changes persist through save/load cycle."""
         # Create initial config
         config1 = ConfigManager()
-        config1.set("test", "persist_value", "original")
-        config1.set("new_section", "new_key", 999)
+        config1.set("test.persist_value", "original")
+        config1.set("new_section.new_key", 999)
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             temp_file = f.name
@@ -399,7 +399,7 @@ class TestIntegration:
             assert config.get("backtest.initial_capital") == 75000
 
             # Test modification and persistence
-            config.set("runtime", "test_run", True)
+            config.set("runtime.test_run", True)
 
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".json", delete=False

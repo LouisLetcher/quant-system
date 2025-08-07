@@ -103,7 +103,6 @@ ignore = [
     "PERF401", # Use a list comprehension to create a transformed list
     "PERF203", # try-except within a loop incurs performance overhead
     "RUF012", # Mutable class attributes should be annotated with ClassVar
-    "PT004",  # Fixture does not return anything, add leading underscore
     "UP006",  # Use new-style typing annotations
     "UP007",  # Use new-style union syntax
     "UP035",  # typing.* imports are deprecated
