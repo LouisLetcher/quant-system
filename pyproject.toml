@@ -42,7 +42,7 @@ isort = "^6.0"
 ruff = "^0.12"
 pytest = "^8.4"
 pytest-cov = "^6.2"
-pre-commit = "^4.2"
+pre-commit = "^4.3"
 
 [tool.poetry.scripts]
 start = "uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
