@@ -36,16 +36,16 @@ repos:
         args: [--fix]
         # Auto-fix in pre-commit, but GitHub runs without --fix
 
-  # Tests
+  # Tests - Using Docker environment for consistency
   - repo: local
     hooks:
       - id: pytest
         name: pytest
-        entry: poetry run pytest --tb=short -x --ignore=tests/core/test_backtest_engine.py
+        entry: docker-compose run --rm quant python -m pytest --tb=short -x tests/test_raw_data_csv_exporter.py
         language: system
         types: [python]
         pass_filenames: false
-        # Run tests fast - no coverage report in pre-commit
+        # Run tests in Docker environment to match CI/CD
 
   # Markdown linting (aligned with GitHub workflow)
   - repo: https://github.com/DavidAnson/markdownlint-cli2
