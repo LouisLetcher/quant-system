@@ -536,6 +536,33 @@ def add_reports_commands(subparsers):
     )
     latest_parser.add_argument("portfolio", help="Portfolio name")
 
+    # CSV Export
+    csv_export_parser = reports_subparsers.add_parser(
+        "export-csv", help="Export portfolio data to CSV format"
+    )
+    csv_export_parser.add_argument(
+        "--portfolio",
+        help="Portfolio configuration file path (optional, used for full format)",
+    )
+    csv_export_parser.add_argument(
+        "--output", default="portfolio_raw_data.csv", help="Output CSV filename"
+    )
+    csv_export_parser.add_argument(
+        "--format",
+        choices=["full", "best-strategies", "quarterly"],
+        default="full",
+        help="Export format: full data, best strategies only, or quarterly summary",
+    )
+    csv_export_parser.add_argument(
+        "--columns",
+        nargs="+",
+        help="Custom column selection (use 'available' to see options)",
+    )
+    csv_export_parser.add_argument(
+        "--quarter", help="Quarter for quarterly export (Q1, Q2, Q3, Q4)"
+    )
+    csv_export_parser.add_argument("--year", help="Year for quarterly export (YYYY)")
+
 
 # Command implementations
 def handle_data_command(args):
@@ -1345,6 +1372,76 @@ def handle_strategy_command(args):
             logger.error("Strategy test failed: %s", e)
 
 
+def handle_csv_export_command(args):
+    """Handle CSV export command."""
+    from src.utils.raw_data_csv_exporter import RawDataCSVExporter
+
+    # Show available columns if requested
+    if hasattr(args, "columns") and args.columns and "available" in args.columns:
+        exporter = RawDataCSVExporter()
+        print("Available columns for CSV export:")
+        for col in exporter.get_available_columns():
+            print(f"  - {col}")
+        return
+
+    # Initialize exporter
+    exporter = RawDataCSVExporter()
+
+    # Handle quarterly exports from existing reports
+    if args.format == "quarterly":
+        if not args.quarter or not args.year:
+            print("❌ Quarter and year required for quarterly export")
+            return
+
+        print(f"📊 Extracting data from quarterly reports: {args.year} {args.quarter}")
+
+        output_paths = exporter.export_from_quarterly_reports(
+            args.quarter, args.year, args.output, "full"
+        )
+
+        if output_paths:
+            print(f"✅ CSV export completed - {len(output_paths)} files:")
+            for path in output_paths:
+                print(f"   📄 {path}")
+        else:
+            print("❌ No quarterly reports found or CSV export failed")
+        return
+
+    # Handle best-strategies format (can work from quarterly reports if quarter/year provided)
+    if args.format == "best-strategies":
+        if args.quarter and args.year:
+            print(
+                f"📊 Extracting best strategies from quarterly reports: {args.year} {args.quarter}"
+            )
+
+            output_paths = exporter.export_from_quarterly_reports(
+                args.quarter, args.year, args.output, "best-strategies"
+            )
+
+            if output_paths:
+                print(
+                    f"✅ Best strategies CSV export completed - {len(output_paths)} files:"
+                )
+                for path in output_paths:
+                    print(f"   📄 {path}")
+            else:
+                print("❌ No quarterly reports found or CSV export failed")
+            return
+        print(
+            "❌ Best strategies export requires --quarter and --year to extract from existing reports"
+        )
+        print("💡 Use: --format best-strategies --quarter Q1 --year 2024")
+        return
+
+    # Handle full format - requires running backtests (fallback to old method)
+    print("❌ Full format export from portfolio config not implemented yet")
+    print(
+        "💡 Use quarterly format with --quarter and --year to extract from existing reports"
+    )
+    print("💡 Example: --format quarterly --quarter Q4 --year 2023")
+    return
+
+
 def handle_reports_command(args):
     """Handle report management commands."""
     import os
@@ -1392,8 +1489,12 @@ def handle_reports_command(args):
             print(f"Latest report for '{portfolio_name}': {latest_report}")
         else:
             print(f"No reports found for portfolio '{portfolio_name}'")
+
+    elif args.reports_command == "export-csv":
+        handle_csv_export_command(args)
+
     else:
-        print("Available reports commands: organize, list, cleanup, latest")
+        print("Available reports commands: organize, list, cleanup, latest, export-csv")
 
 
 def main():
