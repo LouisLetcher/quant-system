@@ -119,6 +119,35 @@ poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
 - ✅ Win rate and trade statistics
 - ✅ Volatility and correlation analysis
 
+### 9. Raw Data CSV Export
+**Status**: ✅ **IMPLEMENTED**
+**Description**: Export raw portfolio data with best strategies and timeframes from existing quarterly reports.
+
+**Features**:
+- ✅ CSV export with symbol, best strategy, best timeframe, and performance metrics
+- ✅ Bulk export for all assets from quarterly reports
+- ✅ **Separate CSV files for each portfolio** (Crypto, Bonds, Forex, Stocks, etc.)
+- ✅ Customizable column selection (Sharpe, Sortino, profit, drawdown)
+- ✅ Integration with existing quarterly report structure
+- ✅ Organized quarterly directory structure (`exports/data_exports/YYYY/QX/`)
+- ✅ HTML report parsing without re-running backtests
+- ✅ Maintains same file naming as HTML reports
+
+**Usage**:
+```bash
+# Export best strategies from quarterly reports
+docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
+  --format best-strategies --quarter Q3 --year 2025
+
+# Export full performance data from quarterly reports
+docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
+  --format quarterly --quarter Q3 --year 2025
+
+# Show available columns
+docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
+  --columns available
+```
+
 ---
 
 ## 🎯 High Priority Features (Planned)
@@ -156,17 +185,7 @@ poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
 - Volatility regime detection
 - Risk-adjusted performance metrics beyond Sortino
 
-### 4. Raw Data CSV Export
-**Status**: 🔄 **PLANNED**
-**Description**: Export raw portfolio data with best strategies and timeframes.
-
-**Features**:
-- CSV export with symbol, best strategy, best timeframe, and performance metrics
-- Bulk export for all assets from quarterly reports
-- Customizable column selection (Sharpe, Sortino, profit, drawdown)
-- Integration with existing quarterly report structure
-
-### 5. GPU Acceleration
+### 4. GPU Acceleration
 **Status**: 🔄 **PLANNED**
 **Description**: GPU-accelerated computations for faster analysis of large portfolios.
 
