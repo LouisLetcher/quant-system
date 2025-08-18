@@ -11,7 +11,7 @@ import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -30,7 +30,9 @@ class RawDataCSVExporter:
     - Multiple export formats (full, best-strategies, quarterly summary)
     """
 
-    def __init__(self, db_session: Session = None, output_dir: str = "exports/csv"):
+    def __init__(
+        self, db_session: Optional[Session] = None, output_dir: str = "exports/csv"
+    ):
         self.db_session = db_session
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -39,11 +41,11 @@ class RawDataCSVExporter:
 
     def export_from_database(
         self,
-        quarter: str = None,
-        year: str = None,
-        output_filename: str = None,
+        quarter: Optional[str] = None,
+        year: Optional[str] = None,
+        output_filename: Optional[str] = None,
         export_format: str = "full",
-        columns: list[str] = None,
+        columns: Optional[list[str]] = None,
     ) -> str:
         """
         Export backtest results directly from PostgreSQL database to CSV.
@@ -164,7 +166,7 @@ class RawDataCSVExporter:
         self,
         quarter: str,
         year: str,
-        output_filename: str | None = None,
+        output_filename: Optional[str] = None,
         export_format: str = "full",
     ) -> str:
         """

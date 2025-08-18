@@ -73,9 +73,9 @@ class TestRawDataCSVExporter:
     def test_initialization(self, temp_dir):
         """Test proper initialization of the exporter."""
         output_dir = temp_dir / "csv_output"
-        exporter = RawDataCSVExporter(None, str(output_dir))
+        exporter = RawDataCSVExporter(db_session=None, output_dir=str(output_dir))
 
-        assert exporter.output_dir == output_dir
+        assert str(exporter.output_dir) == str(output_dir)
         assert output_dir.exists()  # Should be created during init
         assert exporter.reports_dir == Path("exports/reports")
 
@@ -104,7 +104,7 @@ class TestRawDataCSVExporter:
 
     def test_extract_data_from_html_report(self, temp_dir, sample_html_report):
         """Test HTML report parsing and data extraction."""
-        exporter = RawDataCSVExporter(str(temp_dir))
+        exporter = RawDataCSVExporter(None, str(temp_dir))
 
         # Create a sample HTML file
         html_file = temp_dir / "sample_report.html"
@@ -178,7 +178,7 @@ class TestRawDataCSVExporter:
 
     def test_export_from_quarterly_reports_no_reports(self, temp_dir):
         """Test export when no quarterly reports exist."""
-        exporter = RawDataCSVExporter(str(temp_dir))
+        exporter = RawDataCSVExporter(None, str(temp_dir))
 
         result = exporter.export_from_quarterly_reports(
             "Q4", "2023", "test.csv", "full"
@@ -200,11 +200,13 @@ class TestRawDataCSVExporter:
         mock_glob.return_value = [html_file]
 
         # Mock the reports directory to exist and the glob method
-        with patch.object(Path, "exists", return_value=True):
-            with patch("pathlib.Path.glob", return_value=[html_file]):
-                result = exporter.export_from_quarterly_reports(
-                    "Q4", "2023", "test.csv", "full"
-                )
+        with (
+            patch.object(Path, "exists", return_value=True),
+            patch("pathlib.Path.glob", return_value=[html_file]),
+        ):
+            result = exporter.export_from_quarterly_reports(
+                "Q4", "2023", "test.csv", "full"
+            )
 
         # Should return list of paths to created CSV files
         assert result != []
@@ -291,7 +293,7 @@ class TestRawDataCSVExporter:
 
     def test_html_parsing_robustness(self, temp_dir):
         """Test HTML parsing with malformed or edge case HTML."""
-        exporter = RawDataCSVExporter(str(temp_dir))
+        exporter = RawDataCSVExporter(None, str(temp_dir))
 
         malformed_html = """
         <html>

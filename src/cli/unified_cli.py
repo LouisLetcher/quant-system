@@ -44,7 +44,7 @@ def get_earliest_data_date(portfolio_path: str) -> datetime:
         if not portfolio_file.exists():
             return default_date
 
-        with portfolio_file.open("r") as f:
+        with Path(portfolio_file).open("r") as f:
             portfolio_config = json.load(f)
 
         # Get the first portfolio config (since file contains nested portfolio)
@@ -2513,7 +2513,7 @@ def handle_validation_command(args):
 
         # Save detailed report if requested
         if args.output:
-            with open(args.output, "w") as f:
+            with Path(args.output).open("w") as f:
                 f.write(report)
                 f.write("\n\n=== Detailed Results ===\n\n")
                 import json
