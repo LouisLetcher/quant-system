@@ -9,8 +9,9 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from .models import AIRecommendation, BestOptimizationResult, BestStrategy
+from .models import AIRecommendation
 from .models import AssetRecommendation as DbAssetRecommendation
+from .models import BestOptimizationResult, BestStrategy
 
 
 class DatabaseQueryHelper:
