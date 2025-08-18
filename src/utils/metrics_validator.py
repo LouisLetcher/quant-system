@@ -21,21 +21,23 @@ from src.database.models import BestStrategy
 class BacktestingLibStrategy(SignalStrategy):
     """Adapter to use our signals with the backtesting library."""
 
-    def __init__(self, broker, data, params, signals_df):
-        super().__init__(broker, data, params)
-        self.signals_df = signals_df
-
     def init(self):
         """Initialize the strategy with signals."""
-        # Align signals with the data index
-        aligned_signals = self.signals_df.reindex(self.data.index, fill_value=0)
-        self.signals = self.I(lambda: aligned_signals.values, name="signals")
+        # Get signals from the passed parameter
+        signals_df = self._broker._strategy_kwargs.get("signals_df")
+        if signals_df is not None:
+            # Align signals with the data index
+            aligned_signals = signals_df.reindex(self.data.index, fill_value=0)
+            self.signals = self.I(lambda: aligned_signals.values, name="signals")
+        else:
+            # No signals provided, create empty signals
+            self.signals = self.I(lambda: [0] * len(self.data), name="signals")
 
     def next(self):
         """Execute trades based on signals."""
-        if self.signals[-1] == 1 and not self.position:
+        if len(self.signals) > 0 and self.signals[-1] == 1 and not self.position:
             self.buy()
-        elif self.signals[-1] == -1 and self.position:
+        elif len(self.signals) > 0 and self.signals[-1] == -1 and self.position:
             self.sell()
 
 
