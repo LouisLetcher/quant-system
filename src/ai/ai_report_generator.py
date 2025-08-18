@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from jinja2 import BaseLoader, Environment
 
@@ -23,14 +24,14 @@ class AIReportGenerator:
         self.logger = logging.getLogger(__name__)
 
         # Setup Jinja2 environment with string templates
-        self.template_env = Environment(loader=BaseLoader())
+        self.template_env = Environment(loader=BaseLoader(), autoescape=True)
 
     def generate_portfolio_html_report(
         self,
         portfolio_name: str,
         recommendations: PortfolioRecommendation,
-        quarter: str = None,
-        year: str = None,
+        quarter: Optional[str] = None,
+        year: Optional[str] = None,
     ) -> str:
         """Generate HTML report for portfolio AI recommendations."""
 
@@ -48,7 +49,6 @@ class AIReportGenerator:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = (
             f"{portfolio_name}_AI_Recommendations_{quarter_part}_{year_part}.html"
         )
@@ -62,7 +62,7 @@ class AIReportGenerator:
         output_path = output_dir / filename
         output_path.write_text(html_content, encoding="utf-8")
 
-        self.logger.info(f"AI recommendations HTML report saved to {output_path}")
+        self.logger.info("AI recommendations HTML report saved to %s", output_path)
         return str(output_path)
 
     def _render_html_template(

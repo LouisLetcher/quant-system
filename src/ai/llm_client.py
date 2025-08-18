@@ -14,6 +14,10 @@ import openai
 from anthropic import Anthropic
 
 
+class LLMClientError(Exception):
+    """Custom exception for LLM client errors."""
+
+
 class LLMClient:
     """Client for interacting with LLM providers for investment analysis."""
 
@@ -53,10 +57,10 @@ class LLMClient:
                 return self._query_openai(prompt)
             if self.anthropic_client:
                 return self._query_anthropic(prompt)
-            raise Exception("No LLM client available")
+            raise LLMClientError("No LLM client available")
 
         except Exception as e:
-            self.logger.error(f"LLM analysis failed: {e}")
+            self.logger.error("LLM analysis failed: %s", e)
             return {
                 "reasoning": "Quantitative analysis complete - AI reasoning unavailable",
                 "warnings": ["LLM service unavailable"],
@@ -73,7 +77,7 @@ class LLMClient:
             elif self.anthropic_client:
                 response = self._query_anthropic(prompt)
             else:
-                raise Exception("No LLM client available")
+                raise LLMClientError("No LLM client available")
 
             return {
                 "summary": response.get("summary", "Asset analysis complete"),
@@ -83,7 +87,7 @@ class LLMClient:
             }
 
         except Exception as e:
-            self.logger.error(f"Asset explanation failed: {e}")
+            self.logger.error("Asset explanation failed: %s", e)
             return {
                 "summary": f"Quantitative analysis for {asset_data.get('symbol', 'asset')}",
                 "strengths": ["Metrics available for analysis"],
@@ -195,7 +199,7 @@ Return JSON format:
                 return {"reasoning": content, "warnings": []}
 
         except Exception as e:
-            self.logger.error(f"OpenAI query failed: {e}")
+            self.logger.error("OpenAI query failed: %s", e)
             raise
 
     def _query_anthropic(self, prompt: str) -> dict[str, Any]:
@@ -218,5 +222,5 @@ Return JSON format:
                 return {"reasoning": content, "warnings": []}
 
         except Exception as e:
-            self.logger.error(f"Anthropic query failed: {e}")
+            self.logger.error("Anthropic query failed: %s", e)
             raise
