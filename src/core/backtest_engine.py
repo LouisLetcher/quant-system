@@ -17,6 +17,8 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from backtesting import Backtest
+from backtesting.lib import SignalStrategy
 
 from .cache_manager import UnifiedCacheManager
 from .data_manager import UnifiedDataManager
@@ -26,6 +28,63 @@ from .result_analyzer import UnifiedResultAnalyzer
 
 
 warnings.filterwarnings("ignore")
+
+
+def create_backtesting_strategy_adapter(strategy_instance):
+    """Create a backtesting library compatible strategy from our strategy instance."""
+
+    class StrategyAdapter(SignalStrategy):
+        """Adapter to make our strategies work with the backtesting library."""
+
+        def init(self):
+            """Initialize the strategy with our custom logic."""
+            # Get the data in the format our strategies expect
+            strategy_data = pd.DataFrame(
+                {
+                    "open": self.data.Open,
+                    "high": self.data.High,
+                    "low": self.data.Low,
+                    "close": self.data.Close,
+                    "volume": self.data.Volume,
+                },
+                index=self.data.index,
+            )
+
+            # Generate signals using our strategy
+            try:
+                signals = strategy_instance.generate_signals(strategy_data)
+                # Ensure signals are aligned with data index
+                if isinstance(signals, pd.Series):
+                    aligned_signals = signals.reindex(self.data.index, fill_value=0)
+                else:
+                    aligned_signals = pd.Series(
+                        signals, index=self.data.index, dtype=float
+                    )
+
+                self.signals = self.I(lambda: aligned_signals.values, name="signals")
+            except Exception:
+                # If strategy fails, create zero signals
+                self.signals = self.I(lambda: [0] * len(self.data), name="signals")
+
+        def next(self):
+            """Execute trades based on our strategy signals."""
+            if len(self.signals) > 0:
+                current_signal = self.signals[-1]
+
+                if current_signal == 1 and not self.position:
+                    # Buy signal and no position - go long
+                    self.buy()
+                elif current_signal == -1 and self.position:
+                    # Sell signal and have position - close position
+                    self.sell()
+                elif current_signal == -1 and not self.position:
+                    # Sell signal and no position - go short (if allowed)
+                    try:
+                        self.sell()
+                    except:
+                        pass  # Shorting not allowed or failed
+
+    return StrategyAdapter
 
 
 @dataclass
@@ -406,16 +465,39 @@ class UnifiedBacktestEngine:
             # Initialize strategy
             strategy_instance = strategy_class(**parameters)
 
-            # Prepare data with technical indicators (keep lowercase for simulation)
-            prepared_data = self._prepare_data_with_indicators(data, strategy_instance)
+            # Prepare data for backtesting library (requires uppercase OHLCV)
+            bt_data = self._prepare_data_for_backtesting_lib(data)
 
-            # Run backtest simulation
-            result = self._simulate_trading(prepared_data, strategy_instance, config)
+            if bt_data is None or bt_data.empty:
+                return BacktestResult(
+                    symbol=symbol,
+                    strategy=strategy,
+                    parameters=parameters,
+                    config=config,
+                    metrics={},
+                    error="Data preparation failed",
+                )
 
-            # Analyze results
-            metrics = self.result_analyzer.calculate_metrics(
-                result, config.initial_capital
+            # Create strategy adapter for backtesting library
+            StrategyAdapter = create_backtesting_strategy_adapter(strategy_instance)
+
+            # Run backtest using the backtesting library
+            bt = Backtest(
+                bt_data,
+                StrategyAdapter,
+                cash=config.initial_capital,
+                commission=config.commission,
+                exclusive_orders=True,
             )
+
+            # Execute backtest
+            bt_results = bt.run()
+
+            # Convert backtesting library results to our format
+            result = self._convert_backtesting_results(bt_results, bt_data, config)
+
+            # Extract metrics from backtesting library results
+            metrics = self._extract_metrics_from_bt_results(bt_results)
 
             return BacktestResult(
                 symbol=symbol,
@@ -952,3 +1034,118 @@ class UnifiedBacktestEngine:
     def clear_cache(self, symbol: str | None = None, strategy: str | None = None):
         """Clear cached results."""
         self.cache_manager.clear_cache(cache_type="backtest", symbol=symbol)
+
+    def _prepare_data_for_backtesting_lib(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Prepare data for the backtesting library (requires uppercase OHLCV columns)."""
+        try:
+            # Check if we have lowercase columns and convert them
+            if all(
+                col in data.columns
+                for col in ["open", "high", "low", "close", "volume"]
+            ):
+                bt_data = data.rename(
+                    columns={
+                        "open": "Open",
+                        "high": "High",
+                        "low": "Low",
+                        "close": "Close",
+                        "volume": "Volume",
+                    }
+                )[["Open", "High", "Low", "Close", "Volume"]].copy()
+            # Check if we already have uppercase columns
+            elif all(
+                col in data.columns
+                for col in ["Open", "High", "Low", "Close", "Volume"]
+            ):
+                bt_data = data[["Open", "High", "Low", "Close", "Volume"]].copy()
+            else:
+                self.logger.error("Missing required OHLCV columns in data")
+                return None
+
+            # Ensure no NaN values
+            bt_data = bt_data.dropna()
+
+            return bt_data
+
+        except Exception as e:
+            self.logger.error("Error preparing data for backtesting library: %s", e)
+            return None
+
+    def _extract_metrics_from_bt_results(self, bt_results) -> dict[str, Any]:
+        """Extract metrics from backtesting library results."""
+        try:
+            metrics = {
+                # Core performance metrics
+                "total_return": float(bt_results.get("Return [%]", 0.0)),
+                "sharpe_ratio": float(bt_results.get("Sharpe Ratio", 0.0)),
+                "sortino_ratio": float(bt_results.get("Sortino Ratio", 0.0)),
+                "calmar_ratio": float(bt_results.get("Calmar Ratio", 0.0)),
+                # Risk metrics
+                "max_drawdown": abs(float(bt_results.get("Max. Drawdown [%]", 0.0))),
+                "volatility": float(bt_results.get("Volatility [%]", 0.0)),
+                # Trade metrics
+                "num_trades": int(bt_results.get("# Trades", 0)),
+                "win_rate": float(bt_results.get("Win Rate [%]", 0.0)),
+                "profit_factor": float(bt_results.get("Profit Factor", 1.0)),
+                # Additional metrics
+                "best_trade": float(bt_results.get("Best Trade [%]", 0.0)),
+                "worst_trade": float(bt_results.get("Worst Trade [%]", 0.0)),
+                "avg_trade": float(bt_results.get("Avg. Trade [%]", 0.0)),
+                "avg_trade_duration": float(bt_results.get("Avg. Trade Duration", 0.0)),
+                # Portfolio metrics
+                "start_value": float(bt_results.get("Start", 0.0)),
+                "end_value": float(bt_results.get("End", 0.0)),
+                "buy_hold_return": float(bt_results.get("Buy & Hold Return [%]", 0.0)),
+                # Exposure
+                "exposure_time": float(bt_results.get("Exposure Time [%]", 0.0)),
+            }
+
+            return metrics
+
+        except Exception as e:
+            self.logger.error(
+                "Error extracting metrics from backtesting results: %s", e
+            )
+            return {}
+
+    def _convert_backtesting_results(
+        self, bt_results, bt_data: pd.DataFrame, config: BacktestConfig
+    ) -> dict[str, Any]:
+        """Convert backtesting library results to our internal format."""
+        try:
+            # Get trades from backtesting library
+            trades_df = None
+            equity_curve_df = None
+
+            # Try to get trades if available
+            try:
+                if hasattr(bt_results, "_trades") and bt_results._trades is not None:
+                    trades_df = bt_results._trades.copy()
+
+                # Get equity curve from backtesting library
+                if (
+                    hasattr(bt_results, "_equity_curve")
+                    and bt_results._equity_curve is not None
+                ):
+                    equity_curve_df = bt_results._equity_curve.copy()
+
+            except Exception as e:
+                self.logger.debug("Could not extract detailed trade data: %s", e)
+
+            result = {
+                "trades": trades_df,
+                "equity_curve": equity_curve_df,
+                "final_value": float(bt_results.get("End", config.initial_capital)),
+                "total_trades": int(bt_results.get("# Trades", 0)),
+            }
+
+            return result
+
+        except Exception as e:
+            self.logger.error("Error converting backtesting results: %s", e)
+            return {
+                "trades": None,
+                "equity_curve": None,
+                "final_value": config.initial_capital,
+                "total_trades": 0,
+            }
