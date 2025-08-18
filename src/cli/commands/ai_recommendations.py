@@ -7,8 +7,8 @@ from pathlib import Path
 
 import click
 
-from ...ai.investment_recommendations import AIInvestmentRecommendations
-from ...database import get_db_session
+from src.ai.investment_recommendations import AIInvestmentRecommendations
+from src.database import get_db_session
 
 
 @click.group()
@@ -286,10 +286,10 @@ def _save_recommendations(portfolio_rec, output_path, format_type):
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     if format_type == "json":
-        with open(output_file, "w") as f:
+        with output_file.open("w") as f:
             json.dump(_portfolio_to_dict(portfolio_rec), f, indent=2)
     else:
-        with open(output_file, "w") as f:
+        with output_file.open("w") as f:
             f.write(
                 f"AI Investment Recommendations - {portfolio_rec.risk_profile.title()}\n"
             )

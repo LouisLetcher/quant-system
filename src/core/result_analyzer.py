@@ -640,7 +640,6 @@ class UnifiedResultAnalyzer:
             volatility = base_metrics.get("volatility", 0.25)
             total_return = base_metrics.get("total_return", 0)
             win_rate = base_metrics.get("win_rate", 0)
-            profit_factor = base_metrics.get("profit_factor", 1.0)
 
             # Calculate alpha (excess return over risk-free rate)
             risk_free_rate = 0.02  # 2% annual risk-free rate

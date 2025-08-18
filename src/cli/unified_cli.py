@@ -135,6 +135,9 @@ def create_parser() -> argparse.ArgumentParser:
     # AI commands
     add_ai_commands(subparsers)
 
+    # Validation commands
+    add_validation_commands(subparsers)
+
     return parser
 
 
@@ -689,6 +692,54 @@ def add_ai_commands(subparsers):
     explain_parser.add_argument("strategy", help="Strategy name")
 
 
+def add_validation_commands(subparsers):
+    """Add metrics validation commands."""
+    validation_parser = subparsers.add_parser(
+        "validate", help="Validate backtesting metrics against backtesting library"
+    )
+    validation_subparsers = validation_parser.add_subparsers(dest="validation_command")
+
+    # Validate single strategy
+    single_parser = validation_subparsers.add_parser(
+        "strategy", help="Validate metrics for a single best strategy"
+    )
+    single_parser.add_argument("symbol", help="Symbol to validate")
+    single_parser.add_argument("strategy", help="Strategy name")
+    single_parser.add_argument(
+        "--timeframe", "-t", default="1d", help="Timeframe (default: 1d)"
+    )
+    single_parser.add_argument(
+        "--tolerance",
+        type=float,
+        default=0.05,
+        help="Tolerance for differences (default: 0.05 = 5%)",
+    )
+
+    # Validate multiple strategies
+    batch_parser = validation_subparsers.add_parser(
+        "batch", help="Validate metrics for multiple best strategies"
+    )
+    batch_parser.add_argument(
+        "--symbols", nargs="*", help="Specific symbols to validate (default: all)"
+    )
+    batch_parser.add_argument(
+        "--limit",
+        "-n",
+        type=int,
+        default=10,
+        help="Number of strategies to validate (default: 10)",
+    )
+    batch_parser.add_argument(
+        "--tolerance",
+        type=float,
+        default=0.05,
+        help="Tolerance for differences (default: 0.05 = 5%)",
+    )
+    batch_parser.add_argument(
+        "--output", "-o", help="Output file path for detailed report"
+    )
+
+
 # Command implementations
 def handle_data_command(args):
     """Handle data management commands."""
@@ -1099,7 +1150,10 @@ def handle_portfolio_test_all(args):
                     )
                 except Exception as db_error:
                     logger.warning(
-                        f"Failed to save {symbol}/{strategy} to database: {db_error}"
+                        "Failed to save %s/%s to database: %s",
+                        symbol,
+                        strategy,
+                        db_error,
                     )
 
             except Exception as e:
@@ -1140,8 +1194,8 @@ def handle_portfolio_test_all(args):
     print("-" * 50)
 
     # Get best strategy performance from database
-    from ..database import get_db_session
-    from ..database.models import BestStrategy
+    from src.database import get_db_session
+    from src.database.models import BestStrategy
 
     session = get_db_session()
     try:
@@ -1253,7 +1307,7 @@ def handle_portfolio_backtest(args):
         _save_backtest_to_database(result, "PORTFOLIO", config)
         logger.info("Backtest results saved to database")
     except Exception as e:
-        logger.warning(f"Failed to save to database: {e}")
+        logger.warning("Failed to save to database: %s", e)
 
     print("\nPortfolio Backtest Results")
     print("=" * 30)
@@ -1272,8 +1326,8 @@ def _save_backtest_to_database(
     """Save backtest result to PostgreSQL database and update best strategies."""
     from datetime import datetime
 
-    from ..database import get_db_session
-    from ..database.models import BacktestResult as DBBacktestResult
+    from src.database import get_db_session
+    from src.database.models import BacktestResult as DBBacktestResult
 
     session = get_db_session()
 
@@ -1326,7 +1380,7 @@ def _save_backtest_to_database(
 
         # Save individual trades if available
         if backtest_result.trades is not None and not backtest_result.trades.empty:
-            from ..database.models import Trade
+            from src.database.models import Trade
 
             # Clean up old trades if override is enabled (default behavior)
             if getattr(backtest_result.config, "override_old_trades", True):
@@ -1406,10 +1460,16 @@ def _save_backtest_to_database(
         # Recalculate correct final_value and total_return from actual trade data
         logger = logging.getLogger(__name__)
         logger.debug(
-            f"Checking trade correction for {backtest_result.symbol}/{backtest_result.strategy}"
+            "Checking trade correction for %s/%s",
+            backtest_result.symbol,
+            backtest_result.strategy,
         )
         logger.debug(
-            f"Has trades attr: {hasattr(backtest_result, 'trades')}, Trade count: {len(backtest_result.trades) if hasattr(backtest_result, 'trades') else 'N/A'}"
+            "Has trades attr: %s, Trade count: %s",
+            hasattr(backtest_result, "trades"),
+            len(backtest_result.trades)
+            if hasattr(backtest_result, "trades")
+            else "N/A",
         )
         if hasattr(backtest_result, "trades") and len(backtest_result.trades) > 0:
             # Get the final equity from the last trade calculation
@@ -1484,10 +1544,18 @@ def _save_backtest_to_database(
             backtest_result.metrics["expectancy"] = actual_expectancy
 
             logger.debug(
-                f"Corrected {backtest_result.symbol}/{backtest_result.strategy} - Final: ${final_trade_equity:.2f}, Return: {actual_total_return:.2f}%, Trades: {len(backtest_result.trades)}"
+                "Corrected %s/%s - Final: $%.2f, Return: %.2f%%, Trades: %d",
+                backtest_result.symbol,
+                backtest_result.strategy,
+                final_trade_equity,
+                actual_total_return,
+                len(backtest_result.trades),
             )
             logger.debug(
-                f"Advanced metrics - avg_win: {actual_avg_win:.2f}%, avg_loss: {actual_avg_loss:.2f}%, win_rate: {actual_win_rate:.1f}%"
+                "Advanced metrics - avg_win: %.2f%%, avg_loss: %.2f%%, win_rate: %.1f%%",
+                actual_avg_win,
+                actual_avg_loss,
+                actual_win_rate,
             )
 
         # Update best_strategies table if this is a better result (after correction)
@@ -1557,7 +1625,10 @@ def _get_best_overall_strategy_from_db(metric: str = "sortino_ratio") -> str:
         return best_strategy[0]
 
     except Exception as e:
-        logger.error(f"Error getting best strategy from database: {e}")
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error("Error getting best strategy from database: %s", e)
         return "Error retrieving best strategy"
     finally:
         session.close()
@@ -1567,7 +1638,7 @@ def _update_best_strategy(
     session, backtest_result, run_id: str, timeframe: str, metric: str = "sortino_ratio"
 ):
     """Update best_strategies table if this result is better than existing."""
-    from ..database.models import BestStrategy
+    from src.database.models import BestStrategy
 
     # Check if there's an existing best strategy for this symbol/timeframe
     existing = (
@@ -1577,7 +1648,6 @@ def _update_best_strategy(
     )
 
     current_metric_value = float(backtest_result.metrics.get(metric, 0))
-    current_sharpe = float(backtest_result.metrics.get("sharpe_ratio", 0))
     current_sortino = float(backtest_result.metrics.get("sortino_ratio", 0))
 
     # Save the best strategy per asset based on CLI-specified metric
@@ -1708,13 +1778,13 @@ def save_optimization_to_database(
     strategy: str,
     optimization_result,
     timeframe: str = "1d",
-    portfolio_name: str = None,
+    portfolio_name: str | None = None,
 ):
     """Save optimization results to PostgreSQL database with new normalized structure."""
     from datetime import datetime
 
-    from ..database import get_db_session
-    from ..database.models import AllOptimizationResult
+    from src.database import get_db_session
+    from src.database.models import AllOptimizationResult
 
     session = get_db_session()
 
@@ -1776,10 +1846,10 @@ def _update_best_optimization_result(
     optimization_result,
     run_id: str,
     timeframe: str,
-    portfolio_name: str = None,
+    portfolio_name: str | None = None,
 ):
     """Update best_optimization_results table if this result is better than existing."""
-    from ..database.models import BestOptimizationResult
+    from src.database.models import BestOptimizationResult
 
     # Check if there's an existing best result for this symbol/strategy/timeframe
     existing = (
@@ -1847,9 +1917,8 @@ def _update_best_optimization_result(
 
 def handle_tradingview_export_command(args):
     """Handle TradingView alerts export command."""
+    from src.database import get_db_session
     from src.utils.tradingview_alert_exporter import TradingViewAlertExporter
-
-    from ..database import get_db_session
 
     try:
         # Initialize with database session
@@ -2166,9 +2235,8 @@ def handle_strategy_command(args):
 
 def handle_csv_export_command(args):
     """Handle CSV export command."""
+    from src.database import get_db_session
     from src.utils.raw_data_csv_exporter import RawDataCSVExporter
-
-    from ..database import get_db_session
 
     # Only do collection-based exports (no portfolio_raw_data.csv)
     exporter = RawDataCSVExporter()
@@ -2258,8 +2326,8 @@ def handle_csv_export_command(args):
 
 def handle_ai_command(args):
     """Handle AI recommendation commands."""
-    from ..ai.investment_recommendations import AIInvestmentRecommendations
-    from ..database import get_db_session
+    from src.ai.investment_recommendations import AIInvestmentRecommendations
+    from src.database import get_db_session
 
     if not args.ai_command:
         print("AI command required. Use --help for options.")
@@ -2396,16 +2464,65 @@ def _save_recommendations(portfolio_rec, output_path, format_type):
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
     if format_type == "json":
-        with open(output_path, "w") as f:
+        with Path(output_path).open("w") as f:
             json.dump(_portfolio_to_dict(portfolio_rec), f, indent=2)
     else:
-        with open(output_path, "w") as f:
+        with Path(output_path).open("w") as f:
             f.write("AI Investment Recommendations\n")
             f.write("=" * 50 + "\n\n")
             for rec in portfolio_rec.recommendations:
                 f.write(
                     f"{rec.symbol} ({rec.strategy}): {rec.allocation_percentage:.1f}%\n"
                 )
+
+
+def handle_validation_command(args):
+    """Handle metrics validation commands."""
+    from src.utils.metrics_validator import MetricsValidator
+
+    validator = MetricsValidator()
+
+    if not args.validation_command:
+        print("Available validation commands: strategy, batch")
+        return
+
+    if args.validation_command == "strategy":
+        # Validate single strategy
+        print(f"Validating metrics for {args.symbol}/{args.strategy}...")
+
+        result = validator.validate_best_strategy_metrics(
+            args.symbol, args.strategy, args.timeframe, args.tolerance
+        )
+
+        # Generate and display report
+        report = validator.generate_validation_report(result)
+        print(report)
+
+    elif args.validation_command == "batch":
+        # Validate multiple strategies
+        symbols = args.symbols if args.symbols else None
+        print(f"Validating {args.limit} best strategies...")
+        if symbols:
+            print(f"Filtering by symbols: {symbols}")
+
+        results = validator.validate_multiple_strategies(symbols, args.limit)
+
+        # Generate and display report
+        report = validator.generate_validation_report(results)
+        print(report)
+
+        # Save detailed report if requested
+        if args.output:
+            with open(args.output, "w") as f:
+                f.write(report)
+                f.write("\n\n=== Detailed Results ===\n\n")
+                import json
+
+                f.write(json.dumps(results, indent=2, default=str))
+            print(f"\nDetailed report saved to {args.output}")
+
+    else:
+        print(f"Unknown validation command: {args.validation_command}")
 
 
 def handle_reports_command(args):
@@ -2496,6 +2613,8 @@ def main():
             handle_reports_command(args)
         elif args.command == "ai":
             handle_ai_command(args)
+        elif args.command == "validate":
+            handle_validation_command(args)
         else:
             print(f"Unknown command: {args.command}")
             parser.print_help()
