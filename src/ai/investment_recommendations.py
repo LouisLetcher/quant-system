@@ -16,8 +16,9 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 from ..core.result_analyzer import UnifiedResultAnalyzer
-from ..database.models import AIRecommendation, BacktestResult, BestStrategy
+from ..database.models import AIRecommendation
 from ..database.models import AssetRecommendation as DbAssetRecommendation
+from ..database.models import BacktestResult, BestStrategy
 from .ai_report_generator import AIReportGenerator
 from .llm_client import LLMClient
 from .models import AssetRecommendation, PortfolioRecommendation
