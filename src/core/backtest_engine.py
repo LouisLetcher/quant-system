@@ -38,14 +38,14 @@ def create_backtesting_strategy_adapter(strategy_instance):
 
         def init(self):
             """Initialize the strategy with our custom logic."""
-            # Get the data in the format our strategies expect
+            # Get the data in the format our strategies expect (uppercase columns)
             strategy_data = pd.DataFrame(
                 {
-                    "open": self.data.Open,
-                    "high": self.data.High,
-                    "low": self.data.Low,
-                    "close": self.data.Close,
-                    "volume": self.data.Volume,
+                    "Open": self.data.Open,
+                    "High": self.data.High,
+                    "Low": self.data.Low,
+                    "Close": self.data.Close,
+                    "Volume": self.data.Volume,
                 },
                 index=self.data.index,
             )
