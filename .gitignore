@@ -108,9 +108,3 @@ Desktop.ini
 
 # Local agent configuration (hidden from repo)
 .agent.md
-
-# Debug and fix scripts (development artifacts)
-debug_*.py
-fix_*.py
-scripts/debug/
-scripts/fixes/

@@ -31,11 +31,6 @@
       "SCHC"
     ],
     "initial_capital": 10000,
-    "commission": 0.001,
-    "data_sources": {
-      "primary": ["yahoo_finance", "twelve_data"],
-      "fallback": ["alpha_vantage_enhanced"],
-      "comment": "Yahoo Finance and Twelve Data have excellent ETF and index coverage"
-    }
+    "commission": 0.001
   }
 }

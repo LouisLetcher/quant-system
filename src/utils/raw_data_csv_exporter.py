@@ -1,179 +1,45 @@
 """
 Raw Data CSV Export Utility
 
-Exports portfolio performance data directly from PostgreSQL database to CSV format.
-Replaces HTML parsing with direct database queries for better performance.
+Exports portfolio performance data with best strategies and timeframes to CSV format.
+Based on the features.md specification and crypto_best_strategies.csv format.
 """
 
 from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 from bs4 import BeautifulSoup
-from sqlalchemy.orm import Session
 
 
 class RawDataCSVExporter:
     """
-    Export portfolio data directly from PostgreSQL database to CSV format.
+    Export raw portfolio data with best strategies and performance metrics to CSV.
 
     Features:
-    - Direct database queries (no HTML parsing)
-    - CSV export with symbol, best strategy, timeframe, and performance metrics
-    - Quarter/year filtering with proper date handling
+    - CSV export with symbol, best strategy, best timeframe, and performance metrics
+    - Bulk export for all assets from quarterly reports
     - Customizable column selection (Sharpe, Sortino, profit, drawdown)
-    - Multiple export formats (full, best-strategies, quarterly summary)
+    - Integration with existing quarterly report structure
     """
 
-    def __init__(
-        self, db_session: Optional[Session] = None, output_dir: str = "exports/csv"
-    ):
-        self.db_session = db_session
+    def __init__(self, output_dir: str = "exports/data_exports"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.reports_dir = Path("exports/reports")  # Fallback for legacy HTML parsing
+        self.reports_dir = Path("exports/reports")
         self.logger = logging.getLogger(__name__)
-
-    def export_from_database(
-        self,
-        quarter: Optional[str] = None,
-        year: Optional[str] = None,
-        output_filename: Optional[str] = None,
-        export_format: str = "full",
-        columns: Optional[list[str]] = None,
-    ) -> str:
-        """
-        Export backtest results directly from PostgreSQL database to CSV.
-
-        Args:
-            quarter: Quarter filter (Q1, Q2, Q3, Q4)
-            year: Year filter (YYYY)
-            output_filename: Custom output filename
-            export_format: Export format (full, best-strategies, quarterly)
-            columns: Custom column selection
-
-        Returns:
-            Path to exported CSV file
-        """
-        if not self.db_session:
-            self.logger.error("No database session - falling back to HTML parsing")
-            return self.export_from_quarterly_reports(
-                quarter, year, output_filename, export_format
-            )
-
-        # Use new query helper for better performance and consistency
-        from src.database.query_helpers import DatabaseQueryHelper
-
-        query_helper = DatabaseQueryHelper(self.db_session)
-
-        # Get best strategies data
-        strategies_data = query_helper.get_best_strategies(
-            quarter=quarter, year=int(year) if year else None
-        )
-
-        if not strategies_data:
-            self.logger.warning("No best strategies found in database")
-            return ""
-
-        self.logger.info(
-            "Found %s best strategies for CSV export", len(strategies_data)
-        )
-
-        # For collection-based exports, create separate files per collection
-        return self._export_collection_based_files(
-            strategies_data, quarter, year, export_format
-        )
-
-    def _export_collection_based_files(
-        self, strategies_data, quarter: str, year: str, export_format: str
-    ) -> list[str]:
-        """Create collection-based CSV files from database data."""
-
-        # Define collections and their symbols
-        collections = {
-            "Commodities_Collection": [
-                "GC=F",
-                "SI=F",
-                "CL=F",
-                "NG=F",
-                "ZC=F",
-                "ZS=F",
-                "ZW=F",
-                "KC=F",
-                "CC=F",
-                "SB=F",
-                "CT=F",
-                "HE=F",
-                "LE=F",
-                "HG=F",
-                "PA=F",
-                "PL=F",
-            ],
-            "Bonds_Collection": [
-                "HYG",
-                "VMBS",
-                "IEI",
-                "GOVT",
-                "VCIT",
-                "EDV",
-                "FLOT",
-                "EMB",
-                "JPST",
-                "VCSH",
-                "SHY",
-                "TIP",
-                "VGIT",
-                "VGLT",
-            ],
-        }
-
-        # Create output directory
-        output_dir = self.output_dir / year / quarter
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        output_paths = []
-
-        for collection_name, symbols in collections.items():
-            # Filter strategies data for this collection
-            collection_data = [s for s in strategies_data if s.symbol in symbols]
-
-            if not collection_data:
-                continue
-
-            # Convert to DataFrame
-            df = self._strategies_data_to_dataframe(
-                collection_data, export_format, None
-            )
-
-            # Generate filename
-            filename = f"{collection_name}_{quarter}_{year}.csv"
-            output_path = output_dir / filename
-
-            # Save to CSV
-            df.to_csv(output_path, index=False)
-            output_paths.append(str(output_path))
-
-            self.logger.info(
-                "Exported %s records for %s to %s",
-                len(df),
-                collection_name,
-                output_path,
-            )
-
-        return output_paths
 
     def export_from_quarterly_reports(
         self,
         quarter: str,
         year: str,
-        output_filename: Optional[str] = None,
+        output_filename: str | None = None,
         export_format: str = "full",
-    ) -> str:
+    ) -> list[str]:
         """
         Extract data from existing quarterly reports and export to CSV.
         Creates separate CSV files for each HTML report (e.g., Crypto_Portfolio_Q3_2025.csv).
@@ -251,16 +117,10 @@ class RawDataCSVExporter:
             df["Year"] = year
             df["Export_Date"] = pd.Timestamp.now().strftime("%Y-%m-%d")
 
-            # Sort by performance (convert to numeric first to handle mixed types)
+            # Sort by performance
             if "Sortino_Ratio" in df.columns:
-                df["Sortino_Ratio"] = pd.to_numeric(
-                    df["Sortino_Ratio"], errors="coerce"
-                )
                 df = df.sort_values("Sortino_Ratio", ascending=False)
             elif "Total_Return_Pct" in df.columns:
-                df["Total_Return_Pct"] = pd.to_numeric(
-                    df["Total_Return_Pct"], errors="coerce"
-                )
                 df = df.sort_values("Total_Return_Pct", ascending=False)
 
             # Export to quarterly directory
@@ -478,84 +338,3 @@ class RawDataCSVExporter:
             return card_data
 
         return None
-
-    def _strategies_data_to_dataframe(
-        self,
-        strategies_data: list[dict],
-        export_format: str = "full",
-        columns: Optional[list[str]] = None,
-    ) -> pd.DataFrame:
-        """Convert strategies data to DataFrame."""
-
-        data = []
-        for strategy in strategies_data:
-            row = {
-                "Symbol": strategy["symbol"],
-                "Strategy": strategy["strategy"],
-                "Timeframe": strategy["timeframe"],
-                "Sortino Ratio": strategy["sortino_ratio"],
-                "Calmar Ratio": strategy["calmar_ratio"],
-                "Sharpe Ratio": strategy["sharpe_ratio"],
-                "Profit Factor": strategy["profit_factor"],
-                "Total Return": strategy["total_return"],
-                "Max Drawdown": strategy["max_drawdown"],
-                "Volatility": strategy["volatility"],
-                "Win Rate": strategy["win_rate"],
-                "Trades Count": strategy["num_trades"],
-                "Risk Score": strategy["risk_score"],
-                "Risk Per Trade": strategy["risk_per_trade"],
-                "Stop Loss %": strategy["stop_loss_pct"],
-                "Take Profit %": strategy["take_profit_pct"],
-                "Last Updated": strategy["last_updated"] or "",
-            }
-            data.append(row)
-
-        df = pd.DataFrame(data)
-
-        # Apply format-specific filtering
-        if export_format == "best-strategies":
-            essential_cols = [
-                "Symbol",
-                "Strategy",
-                "Timeframe",
-                "Sortino Ratio",
-                "Total Return",
-                "Max Drawdown",
-                "Win Rate",
-            ]
-            df = df[essential_cols]
-
-        elif export_format == "quarterly":
-            quarterly_cols = [
-                "Symbol",
-                "Strategy",
-                "Sortino Ratio",
-                "Calmar Ratio",
-                "Total Return",
-                "Max Drawdown",
-                "Trades Count",
-            ]
-            df = df[quarterly_cols]
-
-        # Apply custom column selection
-        if columns:
-            available_cols = [col for col in columns if col in df.columns]
-            if available_cols:
-                df = df[available_cols]
-
-        return df
-
-    def _get_quarter_dates(self, quarter: str, year: str) -> tuple[datetime, datetime]:
-        """Get start and end dates for a quarter."""
-        quarter_num = int(quarter[1])  # Extract number from Q1, Q2, etc.
-        start_month = (quarter_num - 1) * 3 + 1
-
-        start_date = datetime(int(year), start_month, 1)
-
-        if quarter_num == 4:
-            end_date = datetime(int(year) + 1, 1, 1)
-        else:
-            end_month = quarter_num * 3
-            end_date = datetime(int(year), end_month + 1, 1)
-
-        return start_date, end_date

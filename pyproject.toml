@@ -1,21 +1,11 @@
 [tool.poetry]
 name = "quant-system"
 version = "0.1.0"
-description = "Comprehensive quantitative trading system with multi-asset support, AI-powered portfolio optimization, and institutional-grade backtesting capabilities"
+description = "Comprehensive quantitative analysis system with multi-asset support, advanced portfolio optimization, and extensive backtesting capabilities"
 authors = ["Louis Letcher <heck.manu@icloud.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{ include = "src", from = "." }]
-homepage = "https://github.com/LouisLetcher/quant-system"
-repository = "https://github.com/LouisLetcher/quant-system"
-keywords = ["quantitative-finance", "backtesting", "portfolio-optimization", "trading", "financial-analysis"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Financial and Insurance Industry",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Office/Business :: Financial :: Investment",
-]
 
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
@@ -44,9 +34,6 @@ pytz = "^2025.2"
 python-dateutil = "^2.8.2"
 click = "^8.1.0"
 beautifulsoup4 = "^4.13.4"
-openai = "^1.0"
-anthropic = "^0.40"
-psycopg2-binary = "^2.9"
 
 [tool.poetry.group.dev.dependencies]
 # Essential dev tools only

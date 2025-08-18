@@ -90,8 +90,7 @@ COPY . .
 RUN mkdir -p cache exports logs tests
 
 # Set development environment
-ENV ENVIRONMENT=development \
-    PYTHONPATH="/app:$PYTHONPATH"
+ENV ENVIRONMENT=development
 
 # Default command for development
 CMD ["bash"]

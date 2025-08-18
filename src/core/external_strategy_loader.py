@@ -33,16 +33,10 @@ class ExternalStrategyLoader:
                            (defaults to ../quant-strategies relative to project root)
         """
         if strategies_path is None:
-            # Check if running in Docker (external_strategies mounted) or local
-            docker_path = Path("/app/external_strategies")
-            if docker_path.exists():
-                self.strategies_path = docker_path
-            else:
-                # Local development path
-                project_root = Path(__file__).parent.parent.parent
-                self.strategies_path = (
-                    project_root / "quant-strategies" / "algorithms" / "python"
-                )
+            # Default to external_strategies directory (mounted in Docker)
+            project_root = Path(__file__).parent.parent.parent
+            default_strategies_path = project_root / "external_strategies"
+            self.strategies_path = default_strategies_path
         else:
             self.strategies_path = Path(strategies_path)
         self.loaded_strategies: dict[str, type] = {}
