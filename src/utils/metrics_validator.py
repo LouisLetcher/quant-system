@@ -216,13 +216,11 @@ class MetricsValidator:
             from src.core.external_strategy_loader import ExternalStrategyLoader
 
             loader = ExternalStrategyLoader()
-            strategy_class = loader.get_strategy_class(strategy_name)
+            strategy_instance = loader.get_strategy(strategy_name)
 
-            if not strategy_class:
-                self.logger.error("Strategy class %s not found", strategy_name)
+            if not strategy_instance:
+                self.logger.error("Strategy %s not found", strategy_name)
                 return None
-
-            strategy_instance = strategy_class()
             signals = strategy_instance.generate_signals(data_df)
 
             # Convert to pandas Series with same index as data
