@@ -14,6 +14,21 @@ services:
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     restart: unless-stopped
 
+  # PostgreSQL Admin Interface
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: quant-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@quant.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
   # Local quant system with production features
   quant:
     build:
@@ -22,6 +37,7 @@ services:
       target: development
     image: quant-system:local
     container_name: quant-system
+    env_file: .env
     environment:
       - ENVIRONMENT=local
       - CACHE_DIR=/app/cache
@@ -32,7 +48,7 @@ services:
       - ./exports:/app/exports
       - ./logs:/app/logs
       - ./config:/app/config:ro
-      - ./quant-strategies/algorithms/general/python:/app/external_strategies:ro
+      - ./quant-strategies/algorithms/python:/app/external_strategies:ro
     depends_on:
       - postgres
     stdin_open: true
@@ -45,3 +61,4 @@ networks:
 
 volumes:
   postgres-data:
+  pgadmin-data:

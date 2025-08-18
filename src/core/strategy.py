@@ -67,27 +67,23 @@ class BaseStrategy(ABC):
         Returns:
             True if data is valid, False otherwise
         """
-        required_columns = ["Open", "High", "Low", "Close", "Volume"]
+        required_columns = ["open", "high", "low", "close", "volume"]
         return all(col in data.columns for col in required_columns)
 
 
-class BuyAndHoldStrategy(BaseStrategy):
-    """
-    Simple Buy and Hold Strategy
-
-    Generates a buy signal at the start and holds the position.
-    """
+class SimpleBuyAndHoldStrategy(BaseStrategy):
+    """Simple working Buy and Hold Strategy that generates proper equity curves."""
 
     def __init__(self) -> None:
-        super().__init__("Buy and Hold")
+        super().__init__("Simple Buy and Hold")
         self.parameters = {}
 
     def generate_signals(self, data: pd.DataFrame) -> pd.Series:
-        """Generate buy and hold signals"""
-        signals = [0] * len(data)
+        """Generate buy signal at start and hold"""
+        signals = pd.Series(0, index=data.index)
         if len(signals) > 0:
-            signals[0] = 1  # Buy at the start
-        return pd.Series(signals, index=data.index)
+            signals.iloc[0] = 1  # Buy at the start
+        return signals
 
 
 class StrategyFactory:
@@ -97,8 +93,8 @@ class StrategyFactory:
     Supports both built-in and external strategies.
     """
 
-    # Built-in strategies
-    BUILTIN_STRATEGIES = {"BuyAndHold": BuyAndHoldStrategy}
+    # Built-in strategies (simple working BuyAndHold for testing)
+    BUILTIN_STRATEGIES = {"BuyAndHold": SimpleBuyAndHoldStrategy}
 
     @classmethod
     def create_strategy(

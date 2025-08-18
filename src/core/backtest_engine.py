@@ -42,6 +42,9 @@ class BacktestConfig:
     use_cache: bool = True
     save_trades: bool = False
     save_equity_curve: bool = False
+    override_old_trades: bool = (
+        True  # Whether to clean up old trades for same symbol/strategy
+    )
     memory_limit_gb: float = 8.0
     max_workers: int = None
     asset_type: str = None  # 'stocks', 'crypto', 'forex', etc.
@@ -403,7 +406,7 @@ class UnifiedBacktestEngine:
             # Initialize strategy
             strategy_instance = strategy_class(**parameters)
 
-            # Prepare data with technical indicators
+            # Prepare data with technical indicators (keep lowercase for simulation)
             prepared_data = self._prepare_data_with_indicators(data, strategy_instance)
 
             # Run backtest simulation
@@ -603,9 +606,20 @@ class UnifiedBacktestEngine:
         position = 0
         position_size = 0
 
+        # Pre-generate all signals for the entire dataset
+        try:
+            strategy_data = self._transform_data_for_strategy(data)
+            all_signals = strategy_instance.generate_signals(strategy_data)
+        except Exception as e:
+            self.logger.debug(
+                f"Strategy {strategy_instance.__class__.__name__} failed: {e}"
+            )
+            # If strategy fails, create zero signals
+            all_signals = pd.Series(0, index=data.index)
+
         for i, (timestamp, row) in enumerate(data.iterrows()):
-            # Get strategy signal
-            signal = self._get_strategy_signal(strategy_instance, data.iloc[: i + 1])
+            # Get pre-generated signal for this timestamp
+            signal = all_signals.iloc[i] if i < len(all_signals) else 0
 
             # Execute trades based on signal
             if signal == 1 and position <= 0:  # Buy signal
@@ -622,8 +636,11 @@ class UnifiedBacktestEngine:
                         }
                     )
 
-                # Open long position
-                position_size = (capital * 0.95) / row["close"]  # 95% of capital
+                # Open long position - use full capital minus commission for BuyAndHold
+                available_capital = capital / (
+                    1 + config.commission
+                )  # Account for commission in calculation
+                position_size = available_capital / row["close"]
                 position = row["close"]
                 capital -= position_size * row["close"] + (
                     position_size * row["close"] * config.commission
@@ -665,8 +682,10 @@ class UnifiedBacktestEngine:
 
             equity_curve.append({"timestamp": timestamp, "equity": portfolio_value})
 
+        trades_df = pd.DataFrame(trades) if trades else pd.DataFrame()
+
         return {
-            "trades": pd.DataFrame(trades) if trades else pd.DataFrame(),
+            "trades": trades_df,
             "equity_curve": pd.DataFrame(equity_curve),
             "final_capital": (
                 equity_curve[-1]["equity"] if equity_curve else config.initial_capital
@@ -675,20 +694,55 @@ class UnifiedBacktestEngine:
 
     def _get_strategy_signal(self, strategy_instance, data: pd.DataFrame) -> int:
         """Get trading signal from strategy."""
-        if hasattr(strategy_instance, "generate_signal"):
-            return strategy_instance.generate_signal(data)
-        # Fallback simple strategy
-        if len(data) < 20:
-            return 0
+        if hasattr(strategy_instance, "generate_signals"):
+            try:
+                # Transform data to uppercase columns for strategy compatibility
+                strategy_data = self._transform_data_for_strategy(data)
+                # Use the correct method name (plural)
+                signals = strategy_instance.generate_signals(strategy_data)
+                if len(signals) > 0:
+                    return signals.iloc[-1]  # Return last signal
+                return 0
+            except Exception as e:
+                # Log the actual error for debugging
+                self.logger.debug(
+                    f"Strategy {strategy_instance.__class__.__name__} failed: {e}"
+                )
+                # Strategy failed - return 0 (no signal) to generate zero metrics
+                return 0
 
-        current_price = data["close"].iloc[-1]
-        sma_20 = data["close"].rolling(20).mean().iloc[-1]
+        # No generate_signals method - strategy is invalid, return 0
+        return 0
 
-        if current_price > sma_20:
-            return 1  # Buy
-        if current_price < sma_20:
-            return -1  # Sell
-        return 0  # Hold
+    def _transform_data_for_strategy(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Transform data columns to uppercase format expected by external strategies."""
+        if data is None or data.empty:
+            return data
+
+        # Only select OHLCV columns that strategies expect
+        required_columns = ["open", "high", "low", "close", "volume"]
+
+        # Check if all required columns exist
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"Missing required columns: {missing_columns}")
+
+        # Select only OHLCV columns
+        df = data[required_columns].copy()
+
+        # Transform lowercase columns to uppercase for strategy compatibility
+        column_mapping = {
+            "open": "Open",
+            "high": "High",
+            "low": "Low",
+            "close": "Close",
+            "volume": "Volume",
+        }
+
+        # Rename columns
+        df = df.rename(columns=column_mapping)
+
+        return df
 
     def _align_portfolio_data(self, data_dict: dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Align multiple asset data to common date range."""
@@ -816,10 +870,16 @@ class UnifiedBacktestEngine:
         return min(max_batch_size, num_symbols, 100)
 
     def _get_strategy_class(self, strategy_name: str) -> type | None:
-        """Get strategy class by name."""
-        # This would be implemented based on your strategy registry
-        # For now, return a placeholder
-        return None
+        """Get strategy class by name using StrategyFactory."""
+        try:
+            from .strategy import StrategyFactory
+
+            # Create an instance and get its class
+            strategy_instance = StrategyFactory.create_strategy(strategy_name, {})
+            return strategy_instance.__class__
+        except Exception as e:
+            self.logger.error(f"Failed to load strategy {strategy_name}: {e}")
+            return None
 
     def _get_default_parameters(self, strategy_name: str) -> dict[str, Any]:
         """Get default parameters for a strategy."""
@@ -840,12 +900,32 @@ class UnifiedBacktestEngine:
         config: BacktestConfig,
     ) -> BacktestResult:
         """Convert cached dictionary to BacktestResult object."""
+        import pandas as pd
+
+        # Handle trades data from cache
+        trades = cached_dict.get("trades")
+        if trades is not None and isinstance(trades, dict):
+            # Convert trades dict back to DataFrame
+            trades = pd.DataFrame(trades)
+        elif trades is not None and not isinstance(trades, pd.DataFrame):
+            trades = None
+
+        # Handle equity_curve data from cache
+        equity_curve = cached_dict.get("equity_curve")
+        if equity_curve is not None and isinstance(equity_curve, dict):
+            # Convert equity_curve dict back to DataFrame
+            equity_curve = pd.DataFrame(equity_curve)
+        elif equity_curve is not None and not isinstance(equity_curve, pd.DataFrame):
+            equity_curve = None
+
         return BacktestResult(
             symbol=symbol,
             strategy=strategy,
             parameters=parameters,
             config=config,
             metrics=cached_dict.get("metrics", {}),
+            trades=trades,
+            equity_curve=equity_curve,
             start_date=cached_dict.get("start_date"),
             end_date=cached_dict.get("end_date"),
             duration_seconds=cached_dict.get("duration_seconds", 0),

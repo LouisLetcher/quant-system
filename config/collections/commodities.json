@@ -1,0 +1,31 @@
+{
+  "commodities": {
+    "name": "Commodities Collection",
+    "asset_type": "commodity",
+    "symbols": [
+      "GC=F",
+      "SI=F",
+      "CL=F",
+      "NG=F",
+      "ZC=F",
+      "ZS=F",
+      "ZW=F",
+      "KC=F",
+      "CC=F",
+      "SB=F",
+      "CT=F",
+      "HE=F",
+      "LE=F",
+      "HG=F",
+      "PA=F",
+      "PL=F"
+    ],
+    "initial_capital": 10000,
+    "commission": 0.001,
+    "data_sources": {
+      "primary": ["yahoo_finance", "alpha_vantage_enhanced"],
+      "fallback": ["twelve_data"],
+      "comment": "Yahoo Finance for futures, Alpha Vantage for commodities data"
+    }
+  }
+}

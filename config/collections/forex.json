@@ -1,0 +1,35 @@
+{
+  "forex": {
+    "name": "Forex Collection",
+    "asset_type": "forex",
+    "symbols": [
+      "EURUSD=X",
+      "GBPUSD=X",
+      "USDJPY=X",
+      "USDCHF=X",
+      "AUDUSD=X",
+      "USDCAD=X",
+      "NZDUSD=X",
+      "EURJPY=X",
+      "GBPJPY=X",
+      "EURGBP=X",
+      "AUDJPY=X",
+      "EURAUD=X",
+      "EURCHF=X",
+      "AUDNZD=X",
+      "GBPAUD=X",
+      "GBPCAD=X",
+      "CHFJPY=X",
+      "CADJPY=X",
+      "NZDJPY=X",
+      "AUDCAD=X"
+    ],
+    "initial_capital": 10000,
+    "commission": 0.001,
+    "data_sources": {
+      "primary": ["yahoo_finance", "alpha_vantage_enhanced"],
+      "fallback": ["twelve_data"],
+      "comment": "Yahoo Finance and Alpha Vantage have comprehensive forex coverage"
+    }
+  }
+}

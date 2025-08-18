@@ -132,6 +132,9 @@ def create_parser() -> argparse.ArgumentParser:
     # Reports commands
     add_reports_commands(subparsers)
 
+    # AI commands
+    add_ai_commands(subparsers)
+
     return parser
 
 
@@ -344,6 +347,11 @@ def add_portfolio_commands(subparsers):
     )
     test_all_parser.add_argument(
         "--open-browser", action="store_true", help="Open results in browser"
+    )
+    test_all_parser.add_argument(
+        "--keep-old-trades",
+        action="store_true",
+        help="Keep old trade records instead of overriding them (default: override)",
     )
 
     # Compare portfolios
@@ -563,6 +571,123 @@ def add_reports_commands(subparsers):
     )
     csv_export_parser.add_argument("--year", help="Year for quarterly export (YYYY)")
 
+    # TradingView alerts export
+    tv_export_parser = reports_subparsers.add_parser(
+        "export-tradingview", help="Export TradingView alerts from database"
+    )
+    tv_export_parser.add_argument("--quarter", "-q", help="Quarter (Q1, Q2, Q3, Q4)")
+    tv_export_parser.add_argument("--year", "-y", help="Year (YYYY)")
+
+    tv_export_parser.add_argument(
+        "--output-dir",
+        default="exports/tradingview_alerts",
+        help="Output directory for alert files",
+    )
+
+
+def add_ai_commands(subparsers):
+    """Add AI recommendation commands."""
+    ai_parser = subparsers.add_parser(
+        "ai", help="AI-powered investment recommendations"
+    )
+    ai_subparsers = ai_parser.add_subparsers(dest="ai_command")
+
+    # Generate recommendations
+    recommend_parser = ai_subparsers.add_parser(
+        "recommend", help="Generate AI investment recommendations"
+    )
+    recommend_parser.add_argument(
+        "--risk-tolerance",
+        "-r",
+        choices=["conservative", "moderate", "aggressive"],
+        default="moderate",
+        help="Risk tolerance level",
+    )
+    recommend_parser.add_argument(
+        "--max-assets",
+        "-n",
+        type=int,
+        default=10,
+        help="Maximum number of assets to recommend",
+    )
+    recommend_parser.add_argument(
+        "--min-confidence",
+        "-c",
+        type=float,
+        default=0.7,
+        help="Minimum confidence score (0-1)",
+    )
+    recommend_parser.add_argument(
+        "--quarter", "-q", help="Specific quarter to analyze (e.g., Q3_2025)"
+    )
+    recommend_parser.add_argument("--output", "-o", help="Output file path")
+    recommend_parser.add_argument(
+        "--format",
+        choices=["table", "json", "summary"],
+        default="table",
+        help="Output format",
+    )
+    recommend_parser.add_argument(
+        "--timeframe",
+        "-t",
+        default="1h",
+        help="Trading timeframe (e.g., 5m, 15m, 1h, 4h, 1d). Affects trading parameters: <1h=scalping, >=1h=swing trading",
+    )
+
+    # Compare assets
+    compare_parser = ai_subparsers.add_parser("compare", help="Compare multiple assets")
+    compare_parser.add_argument("symbols", nargs="+", help="Asset symbols to compare")
+    compare_parser.add_argument("--strategy", "-s", help="Filter by specific strategy")
+
+    # Portfolio-specific recommendations
+    portfolio_recommend_parser = ai_subparsers.add_parser(
+        "portfolio_recommend",
+        help="Generate portfolio-specific AI recommendations with HTML report",
+    )
+    portfolio_recommend_parser.add_argument(
+        "--portfolio", "-p", required=True, help="Portfolio configuration file path"
+    )
+    portfolio_recommend_parser.add_argument(
+        "--risk-tolerance",
+        "-r",
+        choices=["conservative", "moderate", "aggressive"],
+        default="moderate",
+        help="Risk tolerance level",
+    )
+    portfolio_recommend_parser.add_argument(
+        "--max-assets",
+        "-n",
+        type=int,
+        default=10,
+        help="Maximum number of assets to recommend",
+    )
+    portfolio_recommend_parser.add_argument(
+        "--min-confidence",
+        "-c",
+        type=float,
+        default=0.6,
+        help="Minimum confidence score (0-1)",
+    )
+    portfolio_recommend_parser.add_argument(
+        "--quarter", "-q", help="Specific quarter to analyze (e.g., Q3_2025)"
+    )
+    portfolio_recommend_parser.add_argument(
+        "--no-html", action="store_true", help="Skip HTML report generation"
+    )
+    portfolio_recommend_parser.add_argument(
+        "--timeframe",
+        "-t",
+        default="1h",
+        help="Trading timeframe (e.g., 5m, 15m, 1h, 4h, 1d). Affects trading parameters: <1h=scalping, >=1h=swing trading",
+    )
+
+    # Explain recommendation
+    explain_parser = ai_subparsers.add_parser(
+        "explain", help="Explain specific asset recommendation"
+    )
+    explain_parser.add_argument("symbol", help="Asset symbol")
+    explain_parser.add_argument("strategy", help="Strategy name")
+
 
 # Command implementations
 def handle_data_command(args):
@@ -699,6 +824,7 @@ def handle_single_backtest(args):
         commission=args.commission,
         use_cache=not args.no_cache,
         futures_mode=args.futures,
+        save_trades=True,  # Enable trade history saving
     )
 
     # Run backtest
@@ -727,6 +853,15 @@ def handle_single_backtest(args):
         print(f"  Max Drawdown: {metrics.get('max_drawdown', 0):.2f}%")
         print(f"  Win Rate: {metrics.get('win_rate', 0):.1f}%")
         print(f"  Number of Trades: {metrics.get('num_trades', 0)}")
+
+        # Save to database for consistency with portfolio tests
+        try:
+            _save_backtest_to_database(
+                result, f"single_{args.symbol}_{args.strategy}", config, "sortino_ratio"
+            )
+            print("  ✅ Results saved to database")
+        except Exception as e:
+            print(f"  ⚠️ Database save failed: {e}")
 
 
 def handle_batch_backtest(args):
@@ -950,10 +1085,22 @@ def handle_portfolio_test_all(args):
                     end_date=end_date.strftime("%Y-%m-%d"),
                     initial_capital=portfolio_config.get("initial_capital", 10000),
                     commission=portfolio_config.get("commission", 0.001),
+                    save_trades=True,  # Enable trade history saving
+                    override_old_trades=not args.keep_old_trades,  # Override by default, unless user wants to keep
                 )
 
                 result = backtest_engine.run_backtest(symbol, strategy, config)
                 backtest_results[symbol][strategy] = result
+
+                # Save to database
+                try:
+                    _save_backtest_to_database(
+                        result, f"{symbol}_{strategy}", config, args.metric
+                    )
+                except Exception as db_error:
+                    logger.warning(
+                        f"Failed to save {symbol}/{strategy} to database: {db_error}"
+                    )
 
             except Exception as e:
                 print(f"    ❌ Error testing {symbol} with {strategy}: {e}")
@@ -983,52 +1130,73 @@ def handle_portfolio_test_all(args):
         end_date=end_date.strftime("%Y-%m-%d"),
         strategies=all_strategies,
         timeframes=timeframes_to_test,
+        metric=args.metric,
     )
 
     print(f"\n📱 Comprehensive report generated: {report_path}")
 
-    # Quick summary for CLI using actual results
+    # Quick summary for CLI using database best strategies
     print(f"\n📊 Quick Summary by {args.metric.replace('_', ' ').title()}:")
     print("-" * 50)
 
-    # Calculate actual strategy performance averages
-    strategy_results = {}
-    for strategy in all_strategies:
-        total_score = 0
-        count = 0
+    # Get best strategy performance from database
+    from ..database import get_db_session
+    from ..database.models import BestStrategy
 
-        for symbol_results in backtest_results.values():
-            if symbol_results.get(strategy):
-                result = symbol_results[strategy]
-                if hasattr(result, args.metric):
-                    value = getattr(result, args.metric)
-                    if value is not None:
-                        total_score += float(value)
-                        count += 1
+    session = get_db_session()
+    try:
+        best_strategies = session.query(BestStrategy).all()
 
-        # Calculate average score for this strategy
-        if count > 0:
-            strategy_results[strategy] = total_score / count
+        if not best_strategies:
+            print("No strategies found in database")
         else:
-            strategy_results[strategy] = 0.0
+            # Calculate average metric scores for each strategy
+            strategy_scores = {}
+            for best_strategy in best_strategies:
+                strategy_name = best_strategy.best_strategy
+                metric_value = getattr(best_strategy, args.metric, 0)
 
-    # Sort by metric (ascending for drawdown, descending for others)
-    reverse_sort = args.metric != "max_drawdown"
-    sorted_strategies = sorted(
-        strategy_results.items(), key=lambda x: x[1], reverse=reverse_sort
-    )
+                if strategy_name not in strategy_scores:
+                    strategy_scores[strategy_name] = []
+                strategy_scores[strategy_name].append(
+                    float(metric_value) if metric_value is not None else 0.0
+                )
 
-    for i, (strategy, score) in enumerate(sorted_strategies, 1):
-        if args.metric == "sharpe_ratio":
-            print(f"  {i}. {strategy:15} | Sharpe: {score:.3f}")
-        elif args.metric == "total_return":
-            print(f"  {i}. {strategy:15} | Return: {score:.1f}%")
-        elif args.metric == "profit_factor":
-            print(f"  {i}. {strategy:15} | Profit Factor: {score:.2f}")
-        else:
-            print(f"  {i}. {strategy:15} | Max Drawdown: {score:.1f}%")
+            # Calculate averages
+            strategy_results = {}
+            for strategy_name, scores in strategy_scores.items():
+                strategy_results[strategy_name] = (
+                    sum(scores) / len(scores) if scores else 0.0
+                )
 
-    print(f"\n🏆 Best Overall Strategy: {sorted_strategies[0][0]}")
+            # Sort by metric (ascending for drawdown, descending for others)
+            reverse_sort = args.metric != "max_drawdown"
+            sorted_strategies = sorted(
+                strategy_results.items(), key=lambda x: x[1], reverse=reverse_sort
+            )
+
+            for i, (strategy, score) in enumerate(sorted_strategies, 1):
+                if args.metric == "sharpe_ratio":
+                    print(f"  {i}. {strategy:15} | Sharpe: {score:.3f}")
+                elif args.metric == "total_return":
+                    print(f"  {i}. {strategy:15} | Return: {score:.1f}%")
+                elif args.metric == "profit_factor":
+                    print(f"  {i}. {strategy:15} | Profit Factor: {score:.2f}")
+                elif args.metric == "sortino_ratio":
+                    print(f"  {i}. {strategy:15} | Sortino: {score:.3f}")
+                elif args.metric == "max_drawdown":
+                    print(f"  {i}. {strategy:15} | Max Drawdown: {score:.1f}%")
+                else:
+                    print(
+                        f"  {i}. {strategy:15} | {args.metric.replace('_', ' ').title()}: {score:.3f}"
+                    )
+
+    finally:
+        session.close()
+
+    # Get the best overall strategy from the database
+    best_strategy_name = _get_best_overall_strategy_from_db(args.metric)
+    print(f"\n🏆 Best Overall Strategy: {best_strategy_name}")
     print(
         "\n📊 Each asset analyzed with detailed KPIs, order history, and equity curves"
     )
@@ -1080,6 +1248,13 @@ def handle_portfolio_backtest(args):
         logger.error("Portfolio backtest failed: %s", result.error)
         return
 
+    # Save to database
+    try:
+        _save_backtest_to_database(result, "PORTFOLIO", config)
+        logger.info("Backtest results saved to database")
+    except Exception as e:
+        logger.warning(f"Failed to save to database: {e}")
+
     print("\nPortfolio Backtest Results")
     print("=" * 30)
 
@@ -1089,6 +1264,623 @@ def handle_portfolio_backtest(args):
         print(f"Sharpe Ratio: {metrics.get('sharpe_ratio', 0):.3f}")
         print(f"Max Drawdown: {metrics.get('max_drawdown', 0):.2f}%")
         print(f"Volatility: {metrics.get('volatility', 0):.2f}%")
+
+
+def _save_backtest_to_database(
+    backtest_result, name_prefix: str = "", config=None, metric: str = "sortino_ratio"
+):
+    """Save backtest result to PostgreSQL database and update best strategies."""
+    from datetime import datetime
+
+    from ..database import get_db_session
+    from ..database.models import BacktestResult as DBBacktestResult
+
+    session = get_db_session()
+
+    try:
+        # Save to legacy results table (for backward compatibility)
+        db_result = DBBacktestResult(
+            name=f"{name_prefix}_{backtest_result.strategy}_{backtest_result.symbol}",
+            symbols=[backtest_result.symbol]
+            if backtest_result.symbol != "PORTFOLIO"
+            else ["PORTFOLIO"],
+            strategy=backtest_result.strategy,
+            start_date=datetime.strptime(config.start_date, "%Y-%m-%d").date()
+            if config
+            else None,
+            end_date=datetime.strptime(config.end_date, "%Y-%m-%d").date()
+            if config
+            else None,
+            initial_capital=float(backtest_result.config.initial_capital),
+            final_value=float(
+                backtest_result.metrics.get(
+                    "final_capital", backtest_result.config.initial_capital
+                )
+            ),
+            total_return=float(backtest_result.metrics.get("total_return", 0)),
+            sortino_ratio=float(backtest_result.metrics.get("sortino_ratio", 0)),
+            calmar_ratio=float(backtest_result.metrics.get("calmar_ratio", 0)),
+            sharpe_ratio=float(backtest_result.metrics.get("sharpe_ratio", 0)),
+            profit_factor=float(backtest_result.metrics.get("profit_factor", 0)),
+            max_drawdown=float(backtest_result.metrics.get("max_drawdown", 0)),
+            volatility=float(backtest_result.metrics.get("volatility", 0)),
+            win_rate=float(backtest_result.metrics.get("win_rate", 0)),
+            num_trades=int(backtest_result.metrics.get("num_trades", 0)),
+            alpha=float(backtest_result.metrics.get("alpha", 0)),
+            beta=float(backtest_result.metrics.get("beta", 1)),
+            expectancy=float(backtest_result.metrics.get("expectancy", 0)),
+            average_win=float(backtest_result.metrics.get("average_win", 0)),
+            average_loss=float(backtest_result.metrics.get("average_loss", 0)),
+            total_fees=float(backtest_result.metrics.get("total_fees", 0)),
+            portfolio_turnover=float(
+                backtest_result.metrics.get("portfolio_turnover", 0)
+            ),
+            strategy_capacity=float(
+                backtest_result.metrics.get("strategy_capacity", 1000000)
+            ),
+            parameters=backtest_result.parameters or {},
+        )
+
+        session.add(db_result)
+        session.flush()  # Flush to get the ID
+
+        # Save individual trades if available
+        if backtest_result.trades is not None and not backtest_result.trades.empty:
+            from ..database.models import Trade
+
+            # Clean up old trades if override is enabled (default behavior)
+            if getattr(backtest_result.config, "override_old_trades", True):
+                old_backtest_results = (
+                    session.query(DBBacktestResult)
+                    .filter(
+                        DBBacktestResult.symbols.any(backtest_result.symbol),
+                        DBBacktestResult.strategy == backtest_result.strategy,
+                        DBBacktestResult.id
+                        != db_result.id,  # Don't delete the current record
+                    )
+                    .all()
+                )
+
+                for old_result in old_backtest_results:
+                    # Delete associated trades first
+                    old_trades_deleted = (
+                        session.query(Trade)
+                        .filter(
+                            Trade.backtest_result_id == old_result.id,
+                            Trade.symbol == backtest_result.symbol,
+                        )
+                        .delete()
+                    )
+
+                    # Then delete the old backtest result
+                    session.delete(old_result)
+
+                    if old_trades_deleted > 0:
+                        print(
+                            f"🧹 Cleaned up {old_trades_deleted} old trades and 1 old backtest result for {backtest_result.symbol}/{backtest_result.strategy}"
+                        )
+
+            current_equity = float(backtest_result.config.initial_capital)
+            current_holdings = 0.0
+
+            for _, trade_row in backtest_result.trades.iterrows():
+                # Calculate portfolio state after trade
+                if trade_row["action"] == "buy":
+                    trade_type = "BUY"
+                    current_holdings += float(trade_row["size"])
+                    current_equity -= float(trade_row["size"]) * float(
+                        trade_row["price"]
+                    )
+                else:
+                    trade_type = "SELL"
+                    current_holdings -= float(trade_row["size"])
+                    current_equity += float(trade_row["size"]) * float(
+                        trade_row["price"]
+                    )
+
+                # Calculate fees
+                trade_value = float(trade_row["size"]) * float(trade_row["price"])
+                fees = trade_value * config.commission if config else 0
+                current_equity -= fees
+
+                # Create trade record
+                trade_record = Trade(
+                    backtest_result_id=db_result.id,
+                    symbol=backtest_result.symbol,
+                    trade_datetime=trade_row["timestamp"],
+                    trade_type=trade_type,
+                    price=float(trade_row["price"]),
+                    quantity=float(trade_row["size"]),
+                    value=trade_value,
+                    equity_after_trade=current_equity
+                    + (current_holdings * float(trade_row["price"])),
+                    holdings_after_trade=current_holdings,
+                    cash_after_trade=current_equity,
+                    fees=fees,
+                    net_profit=float(trade_row.get("pnl", 0)),
+                    unrealized_pnl=0.0,  # Could be calculated if needed
+                    entry_reason=f"{trade_type} signal from {backtest_result.strategy}",
+                )
+                session.add(trade_record)
+
+        # Recalculate correct final_value and total_return from actual trade data
+        logger = logging.getLogger(__name__)
+        logger.debug(
+            f"Checking trade correction for {backtest_result.symbol}/{backtest_result.strategy}"
+        )
+        logger.debug(
+            f"Has trades attr: {hasattr(backtest_result, 'trades')}, Trade count: {len(backtest_result.trades) if hasattr(backtest_result, 'trades') else 'N/A'}"
+        )
+        if hasattr(backtest_result, "trades") and len(backtest_result.trades) > 0:
+            # Get the final equity from the last trade calculation
+            final_trade_equity = current_equity + (
+                current_holdings * float(backtest_result.trades.iloc[-1]["price"])
+            )
+            actual_total_return = (
+                (final_trade_equity - float(backtest_result.config.initial_capital))
+                / float(backtest_result.config.initial_capital)
+            ) * 100
+
+            # Recalculate advanced metrics from actual trade PnL data using pure Python
+            trade_pnls = []
+            for _, trade_row in backtest_result.trades.iterrows():
+                if "pnl" in trade_row and trade_row["pnl"] != 0:
+                    trade_pnls.append(float(trade_row["pnl"]))
+
+            if trade_pnls:
+                winning_trades = [pnl for pnl in trade_pnls if pnl > 0]
+                losing_trades = [pnl for pnl in trade_pnls if pnl < 0]
+                initial_capital = float(backtest_result.config.initial_capital)
+
+                # Calculate percentages of initial capital using pure Python
+                actual_avg_win = (
+                    (sum(winning_trades) / len(winning_trades) / initial_capital * 100)
+                    if winning_trades
+                    else 0
+                )
+                actual_avg_loss = (
+                    (
+                        sum(abs(loss) for loss in losing_trades)
+                        / len(losing_trades)
+                        / initial_capital
+                        * 100
+                    )
+                    if losing_trades
+                    else 0
+                )
+                actual_win_rate = (
+                    (len(winning_trades) / len(trade_pnls) * 100) if trade_pnls else 0
+                )
+                actual_expectancy = (
+                    (sum(trade_pnls) / len(trade_pnls) / initial_capital * 100)
+                    if trade_pnls
+                    else 0
+                )
+            else:
+                actual_avg_win = actual_avg_loss = actual_win_rate = (
+                    actual_expectancy
+                ) = 0
+
+            # Update the database record with correct values (ensure all are Python native types)
+            db_result.final_value = float(final_trade_equity)
+            db_result.total_return = float(actual_total_return)
+            db_result.num_trades = len(backtest_result.trades)
+
+            # For advanced metrics, ensure complete type conversion
+            import builtins
+
+            db_result.average_win = builtins.float(actual_avg_win)
+            db_result.average_loss = builtins.float(actual_avg_loss)
+            db_result.win_rate = builtins.float(actual_win_rate)
+            db_result.expectancy = builtins.float(actual_expectancy)
+
+            # Also update the backtest_result metrics so best strategy update uses correct values
+            backtest_result.metrics["final_capital"] = final_trade_equity
+            backtest_result.metrics["total_return"] = actual_total_return
+            backtest_result.metrics["num_trades"] = len(backtest_result.trades)
+            backtest_result.metrics["average_win"] = actual_avg_win
+            backtest_result.metrics["average_loss"] = actual_avg_loss
+            backtest_result.metrics["win_rate"] = actual_win_rate
+            backtest_result.metrics["expectancy"] = actual_expectancy
+
+            logger.debug(
+                f"Corrected {backtest_result.symbol}/{backtest_result.strategy} - Final: ${final_trade_equity:.2f}, Return: {actual_total_return:.2f}%, Trades: {len(backtest_result.trades)}"
+            )
+            logger.debug(
+                f"Advanced metrics - avg_win: {actual_avg_win:.2f}%, avg_loss: {actual_avg_loss:.2f}%, win_rate: {actual_win_rate:.1f}%"
+            )
+
+        # Update best_strategies table if this is a better result (after correction)
+        if backtest_result.symbol != "PORTFOLIO":
+            run_id = f"{name_prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            _update_best_strategy(
+                session,
+                backtest_result,
+                run_id,
+                getattr(backtest_result.config, "timeframe", "1d"),
+                metric,
+            )
+
+        session.commit()
+
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def _get_best_overall_strategy_from_db(metric: str = "sortino_ratio") -> str:
+    """Get the best overall strategy from the database based on the specified metric."""
+    from src.database.db_connection import get_db_session
+    from src.database.models import BestStrategy
+
+    session = get_db_session()
+
+    try:
+        # Get the strategy with the highest average score for the metric
+        best_strategies = session.query(BestStrategy).all()
+
+        if not best_strategies:
+            return "No strategies found"
+
+        # Calculate average metric scores for each strategy
+        strategy_scores = {}
+        for best_strategy in best_strategies:
+            strategy_name = best_strategy.best_strategy
+            metric_value = getattr(best_strategy, metric, 0)
+
+            if strategy_name not in strategy_scores:
+                strategy_scores[strategy_name] = []
+            strategy_scores[strategy_name].append(
+                float(metric_value) if metric_value is not None else 0.0
+            )
+
+        # Calculate averages and find the best
+        strategy_averages = {}
+        for strategy_name, scores in strategy_scores.items():
+            strategy_averages[strategy_name] = (
+                sum(scores) / len(scores) if scores else 0.0
+            )
+
+        if not strategy_averages:
+            return "No valid strategies found"
+
+        # Sort by metric (ascending for drawdown, descending for others)
+        reverse_sort = metric != "max_drawdown"
+        best_strategy = (
+            max(strategy_averages.items(), key=lambda x: x[1])
+            if reverse_sort
+            else min(strategy_averages.items(), key=lambda x: x[1])
+        )
+
+        return best_strategy[0]
+
+    except Exception as e:
+        logger.error(f"Error getting best strategy from database: {e}")
+        return "Error retrieving best strategy"
+    finally:
+        session.close()
+
+
+def _update_best_strategy(
+    session, backtest_result, run_id: str, timeframe: str, metric: str = "sortino_ratio"
+):
+    """Update best_strategies table if this result is better than existing."""
+    from ..database.models import BestStrategy
+
+    # Check if there's an existing best strategy for this symbol/timeframe
+    existing = (
+        session.query(BestStrategy)
+        .filter_by(symbol=backtest_result.symbol, timeframe=timeframe)
+        .first()
+    )
+
+    current_metric_value = float(backtest_result.metrics.get(metric, 0))
+    current_sharpe = float(backtest_result.metrics.get("sharpe_ratio", 0))
+    current_sortino = float(backtest_result.metrics.get("sortino_ratio", 0))
+
+    # Save the best strategy per asset based on CLI-specified metric
+    # For max_drawdown, lower is better; for all others, higher is better
+    # Prefer strategies with actual trades over strategies with no trades
+    is_better = False
+    current_num_trades = int(backtest_result.metrics.get("num_trades", 0))
+
+    if not existing:
+        is_better = True
+    else:
+        existing_metric_value = getattr(existing, metric, 0) or 0
+        existing_num_trades = existing.num_trades or 0
+
+        # Prefer strategies with actual trades
+        if current_num_trades > 0 and existing_num_trades == 0:
+            is_better = True
+        elif current_num_trades == 0 and existing_num_trades > 0:
+            is_better = False
+        elif current_num_trades == 0 and existing_num_trades == 0:
+            # Both have no trades - skip this strategy entirely
+            is_better = False
+        else:
+            # Both have trades - compare by metric
+            if metric == "max_drawdown":
+                is_better = current_metric_value < existing_metric_value
+            else:
+                is_better = current_metric_value > existing_metric_value
+
+    if is_better:
+        # Calculate risk score (normalized combination of drawdown and volatility)
+        max_dd = float(backtest_result.metrics.get("max_drawdown", 0))
+        volatility = float(backtest_result.metrics.get("volatility", 0))
+        risk_score = (max_dd + volatility) / 2  # Simple risk score
+
+        # Calculate trading parameters based on timeframe
+        risk_per_trade, stop_loss, take_profit = _calculate_trading_parameters_for_db(
+            timeframe
+        )
+
+        if existing:
+            # Update existing record
+            existing.best_strategy = backtest_result.strategy
+            existing.sortino_ratio = current_sortino
+            existing.sharpe_ratio = float(
+                backtest_result.metrics.get("sharpe_ratio", 0)
+            )
+            existing.calmar_ratio = float(
+                backtest_result.metrics.get("calmar_ratio", 0)
+            )
+            existing.profit_factor = float(
+                backtest_result.metrics.get("profit_factor", 0)
+            )
+            existing.total_return = float(
+                backtest_result.metrics.get("total_return", 0)
+            )
+            existing.max_drawdown = max_dd
+            existing.volatility = volatility
+            existing.win_rate = float(backtest_result.metrics.get("win_rate", 0))
+            existing.num_trades = int(backtest_result.metrics.get("num_trades", 0))
+            existing.alpha = float(backtest_result.metrics.get("alpha", 0))
+            existing.beta = float(backtest_result.metrics.get("beta", 1))
+            existing.expectancy = float(backtest_result.metrics.get("expectancy", 0))
+            existing.average_win = float(backtest_result.metrics.get("average_win", 0))
+            existing.average_loss = float(
+                backtest_result.metrics.get("average_loss", 0)
+            )
+            existing.total_fees = float(backtest_result.metrics.get("total_fees", 0))
+            existing.portfolio_turnover = float(
+                backtest_result.metrics.get("portfolio_turnover", 0)
+            )
+            existing.strategy_capacity = float(
+                backtest_result.metrics.get("strategy_capacity", 1000000)
+            )
+            existing.risk_score = risk_score
+            existing.risk_per_trade = risk_per_trade
+            existing.stop_loss_pct = stop_loss
+            existing.take_profit_pct = take_profit
+            existing.best_parameters = backtest_result.parameters or {}
+            existing.backtest_run_id = run_id
+        else:
+            # Create new record
+            best_strategy = BestStrategy(
+                symbol=backtest_result.symbol,
+                timeframe=timeframe,
+                best_strategy=backtest_result.strategy,
+                sortino_ratio=current_sortino,
+                sharpe_ratio=float(backtest_result.metrics.get("sharpe_ratio", 0)),
+                calmar_ratio=float(backtest_result.metrics.get("calmar_ratio", 0)),
+                profit_factor=float(backtest_result.metrics.get("profit_factor", 0)),
+                total_return=float(backtest_result.metrics.get("total_return", 0)),
+                max_drawdown=max_dd,
+                volatility=volatility,
+                win_rate=float(backtest_result.metrics.get("win_rate", 0)),
+                num_trades=int(backtest_result.metrics.get("num_trades", 0)),
+                alpha=float(backtest_result.metrics.get("alpha", 0)),
+                beta=float(backtest_result.metrics.get("beta", 1)),
+                expectancy=float(backtest_result.metrics.get("expectancy", 0)),
+                average_win=float(backtest_result.metrics.get("average_win", 0)),
+                average_loss=float(backtest_result.metrics.get("average_loss", 0)),
+                total_fees=float(backtest_result.metrics.get("total_fees", 0)),
+                portfolio_turnover=float(
+                    backtest_result.metrics.get("portfolio_turnover", 0)
+                ),
+                strategy_capacity=float(
+                    backtest_result.metrics.get("strategy_capacity", 1000000)
+                ),
+                risk_score=risk_score,
+                risk_per_trade=risk_per_trade,
+                stop_loss_pct=stop_loss,
+                take_profit_pct=take_profit,
+                best_parameters=backtest_result.parameters or {},
+                backtest_run_id=run_id,
+            )
+            session.add(best_strategy)
+
+
+def _calculate_trading_parameters_for_db(timeframe: str) -> tuple[float, float, float]:
+    """Calculate trading parameters for database storage."""
+    if timeframe in ["1m", "5m", "15m", "30m", "1h"]:  # Scalping
+        return 0.01, 0.005, 0.01  # 1% risk, 0.5% SL, 1% TP
+    # Swing trading
+    return 0.02, 0.02, 0.04  # 2% risk, 2% SL, 4% TP
+
+
+def save_optimization_to_database(
+    symbol: str,
+    strategy: str,
+    optimization_result,
+    timeframe: str = "1d",
+    portfolio_name: str = None,
+):
+    """Save optimization results to PostgreSQL database with new normalized structure."""
+    from datetime import datetime
+
+    from ..database import get_db_session
+    from ..database.models import AllOptimizationResult
+
+    session = get_db_session()
+
+    try:
+        # Generate unique run_id for this optimization session
+        run_id = f"OPT_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{symbol}_{strategy}"
+
+        # Save all optimization iterations to all_optimization_results
+        for i, iteration_data in enumerate(optimization_result.optimization_history):
+            # Extract metrics from iteration data
+            metrics = iteration_data.get("metrics", {})
+            parameters = iteration_data.get("parameters", {})
+
+            opt_record = AllOptimizationResult(
+                run_id=run_id,
+                symbol=symbol,
+                strategy=strategy,
+                timeframe=timeframe,
+                parameters=parameters,
+                sortino_ratio=float(metrics.get("sortino_ratio", 0)),
+                sharpe_ratio=float(metrics.get("sharpe_ratio", 0)),
+                calmar_ratio=float(metrics.get("calmar_ratio", 0)),
+                profit_factor=float(metrics.get("profit_factor", 0)),
+                total_return=float(metrics.get("total_return", 0)),
+                max_drawdown=float(metrics.get("max_drawdown", 0)),
+                volatility=float(metrics.get("volatility", 0)),
+                win_rate=float(metrics.get("win_rate", 0)),
+                num_trades=int(metrics.get("num_trades", 0)),
+                iteration_number=i + 1,
+                optimization_metric="sortino_ratio",
+                portfolio_name=portfolio_name,
+            )
+            session.add(opt_record)
+
+        # Update best_optimization_results table
+        _update_best_optimization_result(
+            session,
+            symbol,
+            strategy,
+            optimization_result,
+            run_id,
+            timeframe,
+            portfolio_name,
+        )
+
+        session.commit()
+
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+
+
+def _update_best_optimization_result(
+    session,
+    symbol: str,
+    strategy: str,
+    optimization_result,
+    run_id: str,
+    timeframe: str,
+    portfolio_name: str = None,
+):
+    """Update best_optimization_results table if this result is better than existing."""
+    from ..database.models import BestOptimizationResult
+
+    # Check if there's an existing best result for this symbol/strategy/timeframe
+    existing = (
+        session.query(BestOptimizationResult)
+        .filter_by(symbol=symbol, strategy=strategy, timeframe=timeframe)
+        .first()
+    )
+
+    current_sortino = float(optimization_result.best_score)
+
+    # Only update if this is better (higher score) or no existing record
+    if not existing or (
+        existing.best_sortino_ratio
+        and current_sortino > float(existing.best_sortino_ratio)
+    ):
+        # Extract best metrics from optimization result
+        best_metrics = {}
+        if optimization_result.optimization_history:
+            # Find the iteration with the best score
+            best_iteration = max(
+                optimization_result.optimization_history,
+                key=lambda x: x.get("metrics", {}).get("sortino_ratio", 0),
+            )
+            best_metrics = best_iteration.get("metrics", {})
+
+        if existing:
+            # Update existing record
+            existing.best_sortino_ratio = current_sortino
+            existing.best_sharpe_ratio = float(best_metrics.get("sharpe_ratio", 0))
+            existing.best_calmar_ratio = float(best_metrics.get("calmar_ratio", 0))
+            existing.best_profit_factor = float(best_metrics.get("profit_factor", 0))
+            existing.best_total_return = float(best_metrics.get("total_return", 0))
+            existing.best_max_drawdown = float(best_metrics.get("max_drawdown", 0))
+            existing.best_volatility = float(best_metrics.get("volatility", 0))
+            existing.best_win_rate = float(best_metrics.get("win_rate", 0))
+            existing.best_num_trades = int(best_metrics.get("num_trades", 0))
+            existing.best_parameters = optimization_result.best_parameters
+            existing.total_iterations = optimization_result.total_evaluations
+            existing.optimization_time_seconds = optimization_result.optimization_time
+            existing.optimization_run_id = run_id
+            existing.portfolio_name = portfolio_name
+        else:
+            # Create new record
+            best_opt_result = BestOptimizationResult(
+                symbol=symbol,
+                strategy=strategy,
+                timeframe=timeframe,
+                best_sortino_ratio=current_sortino,
+                best_sharpe_ratio=float(best_metrics.get("sharpe_ratio", 0)),
+                best_calmar_ratio=float(best_metrics.get("calmar_ratio", 0)),
+                best_profit_factor=float(best_metrics.get("profit_factor", 0)),
+                best_total_return=float(best_metrics.get("total_return", 0)),
+                best_max_drawdown=float(best_metrics.get("max_drawdown", 0)),
+                best_volatility=float(best_metrics.get("volatility", 0)),
+                best_win_rate=float(best_metrics.get("win_rate", 0)),
+                best_num_trades=int(best_metrics.get("num_trades", 0)),
+                best_parameters=optimization_result.best_parameters,
+                total_iterations=optimization_result.total_evaluations,
+                optimization_time_seconds=optimization_result.optimization_time,
+                optimization_run_id=run_id,
+                portfolio_name=portfolio_name,
+            )
+            session.add(best_opt_result)
+
+
+def handle_tradingview_export_command(args):
+    """Handle TradingView alerts export command."""
+    from src.utils.tradingview_alert_exporter import TradingViewAlertExporter
+
+    from ..database import get_db_session
+
+    try:
+        # Initialize with database session
+        db_session = get_db_session()
+        exporter = TradingViewAlertExporter(db_session=db_session)
+
+        print("📺 Exporting TradingView alerts from database...")
+
+        generated_files = exporter.export_from_database(
+            quarter=args.quarter, year=args.year, output_dir=args.output_dir
+        )
+
+        if generated_files:
+            print(f"✅ TradingView alerts exported - {len(generated_files)} files:")
+            for file_path in generated_files:
+                print(f"   📄 {file_path}")
+        else:
+            print("❌ No high-performing strategies found for alerts")
+
+        db_session.close()
+
+    except Exception as e:
+        print(f"❌ TradingView export failed: {e}")
+        print("📺 Falling back to HTML report parsing...")
+
+        # Fallback to HTML parsing
+        exporter = TradingViewAlertExporter()
+        generated_files = exporter.export_alerts_from_reports()
+
+        if generated_files:
+            print(f"✅ Fallback export completed: {generated_files[0]}")
 
 
 def handle_portfolio_compare(args):
@@ -1376,16 +2168,25 @@ def handle_csv_export_command(args):
     """Handle CSV export command."""
     from src.utils.raw_data_csv_exporter import RawDataCSVExporter
 
+    from ..database import get_db_session
+
+    # Only do collection-based exports (no portfolio_raw_data.csv)
+    exporter = RawDataCSVExporter()
+
     # Show available columns if requested
     if hasattr(args, "columns") and args.columns and "available" in args.columns:
-        exporter = RawDataCSVExporter()
         print("Available columns for CSV export:")
-        for col in exporter.get_available_columns():
+        for col in [
+            "Symbol",
+            "Strategy",
+            "Sortino Ratio",
+            "Calmar Ratio",
+            "Total Return",
+            "Max Drawdown",
+            "Win Rate",
+        ]:
             print(f"  - {col}")
         return
-
-    # Initialize exporter
-    exporter = RawDataCSVExporter()
 
     # Handle quarterly exports from existing reports
     if args.format == "quarterly":
@@ -1407,15 +2208,27 @@ def handle_csv_export_command(args):
             print("❌ No quarterly reports found or CSV export failed")
         return
 
-    # Handle best-strategies format (can work from quarterly reports if quarter/year provided)
+    # Handle best-strategies format - requires quarter and year
     if args.format == "best-strategies":
-        if args.quarter and args.year:
+        if not args.quarter or not args.year:
+            print("❌ Best strategies export requires --quarter and --year")
+            print("💡 Use: --format best-strategies --quarter Q3 --year 2025")
+            return
+
+        try:
+            db_session = get_db_session()
+            exporter_with_db = RawDataCSVExporter(db_session=db_session)
+
             print(
-                f"📊 Extracting best strategies from quarterly reports: {args.year} {args.quarter}"
+                f"📊 Exporting best strategies from database: {args.year} {args.quarter}"
             )
 
-            output_paths = exporter.export_from_quarterly_reports(
-                args.quarter, args.year, args.output, "best-strategies"
+            output_paths = exporter_with_db.export_from_database(
+                quarter=args.quarter,
+                year=args.year,
+                output_filename=args.output,
+                export_format=args.format,
+                columns=args.columns,
             )
 
             if output_paths:
@@ -1425,13 +2238,14 @@ def handle_csv_export_command(args):
                 for path in output_paths:
                     print(f"   📄 {path}")
             else:
-                print("❌ No quarterly reports found or CSV export failed")
+                print("❌ No data found for export criteria")
+
+            db_session.close()
             return
-        print(
-            "❌ Best strategies export requires --quarter and --year to extract from existing reports"
-        )
-        print("💡 Use: --format best-strategies --quarter Q1 --year 2024")
-        return
+
+        except Exception as e:
+            print(f"❌ Database export failed: {e}")
+            return
 
     # Handle full format - requires running backtests (fallback to old method)
     print("❌ Full format export from portfolio config not implemented yet")
@@ -1440,6 +2254,158 @@ def handle_csv_export_command(args):
     )
     print("💡 Example: --format quarterly --quarter Q4 --year 2023")
     return
+
+
+def handle_ai_command(args):
+    """Handle AI recommendation commands."""
+    from ..ai.investment_recommendations import AIInvestmentRecommendations
+    from ..database import get_db_session
+
+    if not args.ai_command:
+        print("AI command required. Use --help for options.")
+        return
+
+    try:
+        session = get_db_session()
+        recommender = AIInvestmentRecommendations(session)
+
+        if args.ai_command == "recommend":
+            portfolio_rec = recommender.generate_recommendations(
+                risk_tolerance=args.risk_tolerance,
+                min_confidence=args.min_confidence,
+                max_assets=args.max_assets,
+                quarter=args.quarter,
+                timeframe=args.timeframe,
+            )
+
+            # Display based on format
+            if args.format == "json":
+                print(json.dumps(_portfolio_to_dict(portfolio_rec), indent=2))
+            else:
+                _display_recommendations(portfolio_rec, args.format)
+
+            if args.output:
+                _save_recommendations(portfolio_rec, args.output, args.format)
+                print(f"Saved to {args.output}")
+
+        elif args.ai_command == "compare":
+            comparison_df = recommender.get_asset_comparison(
+                args.symbols, args.strategy
+            )
+            if not comparison_df.empty:
+                print(comparison_df.to_string(index=False))
+            else:
+                print("No data found for specified assets")
+
+        elif args.ai_command == "portfolio_recommend":
+            portfolio_rec, html_path = recommender.generate_portfolio_recommendations(
+                portfolio_config_path=args.portfolio,
+                risk_tolerance=args.risk_tolerance,
+                min_confidence=args.min_confidence,
+                max_assets=args.max_assets,
+                quarter=args.quarter,
+                timeframe=args.timeframe,
+                generate_html=not args.no_html,
+            )
+
+            # Display results
+            _display_recommendations(portfolio_rec, "table")
+
+            if html_path:
+                print(f"\n📄 HTML report generated: {html_path}")
+
+        elif args.ai_command == "explain":
+            explanation = recommender.explain_recommendation(args.symbol, args.strategy)
+            if "error" in explanation:
+                print(f"Error: {explanation['error']}")
+            else:
+                print(f"Asset: {args.symbol} ({args.strategy})")
+                print(f"Summary: {explanation['summary']}")
+                if explanation.get("strengths"):
+                    print("Strengths:", ", ".join(explanation["strengths"]))
+                if explanation.get("concerns"):
+                    print("Concerns:", ", ".join(explanation["concerns"]))
+                print(f"Recommendation: {explanation['recommendation']}")
+
+        session.close()
+
+    except Exception as e:
+        print(f"AI command failed: {e}")
+        raise
+
+
+def _display_recommendations(portfolio_rec, format_type):
+    """Display portfolio recommendations."""
+    if format_type == "summary":
+        print(f"AI Recommendations ({portfolio_rec.risk_profile})")
+        print(f"Assets: {len(portfolio_rec.recommendations)}")
+        print(f"Score: {portfolio_rec.total_score:.2f}")
+        print(f"Confidence: {portfolio_rec.confidence:.1%}")
+        if portfolio_rec.recommendations:
+            top = portfolio_rec.recommendations[0]
+            print(f"Top: {top.symbol} ({top.allocation_percentage:.1f}%)")
+    else:
+        print(f"Portfolio Recommendations - {portfolio_rec.risk_profile.title()}")
+        print("=" * 120)
+        print(
+            f"{'Symbol':<12} {'Strategy':<12} {'Style':<6} {'TF':<4} {'Score':<6} {'Alloc%':<6} {'Risk%':<6} {'SL':<6} {'TP':<6} {'Conf%':<6}"
+        )
+        print("=" * 120)
+        for rec in portfolio_rec.recommendations:
+            print(
+                f"{rec.symbol:<12} {rec.strategy:<12} {rec.trading_style:<6} {rec.timeframe:<4} "
+                f"{rec.score:<6.2f} {rec.allocation_percentage:<6.1f} {rec.risk_per_trade:<6.1f} "
+                f"{rec.stop_loss_points:<6.0f} {rec.take_profit_points:<6.0f} {rec.confidence:<6.1%}"
+            )
+        print(f"\nAnalysis: {portfolio_rec.overall_reasoning}")
+
+        if portfolio_rec.recommendations:
+            print("\nTrading Parameters Legend:")
+            print("  Style: Trading style (swing=≥1h timeframes, scalp=<1h timeframes)")
+            print("  TF: Timeframe")
+            print("  Risk%: Risk per trade (% of capital)")
+            print("  SL: Stop loss (points)")
+            print("  TP: Take profit (points)")
+
+
+def _portfolio_to_dict(portfolio_rec):
+    """Convert portfolio recommendation to dict."""
+    return {
+        "risk_profile": portfolio_rec.risk_profile,
+        "total_score": portfolio_rec.total_score,
+        "confidence": portfolio_rec.confidence,
+        "recommendations": [
+            {
+                "symbol": rec.symbol,
+                "strategy": rec.strategy,
+                "score": rec.score,
+                "allocation_percentage": rec.allocation_percentage,
+                "sortino_ratio": rec.sortino_ratio,
+                "calmar_ratio": rec.calmar_ratio,
+                "max_drawdown": rec.max_drawdown,
+            }
+            for rec in portfolio_rec.recommendations
+        ],
+        "overall_reasoning": portfolio_rec.overall_reasoning,
+        "warnings": portfolio_rec.warnings,
+    }
+
+
+def _save_recommendations(portfolio_rec, output_path, format_type):
+    """Save recommendations to file."""
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+    if format_type == "json":
+        with open(output_path, "w") as f:
+            json.dump(_portfolio_to_dict(portfolio_rec), f, indent=2)
+    else:
+        with open(output_path, "w") as f:
+            f.write("AI Investment Recommendations\n")
+            f.write("=" * 50 + "\n\n")
+            for rec in portfolio_rec.recommendations:
+                f.write(
+                    f"{rec.symbol} ({rec.strategy}): {rec.allocation_percentage:.1f}%\n"
+                )
 
 
 def handle_reports_command(args):
@@ -1493,8 +2459,13 @@ def handle_reports_command(args):
     elif args.reports_command == "export-csv":
         handle_csv_export_command(args)
 
+    elif args.reports_command == "export-tradingview":
+        handle_tradingview_export_command(args)
+
     else:
-        print("Available reports commands: organize, list, cleanup, latest, export-csv")
+        print(
+            "Available reports commands: organize, list, cleanup, latest, export-csv, export-tradingview"
+        )
 
 
 def main():
@@ -1523,6 +2494,8 @@ def main():
             handle_cache_command(args)
         elif args.command == "reports":
             handle_reports_command(args)
+        elif args.command == "ai":
+            handle_ai_command(args)
         else:
             print(f"Unknown command: {args.command}")
             parser.print_help()

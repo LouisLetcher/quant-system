@@ -1,0 +1,44 @@
+{
+  "bonds": {
+    "name": "Bonds Collection",
+    "asset_type": "bond",
+    "symbols": [
+      "TLT",
+      "IEF",
+      "SHY",
+      "LQD",
+      "HYG",
+      "EMB",
+      "TIP",
+      "VTEB",
+      "AGG",
+      "BND",
+      "VGIT",
+      "VCIT",
+      "GOVT",
+      "SCHO",
+      "IEI",
+      "SCHZ",
+      "BWX",
+      "IGOV",
+      "WIP",
+      "MUB",
+      "VMBS",
+      "VCSH",
+      "VCLT",
+      "VGSH",
+      "VGLT",
+      "EDV",
+      "ZROZ",
+      "FLOT",
+      "JPST"
+    ],
+    "initial_capital": 10000,
+    "commission": 0.001,
+    "data_sources": {
+      "primary": ["yahoo_finance"],
+      "fallback": ["twelve_data", "alpha_vantage_enhanced"],
+      "comment": "Yahoo Finance has excellent coverage for bond ETFs and treasury securities"
+    }
+  }
+}
