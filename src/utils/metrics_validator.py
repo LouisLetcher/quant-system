@@ -174,13 +174,35 @@ class MetricsValidator:
             if data is None or data.empty:
                 return None
 
-            # Ensure required columns for backtesting library
+            # Ensure required columns for backtesting library (handle both upper and lowercase)
             required_cols = ["Open", "High", "Low", "Close", "Volume"]
-            if not all(col in data.columns for col in required_cols):
-                self.logger.error("Missing required columns for backtesting library")
-                return None
+            lowercase_cols = ["open", "high", "low", "close", "volume"]
 
-            return data
+            # Check if we have uppercase columns
+            if all(col in data.columns for col in required_cols):
+                return data
+            # Check if we have lowercase columns and convert them
+            if all(col in data.columns for col in lowercase_cols):
+                # Convert to uppercase for backtesting library compatibility
+                data = data.rename(
+                    columns={
+                        "open": "Open",
+                        "high": "High",
+                        "low": "Low",
+                        "close": "Close",
+                        "volume": "Volume",
+                    }
+                )
+                return data
+            missing = [
+                col
+                for col in required_cols
+                if col not in data.columns and col.lower() not in data.columns
+            ]
+            self.logger.error(
+                "Missing required columns for backtesting library: %s", missing
+            )
+            return None
 
         except Exception as e:
             self.logger.error("Error getting historical data for %s: %s", symbol, e)
