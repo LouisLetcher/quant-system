@@ -13,7 +13,7 @@ import pickle
 import sqlite3
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -136,7 +136,7 @@ class UnifiedCacheManager:
             file_path.write_bytes(compressed_data)
 
             # Create cache entry
-            now = datetime.now(timezone.utc)
+            now = datetime.now()
             entry = CacheEntry(
                 key=key,
                 cache_type="data",
@@ -220,19 +220,9 @@ class UnifiedCacheManager:
                 if start_date or end_date:
                     if start_date:
                         start = pd.to_datetime(start_date)
-                        # Ensure timezone compatibility
-                        if data.index.tz is not None and start.tz is None:
-                            start = start.tz_localize(data.index.tz)
-                        elif data.index.tz is None and start.tz is not None:
-                            start = start.tz_localize(None)
                         data = data[data.index >= start]
                     if end_date:
                         end = pd.to_datetime(end_date)
-                        # Ensure timezone compatibility
-                        if data.index.tz is not None and end.tz is None:
-                            end = end.tz_localize(data.index.tz)
-                        elif data.index.tz is None and end.tz is not None:
-                            end = end.tz_localize(None)
                         data = data[data.index <= end]
 
                 return data if not data.empty else None
@@ -271,14 +261,14 @@ class UnifiedCacheManager:
                 "strategy": strategy,
                 "parameters": parameters,
                 "interval": interval,
-                "cached_at": datetime.now(timezone.utc).isoformat(),
+                "cached_at": datetime.now().isoformat(),
             }
 
             compressed_data = self._compress_data(result_with_meta)
             file_path.write_bytes(compressed_data)
 
             # Create cache entry
-            now = datetime.now(timezone.utc)
+            now = datetime.now()
             entry = CacheEntry(
                 key=key,
                 cache_type="backtest",
@@ -371,14 +361,14 @@ class UnifiedCacheManager:
                 "strategy": strategy,
                 "optimization_config": optimization_config,
                 "interval": interval,
-                "cached_at": datetime.now(timezone.utc).isoformat(),
+                "cached_at": datetime.now().isoformat(),
             }
 
             compressed_data = self._compress_data(result_with_meta)
             file_path.write_bytes(compressed_data)
 
             # Create cache entry
-            now = datetime.now(timezone.utc)
+            now = datetime.now()
             entry = CacheEntry(
                 key=key,
                 cache_type="optimization",
@@ -467,9 +457,7 @@ class UnifiedCacheManager:
                 params.append(source)
 
             if older_than_days:
-                cutoff = (
-                    datetime.now(timezone.utc) - timedelta(days=older_than_days)
-                ).isoformat()
+                cutoff = (datetime.now() - timedelta(days=older_than_days)).isoformat()
                 conditions.append("created_at < ?")
                 params.append(cutoff)
 
@@ -644,28 +632,13 @@ class UnifiedCacheManager:
 
             entries = []
             for row in cursor:
-                # Parse datetime with timezone handling
-                created_at = datetime.fromisoformat(row[3])
-                if created_at.tzinfo is None:
-                    created_at = created_at.replace(tzinfo=timezone.utc)
-
-                last_accessed = datetime.fromisoformat(row[4])
-                if last_accessed.tzinfo is None:
-                    last_accessed = last_accessed.replace(tzinfo=timezone.utc)
-
-                expires_at = None
-                if row[5]:
-                    expires_at = datetime.fromisoformat(row[5])
-                    if expires_at.tzinfo is None:
-                        expires_at = expires_at.replace(tzinfo=timezone.utc)
-
                 entry = CacheEntry(
                     key=row[0],
                     cache_type=row[1],
                     symbol=row[2],
-                    created_at=created_at,
-                    last_accessed=last_accessed,
-                    expires_at=expires_at,
+                    created_at=datetime.fromisoformat(row[3]),
+                    last_accessed=datetime.fromisoformat(row[4]),
+                    expires_at=datetime.fromisoformat(row[5]) if row[5] else None,
                     size_bytes=row[6],
                     source=row[7],
                     interval=row[8],
@@ -681,29 +654,14 @@ class UnifiedCacheManager:
         """Check if cache entry is expired."""
         if not entry.expires_at:
             return False
-
-        # Handle timezone comparison properly
-        now = datetime.now(timezone.utc)
-        expires_at = entry.expires_at
-
-        # Convert both to UTC if they have timezone info
-        if expires_at.tzinfo is not None:
-            if now.tzinfo is None:
-                now = now.replace(tzinfo=timezone.utc)
-            expires_at = expires_at.astimezone(timezone.utc)
-            now = now.astimezone(timezone.utc)
-        elif now.tzinfo is not None:
-            # If now has timezone but expires_at doesn't, make both naive
-            now = now.replace(tzinfo=None)
-
-        return now > expires_at
+        return datetime.now() > entry.expires_at
 
     def _update_access_time(self, key: str) -> None:
         """Update last access time."""
         with sqlite3.connect(self.metadata_db) as conn:
             conn.execute(
                 "UPDATE cache_entries SET last_accessed = ? WHERE key = ?",
-                (datetime.now(timezone.utc).isoformat(), key),
+                (datetime.now().isoformat(), key),
             )
 
     def _remove_entry(self, key: str) -> None:
@@ -743,7 +701,7 @@ class UnifiedCacheManager:
 
     def _cleanup_expired(self) -> None:
         """Remove expired cache entries."""
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now().isoformat()
 
         with sqlite3.connect(self.metadata_db) as conn:
             cursor = conn.execute(

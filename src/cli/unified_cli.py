@@ -44,7 +44,7 @@ def get_earliest_data_date(portfolio_path: str) -> datetime:
         if not portfolio_file.exists():
             return default_date
 
-        with Path(portfolio_file).open("r") as f:
+        with portfolio_file.open("r") as f:
             portfolio_config = json.load(f)
 
         # Get the first portfolio config (since file contains nested portfolio)
@@ -1672,7 +1672,11 @@ def _update_best_strategy(
             is_better = False
         else:
             # Both have trades - compare by metric
-            if metric == "max_drawdown":
+            # Special handling: Real metrics (non-zero) should always replace fake zero metrics
+            if existing_metric_value == 0.0 and current_metric_value != 0.0:
+                # Real metric replacing fake zero metric - always better
+                is_better = True
+            elif metric == "max_drawdown":
                 is_better = current_metric_value < existing_metric_value
             else:
                 is_better = current_metric_value > existing_metric_value
@@ -2513,7 +2517,7 @@ def handle_validation_command(args):
 
         # Save detailed report if requested
         if args.output:
-            with Path(args.output).open("w") as f:
+            with open(args.output, "w") as f:
                 f.write(report)
                 f.write("\n\n=== Detailed Results ===\n\n")
                 import json

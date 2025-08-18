@@ -6,7 +6,6 @@ This document provides a complete overview of implemented and planned features i
 
 ### 1. Unified Backtesting Engine
 **Status**: ✅ **IMPLEMENTED**
-
 **Description**: Core backtesting infrastructure supporting multiple strategies and assets.
 
 **Features**:
@@ -20,24 +19,23 @@ This document provides a complete overview of implemented and planned features i
 
 **Usage**:
 ```bash
-# Single asset backtest
-docker-compose run --rm quant python -m src.cli.unified_cli backtest single \
-  --symbol AAPL --strategy BuyAndHold --start-date 2023-01-01
+# Single backtest
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
+  --symbols BTCUSDT ETHUSDT --strategy BuyAndHold --start-date 2023-01-01
 
-# Collection backtests
-docker-compose run --rm quant python -m src.cli.unified_cli backtest batch \
-  --collection config/collections/stocks.json --metric sortino_ratio
+# Test all portfolios
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/portfolios/crypto.json --metric sortino_ratio
 ```
 
 ### 2. Portfolio Management & Configuration
 **Status**: ✅ **IMPLEMENTED**
-
 **Description**: Comprehensive portfolio configuration and management system.
 
 **Features**:
-- ✅ JSON-based collection configuration (stocks, bonds, crypto, forex, commodities)
+- ✅ JSON-based portfolio configuration (220+ crypto symbols included)
 - ✅ Flexible portfolio parameters (initial capital, commission, risk management)
-- ✅ Multiple asset type support with specialized data sources
+- ✅ Multiple asset type support (crypto, forex, stocks)
 - ✅ Benchmark configuration and comparison
 - ✅ Strategy parameter customization
 
@@ -68,7 +66,6 @@ docker-compose run --rm quant python -m src.cli.unified_cli backtest batch \
 
 ### 5. CLI Interface
 **Status**: ✅ **IMPLEMENTED**
-
 **Description**: Comprehensive command-line interface for all system operations.
 
 **Features**:
@@ -80,26 +77,22 @@ docker-compose run --rm quant python -m src.cli.unified_cli backtest batch \
 
 ### 6. TradingView Alert Export
 **Status**: ✅ **IMPLEMENTED**
-**Description**: Export trading alerts from PostgreSQL database with TradingView placeholders.
+**Description**: Export trading alerts from quarterly portfolio reports with TradingView placeholders.
 
 **Features**:
-- ✅ **Direct PostgreSQL database export** (no HTML parsing required)
 - ✅ Auto-organized quarterly export structure (`exports/tradingview_alerts/YYYY/QX/`)
-- ✅ Strategy and timeframe extraction from backtest results
+- ✅ Strategy and timeframe extraction from HTML reports
 - ✅ TradingView placeholders (`{{close}}`, `{{timenow}}`, `{{strategy.order.action}}`)
 - ✅ Performance metrics integration (Sharpe, profit, win rate)
 - ✅ Symbol-specific filtering and export options
-- ✅ Real-time data access from live database
 
 **Usage**:
 ```bash
-# Export TradingView alerts (Docker)
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-tradingview \
-  --quarter Q3 --year 2025
+# Auto-organized by quarter/year
+poetry run python src/utils/tradingview_alert_exporter.py --output "alerts.md"
 
-# Export for specific portfolio
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-tradingview \
-  --portfolio bonds --quarter Q3 --year 2025
+# Export for specific symbol
+poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
 ```
 
 ### 7. Docker Infrastructure
@@ -115,7 +108,6 @@ docker-compose run --rm quant python -m src.cli.unified_cli reports export-tradi
 
 ### 8. Performance Metrics & Analytics
 **Status**: ✅ **IMPLEMENTED**
-
 **Description**: Advanced financial metrics and risk analysis.
 
 **Features**:
@@ -129,17 +121,17 @@ docker-compose run --rm quant python -m src.cli.unified_cli reports export-tradi
 
 ### 9. Raw Data CSV Export
 **Status**: ✅ **IMPLEMENTED**
-**Description**: Export raw portfolio data with best strategies and timeframes directly from PostgreSQL database.
+**Description**: Export raw portfolio data with best strategies and timeframes from existing quarterly reports.
 
 **Features**:
-- ✅ **Direct PostgreSQL database export** (no HTML parsing required)
 - ✅ CSV export with symbol, best strategy, best timeframe, and performance metrics
-- ✅ Bulk export for all assets from backtest results
-- ✅ **Separate CSV files for each collection** (Crypto, Bonds, Forex, Stocks, etc.)
+- ✅ Bulk export for all assets from quarterly reports
+- ✅ **Separate CSV files for each portfolio** (Crypto, Bonds, Forex, Stocks, etc.)
 - ✅ Customizable column selection (Sharpe, Sortino, profit, drawdown)
-- ✅ Organized quarterly directory structure (`exports/csv/YYYY/QX/`)
-- ✅ Real-time data access from live database
-- ✅ Maintains consistent file naming convention
+- ✅ Integration with existing quarterly report structure
+- ✅ Organized quarterly directory structure (`exports/data_exports/YYYY/QX/`)
+- ✅ HTML report parsing without re-running backtests
+- ✅ Maintains same file naming as HTML reports
 
 **Usage**:
 ```bash
@@ -156,46 +148,24 @@ docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
   --columns available
 ```
 
-### 10. AI Investment Recommendations
-**Status**: ✅ **IMPLEMENTED**
-
-**Description**: AI-powered analysis of backtest results to recommend optimal asset allocation and investment decisions.
-
-**Features**:
-- ✅ **Performance-based scoring** - Analyze Sortino ratio, Calmar ratio, and profit factors across all assets
-- ✅ **Risk-adjusted recommendations** - Consider volatility, maximum drawdown, and recovery periods
-- ✅ **Portfolio correlation analysis** - Identify diversification opportunities and avoid over-concentration
-- ✅ **Strategy-asset matching** - Recommend best strategy-timeframe combinations for each asset
-- ✅ **Investment allocation suggestions** - Propose percentage allocations based on risk tolerance
-- ✅ **Red flag detection** - Warn against assets with poor historical performance or high risk
-- ✅ **Confidence scoring** - Rate recommendation confidence based on data quality and consistency
-
-**Implementation**:
-- Core module: `src/ai/investment_recommendations.py`
-- LLM integration: `src/ai/llm_client.py` (supports OpenAI GPT-4o and Claude-3.5-Sonnet)
-- CLI commands: `docker-compose run --rm quant python -m src.cli.unified_cli ai recommend|compare|explain`
-- Tests: `tests/test_ai_recommendations.py`
-- Output: `exports/recommendations/YYYY/QX/` (organized by year/quarter)
-
-**Usage**:
-```bash
-# Generate AI recommendations (Docker)
-docker-compose run --rm quant python -m src.cli.unified_cli ai recommend \
-  --risk-tolerance moderate --max-assets 5
-
-# Compare specific assets
-docker-compose run --rm quant python -m src.cli.unified_cli ai compare \
-  BTCUSDT ETHUSDT ADAUSDT --strategy rsi
-
-# Explain a recommendation
-docker-compose run --rm quant python -m src.cli.unified_cli ai explain BTCUSDT macd
-```
-
 ---
 
 ## 🎯 High Priority Features (Planned)
 
-### 1. Enhanced Data Sources
+### 1. AI Investment Recommendations
+**Status**: 🔄 **PLANNED**
+**Description**: AI-powered analysis of backtest results to recommend optimal asset allocation and investment decisions.
+
+**Features**:
+- **Performance-based scoring** - Analyze Sortino ratio, Calmar ratio, and profit factors across all assets
+- **Risk-adjusted recommendations** - Consider volatility, maximum drawdown, and recovery periods
+- **Portfolio correlation analysis** - Identify diversification opportunities and avoid over-concentration
+- **Strategy-asset matching** - Recommend best strategy-timeframe combinations for each asset
+- **Investment allocation suggestions** - Propose percentage allocations based on risk tolerance
+- **Red flag detection** - Warn against assets with poor historical performance or high risk
+- **Confidence scoring** - Rate recommendation confidence based on data quality and consistency
+
+### 2. Enhanced Data Sources
 **Status**: 🔄 **PLANNED**
 **Description**: Add more data providers and improve data quality.
 
@@ -205,7 +175,7 @@ docker-compose run --rm quant python -m src.cli.unified_cli ai explain BTCUSDT m
 - Data validation and anomaly detection
 - Automatic data source failover improvements
 
-### 2. Advanced Risk Metrics
+### 3. Advanced Risk Metrics
 **Status**: 🔄 **PLANNED**
 **Description**: Enhanced risk analysis for portfolio evaluation.
 
@@ -215,7 +185,7 @@ docker-compose run --rm quant python -m src.cli.unified_cli ai explain BTCUSDT m
 - Volatility regime detection
 - Risk-adjusted performance metrics beyond Sortino
 
-### 3. GPU Acceleration
+### 4. GPU Acceleration
 **Status**: 🔄 **PLANNED**
 **Description**: GPU-accelerated computations for faster analysis of large portfolios.
 
@@ -223,7 +193,7 @@ docker-compose run --rm quant python -m src.cli.unified_cli ai explain BTCUSDT m
 - **CuPy integration** - GPU-accelerated NumPy operations
 - **Numba CUDA** - JIT compilation for custom GPU kernels
 - **Rapids cuDF** - GPU-accelerated DataFrame operations
-- Parallel backtesting across 700+ symbols across multiple asset classes
+- Parallel backtesting across 220+ crypto symbols
 
 ---
 
@@ -275,7 +245,7 @@ docker-compose run --rm quant python -m src.cli.unified_cli ai explain BTCUSDT m
 - **Code Quality**: Black, isort, Ruff, markdownlint
 
 ### Performance Characteristics
-- **Portfolio Size**: Tested with 721+ symbols across multiple asset classes
+- **Portfolio Size**: Tested with 220+ crypto symbols
 - **Processing Speed**: Parallel backtesting across multiple cores
 - **Memory Management**: Configurable memory limits with garbage collection
 - **Cache Performance**: File-based caching reduces repeat analysis time by 90%+

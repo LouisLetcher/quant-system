@@ -29,7 +29,7 @@ class AIInvestmentRecommendations:
     to provide optimal asset allocation and investment decisions.
     """
 
-    def __init__(self, db_session: Optional[Session] = None):
+    def __init__(self, db_session: Session = None):
         self.db_session = db_session
         self.logger = logging.getLogger(__name__)
         self.llm_client = LLMClient()
@@ -98,7 +98,7 @@ class AIInvestmentRecommendations:
             PortfolioRecommendation with AI analysis
         """
         self.logger.info(
-            "Generating AI recommendations for %s risk profile", risk_tolerance
+            f"Generating AI recommendations for {risk_tolerance} risk profile"
         )
 
         # Load backtest results
@@ -165,7 +165,7 @@ class AIInvestmentRecommendations:
                 ),  # Always show suggested allocation
                 risk_level=self._classify_risk_level(asset_data),
                 reasoning=reasoning,
-                red_flags=[*asset_data.get("red_flags", []), invest_decision],
+                red_flags=asset_data.get("red_flags", []) + [invest_decision],
                 sortino_ratio=asset_data["sortino_ratio"],
                 calmar_ratio=asset_data["calmar_ratio"],
                 max_drawdown=asset_data["max_drawdown"],
@@ -216,13 +216,13 @@ class AIInvestmentRecommendations:
         risk_tolerance: str = "moderate",
         min_confidence: float = 0.6,
         max_assets: int = 10,
-        quarter: Optional[str] = None,
+        quarter: str = None,
         timeframe: str = "1h",
-        portfolio_name: Optional[str] = None,
+        portfolio_name: str = None,
     ) -> PortfolioRecommendation:
         """Generate recommendations specifically for portfolio symbols only."""
         self.logger.info(
-            "Generating AI recommendations for %s risk profile", risk_tolerance
+            f"Generating AI recommendations for {risk_tolerance} risk profile"
         )
 
         # Load backtest results and filter by portfolio symbols immediately
@@ -263,8 +263,7 @@ class AIInvestmentRecommendations:
             )
 
         self.logger.info(
-            "Found %d backtested assets from portfolio symbols",
-            len(portfolio_backtest_data),
+            f"Found {len(portfolio_backtest_data)} backtested assets from portfolio symbols"
         )
 
         # Performance-based scoring (no filtering, just scoring)
@@ -326,7 +325,7 @@ class AIInvestmentRecommendations:
                 ),  # Always show suggested allocation
                 risk_level=self._classify_risk_level(asset_data),
                 reasoning=reasoning,
-                red_flags=[*asset_data.get("red_flags", []), invest_decision],
+                red_flags=asset_data.get("red_flags", []) + [invest_decision],
                 sortino_ratio=asset_data["sortino_ratio"],
                 calmar_ratio=asset_data["calmar_ratio"],
                 max_drawdown=asset_data["max_drawdown"],
@@ -373,7 +372,7 @@ class AIInvestmentRecommendations:
         risk_tolerance: str = "moderate",
         min_confidence: float = 0.6,
         max_assets: int = 10,
-        quarter: Optional[str] = None,
+        quarter: str = None,
         timeframe: str = "1h",
         generate_html: bool = True,
     ) -> tuple[PortfolioRecommendation, str]:
@@ -383,7 +382,7 @@ class AIInvestmentRecommendations:
 
         # Load portfolio configuration
         portfolio_path = Path(portfolio_config_path)
-        with portfolio_path.open() as f:
+        with open(portfolio_path) as f:
             portfolio_config = json.load(f)
 
         # Handle nested portfolio configuration
@@ -401,9 +400,7 @@ class AIInvestmentRecommendations:
         symbols = portfolio_data.get("symbols", [])
 
         self.logger.info(
-            "Generating AI recommendations for %s portfolio (%d symbols)",
-            portfolio_name,
-            len(symbols),
+            f"Generating AI recommendations for {portfolio_name} portfolio ({len(symbols)} symbols)"
         )
 
         # Generate recommendations for only the portfolio symbols
@@ -423,9 +420,7 @@ class AIInvestmentRecommendations:
         portfolio_recommendations = portfolio_filtered_recommendations.recommendations
 
         self.logger.info(
-            "Generated recommendations for %d backtested assets from %d portfolio symbols",
-            len(portfolio_recommendations),
-            len(symbols),
+            f"Generated recommendations for {len(portfolio_recommendations)} backtested assets from {len(symbols)} portfolio symbols"
         )
 
         # Use the filtered portfolio recommendations
@@ -446,7 +441,7 @@ class AIInvestmentRecommendations:
 
         return filtered_portfolio, html_path
 
-    def _load_backtest_results(self, quarter: Optional[str] = None) -> list[dict]:
+    def _load_backtest_results(self, quarter: str = None) -> list[dict]:
         """Load backtest results from database (primary) or reports (fallback)."""
         if self.db_session:
             # Try database first, but check if metrics are properly calculated
@@ -467,7 +462,7 @@ class AIInvestmentRecommendations:
         self.logger.warning("No database session - using reports as fallback")
         return self._load_from_reports(quarter)
 
-    def _load_from_database(self, quarter: Optional[str] = None) -> list[dict]:
+    def _load_from_database(self, quarter: str = None) -> list[dict]:
         """Load best strategies from database for faster and cleaner recommendations."""
         from datetime import datetime
 
@@ -496,7 +491,7 @@ class AIInvestmentRecommendations:
         query = query.order_by(BestStrategy.sortino_ratio.desc())
         results = query.all()
 
-        self.logger.info("Loaded %d best strategies from database", len(results))
+        self.logger.info(f"Loaded {len(results)} best strategies from database")
 
         return [
             {
@@ -523,7 +518,7 @@ class AIInvestmentRecommendations:
             for result in results
         ]
 
-    def _load_from_reports(self, quarter: Optional[str] = None) -> list[dict]:
+    def _load_from_reports(self, quarter: str = None) -> list[dict]:
         """Load backtest results from HTML reports."""
         reports_dir = Path("exports/reports")
 
@@ -535,7 +530,7 @@ class AIInvestmentRecommendations:
             reports_path = reports_dir / "2025" / "Q3"
 
         if not reports_path.exists():
-            self.logger.warning("Reports directory %s not found", reports_path)
+            self.logger.warning(f"Reports directory {reports_path} not found")
             return []
 
         # Parse HTML reports to extract metrics
@@ -553,7 +548,7 @@ class AIInvestmentRecommendations:
 
         for html_file in html_files:
             try:
-                with html_file.open(encoding="utf-8") as f:
+                with open(html_file, encoding="utf-8") as f:
                     content = f.read()
 
                 soup = BeautifulSoup(content, "html.parser")
@@ -642,10 +637,10 @@ class AIInvestmentRecommendations:
                     parsed_data.append(metrics_data)
 
             except Exception as e:
-                self.logger.warning("Error parsing HTML report %s: %s", html_file, e)
+                self.logger.warning(f"Error parsing HTML report {html_file}: {e}")
                 continue
 
-        self.logger.info("Parsed %d asset metrics from HTML reports", len(parsed_data))
+        self.logger.info(f"Parsed {len(parsed_data)} asset metrics from HTML reports")
         return parsed_data
 
     def _calculate_performance_scores(self, backtest_data: list[dict]) -> list[dict]:
@@ -938,7 +933,7 @@ class AIInvestmentRecommendations:
                 "warnings": ai_response.get("warnings", []),
             }
         except Exception as e:
-            self.logger.error("AI analysis failed: %s", e)
+            self.logger.error(f"AI analysis failed: {e}")
             return {
                 "reasoning": f"Quantitative analysis complete. {len(recommendations)} assets recommended with average Sortino ratio of {analysis_data['avg_sortino']:.2f}",
                 "warnings": [
@@ -947,7 +942,7 @@ class AIInvestmentRecommendations:
             }
 
     def get_asset_comparison(
-        self, symbols: list[str], strategy: Optional[str] = None
+        self, symbols: list[str], strategy: str = None
     ) -> pd.DataFrame:
         """Compare assets side by side with key metrics."""
         if self.db_session:
@@ -993,7 +988,7 @@ class AIInvestmentRecommendations:
             explanation = self.llm_client.explain_asset_recommendation(asset_data)
             return explanation
         except Exception as e:
-            self.logger.error("Failed to generate explanation: %s", e)
+            self.logger.error(f"Failed to generate explanation: {e}")
             return {
                 "summary": f"Asset {symbol} with {strategy} strategy shows Sortino ratio of {asset_data.get('sortino_ratio', 0):.2f}",
                 "strengths": ["Quantitative metrics available"],
@@ -1032,7 +1027,7 @@ class AIInvestmentRecommendations:
         self,
         recommendations: list[AssetRecommendation],
         risk_tolerance: str,
-        quarter: Optional[str],
+        quarter: str,
     ):
         """Save recommendations to exports/recommendations folder with year/quarter structure."""
         from datetime import datetime
@@ -1085,16 +1080,16 @@ class AIInvestmentRecommendations:
 
         # Save to file
         output_path = exports_dir / filename
-        with output_path.open("w") as f:
+        with open(output_path, "w") as f:
             json.dump(data, f, indent=2)
 
-        self.logger.info("AI recommendations saved to %s", output_path)
+        self.logger.info(f"AI recommendations saved to {output_path}")
 
     def _save_to_database(
         self,
         portfolio_rec: PortfolioRecommendation,
-        quarter: Optional[str],
-        portfolio_name: Optional[str] = None,
+        quarter: str,
+        portfolio_name: str = None,
     ):
         """Save AI recommendations to PostgreSQL database using normalized structure."""
         if not self.db_session:
@@ -1173,6 +1168,21 @@ class AIInvestmentRecommendations:
                     .first()
                 )
 
+                # Convert to plain dict to avoid dataclass numpy issues
+                rec_dict = {
+                    "symbol": rec.symbol,
+                    "allocation_percentage": rec.allocation_percentage,
+                    "confidence": rec.confidence,
+                    "score": rec.score,
+                    "max_drawdown": rec.max_drawdown,
+                    "red_flags": rec.red_flags,
+                    "risk_per_trade": rec.risk_per_trade,
+                    "stop_loss_points": rec.stop_loss_points,
+                    "take_profit_points": rec.take_profit_points,
+                    "position_size_percent": rec.position_size_percent,
+                    "reasoning": rec.reasoning,
+                }
+
                 # Ultimate safety conversion - manually check each field
                 def force_native_type(val):
                     """Forcefully convert to native Python type."""
@@ -1204,13 +1214,10 @@ class AIInvestmentRecommendations:
 
             self.db_session.commit()
             self.logger.info(
-                "AI recommendations saved to database: %s_%s, %s",
-                quarter_only,
-                year,
-                portfolio_rec.risk_profile,
+                f"AI recommendations saved to database: {quarter_only}_{year}, {portfolio_rec.risk_profile}"
             )
 
         except Exception as e:
             self.db_session.rollback()
-            self.logger.error("Failed to save AI recommendations to database: %s", e)
+            self.logger.error(f"Failed to save AI recommendations to database: {e}")
             raise
