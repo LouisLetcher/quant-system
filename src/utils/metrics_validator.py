@@ -208,9 +208,7 @@ class MetricsValidator:
                 return signals
             if isinstance(signals, (list, tuple)):
                 return pd.Series(signals, index=data_df.index)
-            self.logger.error(
-                "Invalid signals format from strategy %s", strategy_name
-            )
+            self.logger.error("Invalid signals format from strategy %s", strategy_name)
             return None
 
         except Exception as e:

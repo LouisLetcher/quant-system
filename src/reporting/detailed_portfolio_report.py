@@ -15,7 +15,7 @@ import numpy as np
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from utils.report_organizer import ReportOrganizer
+from src.utils.report_organizer import ReportOrganizer
 
 
 class DetailedPortfolioReporter:
@@ -1122,7 +1122,7 @@ class DetailedPortfolioReporter:
             equity_values = [point["equity"] for point in data["equity_curve"]]
 
             # Only show benchmark if best strategy is not BuyAndHold
-            show_benchmark = data.get("strategy", "").lower() != "buyandhold"
+            # (Not used in current implementation)
 
             # For now, don't show benchmark curves to avoid complexity
             # The timeframe analysis table will show all strategy comparisons

@@ -10,11 +10,13 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..database.models import BacktestResult
+from src.database.models import BacktestResult
 
 
 class AllStrategiesCSVExporter:
@@ -33,11 +35,11 @@ class AllStrategiesCSVExporter:
 
     def export_all_strategies(
         self,
-        quarter: str = None,
-        year: str = None,
-        output_filename: str = None,
-        symbols: list[str] = None,
-        min_sortino: float = None,
+        quarter: Optional[str] = None,
+        year: Optional[str] = None,
+        output_filename: Optional[str] = None,
+        symbols: Optional[list[str]] = None,
+        min_sortino: Optional[float] = None,
     ) -> str:
         """
         Export ALL strategy-asset combinations from PostgreSQL database to CSV.
@@ -67,7 +69,7 @@ class AllStrategiesCSVExporter:
             conditions = []
             for symbol in symbols:
                 conditions.append(BacktestResult.symbols.contains([symbol]))
-            query = query.filter(db.or_(*conditions))
+            query = query.filter(or_(*conditions))
 
         if min_sortino:
             query = query.filter(BacktestResult.sortino_ratio >= min_sortino)

@@ -12,17 +12,17 @@ import argparse
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from bs4 import BeautifulSoup
 from sqlalchemy.orm import Session
 
-from ..database.models import BacktestResult
+from src.database.models import BacktestResult
 
 
 class TradingViewAlertExporter:
     def __init__(
-        self, db_session: Session = None, reports_dir: str = "exports/reports"
+        self, db_session: Optional[Session] = None, reports_dir: str = "exports/reports"
     ):
         self.db_session = db_session
         self.reports_dir = Path(reports_dir)
@@ -53,8 +53,8 @@ class TradingViewAlertExporter:
 
     def export_from_database(
         self,
-        quarter: str = None,
-        year: str = None,
+        quarter: Optional[str] = None,
+        year: Optional[str] = None,
         output_dir: str = "exports/tradingview_alerts",
     ) -> List[str]:
         """
@@ -117,7 +117,7 @@ class TradingViewAlertExporter:
             )
             file_path = output_path / filename
 
-            with open(file_path, "w") as f:
+            with Path(file_path).open("w") as f:
                 f.write(f"# TradingView Alerts - {portfolio_type} Portfolio\n\n")
                 f.write(f"**Generated:** {datetime.now().isoformat()}\n")
                 f.write(f"**Quarter:** {current_quarter} {current_year}\n")
@@ -187,7 +187,7 @@ class TradingViewAlertExporter:
         filename = f"tradingview_alerts_{risk_level}_{timestamp}.txt"
         file_path = output_path / filename
 
-        with open(file_path, "w") as f:
+        with Path(file_path).open("w") as f:
             f.write(f"# TradingView Alerts - {risk_level.title()} Risk Level\n")
             f.write(f"# Generated: {datetime.now().isoformat()}\n")
             f.write(f"# Total Strategies: {len(results)}\n\n")
@@ -348,7 +348,9 @@ Qty: {{{{strategy.order.contracts}}}}
                     html_files.append(Path(root) / file)
         return html_files
 
-    def export_alerts_from_reports(self, output_file: str | None = None) -> List[str]:
+    def export_alerts_from_reports(
+        self, output_file: Optional[str] = None
+    ) -> List[str]:
         """Export all TradingView alerts"""
         html_files = self.find_html_reports()
         all_alerts = {}

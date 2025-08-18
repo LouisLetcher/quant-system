@@ -727,7 +727,7 @@ class UnifiedResultAnalyzer:
             }
 
         except Exception as e:
-            self.logger.error(f"Error calculating advanced metrics: {e}")
+            self.logger.error("Error calculating advanced metrics: %s", e)
             return {
                 "alpha": 0.0,
                 "beta": 0.0,
