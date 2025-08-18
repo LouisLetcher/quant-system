@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from .models import AIRecommendation
+from .models import AIRecommendation, BestOptimizationResult, BestStrategy
 from .models import AssetRecommendation as DbAssetRecommendation
-from .models import BestOptimizationResult, BestStrategy
 
 
 class DatabaseQueryHelper:
@@ -23,10 +23,10 @@ class DatabaseQueryHelper:
 
     def get_best_strategies(
         self,
-        quarter: str = None,
-        year: int = None,
-        symbols: list[str] = None,
-        min_sortino: float = None,
+        quarter: Optional[str] = None,
+        year: Optional[int] = None,
+        symbols: Optional[list[str]] = None,
+        min_sortino: Optional[float] = None,
     ) -> list[dict]:
         """Get best strategies with optional filtering."""
         query = self.db_session.query(BestStrategy)
@@ -76,11 +76,11 @@ class DatabaseQueryHelper:
 
     def get_best_optimizations(
         self,
-        quarter: str = None,
-        year: int = None,
-        symbols: list[str] = None,
-        strategies: list[str] = None,
-        min_sortino: float = None,
+        quarter: Optional[str] = None,
+        year: Optional[int] = None,
+        symbols: Optional[list[str]] = None,
+        strategies: Optional[list[str]] = None,
+        min_sortino: Optional[float] = None,
     ) -> list[dict]:
         """Get best optimization results with optional filtering."""
         query = self.db_session.query(BestOptimizationResult)
@@ -133,10 +133,10 @@ class DatabaseQueryHelper:
 
     def get_ai_recommendations_with_assets(
         self,
-        portfolio_name: str = None,
-        quarter: str = None,
-        year: int = None,
-        risk_tolerance: str = None,
+        portfolio_name: Optional[str] = None,
+        quarter: Optional[str] = None,
+        year: Optional[int] = None,
+        risk_tolerance: Optional[str] = None,
     ) -> dict:
         """Get AI recommendations with associated asset recommendations."""
         query = self.db_session.query(AIRecommendation)
@@ -202,7 +202,7 @@ class DatabaseQueryHelper:
         }
 
     def get_performance_summary(
-        self, quarter: str = None, year: int = None, top_n: int = 20
+        self, quarter: Optional[str] = None, year: Optional[int] = None, top_n: int = 20
     ) -> dict:
         """Get performance summary from best strategies and optimizations."""
 
