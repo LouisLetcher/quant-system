@@ -18,27 +18,26 @@ from src.database import get_db_session
 from src.database.models import BestStrategy
 
 
-class BacktestingLibStrategy(SignalStrategy):
-    """Adapter to use our signals with the backtesting library."""
+def create_signal_strategy_class(signals_df):
+    """Create a dynamic strategy class with embedded signals."""
 
-    def init(self):
-        """Initialize the strategy with signals."""
-        # Get signals from the passed parameter
-        signals_df = self._broker._strategy_kwargs.get("signals_df")
-        if signals_df is not None:
-            # Align signals with the data index
+    class DynamicSignalStrategy(SignalStrategy):
+        """Strategy that uses pre-computed signals."""
+
+        def init(self):
+            """Initialize with pre-computed signals."""
+            # Align signals with data index
             aligned_signals = signals_df.reindex(self.data.index, fill_value=0)
             self.signals = self.I(lambda: aligned_signals.values, name="signals")
-        else:
-            # No signals provided, create empty signals
-            self.signals = self.I(lambda: [0] * len(self.data), name="signals")
 
-    def next(self):
-        """Execute trades based on signals."""
-        if len(self.signals) > 0 and self.signals[-1] == 1 and not self.position:
-            self.buy()
-        elif len(self.signals) > 0 and self.signals[-1] == -1 and self.position:
-            self.sell()
+        def next(self):
+            """Execute trades based on signals."""
+            if len(self.signals) > 0 and self.signals[-1] == 1 and not self.position:
+                self.buy()
+            elif len(self.signals) > 0 and self.signals[-1] == -1 and self.position:
+                self.sell()
+
+    return DynamicSignalStrategy
 
 
 class MetricsValidator:
@@ -247,17 +246,20 @@ class MetricsValidator:
             # Prepare data for backtesting library (requires OHLCV)
             bt_data = data_df[["Open", "High", "Low", "Close", "Volume"]].copy()
 
-            # Create strategy instance with our signals
+            # Create strategy class with embedded signals
+            SignalStrategyClass = create_signal_strategy_class(signals)
+
+            # Create backtest instance
             bt = Backtest(
                 bt_data,
-                BacktestingLibStrategy,
+                SignalStrategyClass,
                 cash=10000,
                 commission=0.002,  # 0.2% commission
                 exclusive_orders=True,
             )
 
-            # Pass signals to strategy
-            results = bt.run(signals_df=signals)
+            # Run backtest
+            results = bt.run()
 
             # Extract comparable metrics
             metrics = {
