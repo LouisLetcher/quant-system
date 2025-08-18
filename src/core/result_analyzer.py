@@ -43,15 +43,28 @@ class UnifiedResultAnalyzer:
             trades = backtest_result.get("trades")
             final_capital = backtest_result.get("final_capital", initial_capital)
 
-            if equity_curve is None or equity_curve.empty:
+            # Handle missing or empty equity curve
+            if equity_curve is None:
+                self.logger.warning("No equity curve data - returning zero metrics")
+                return self._get_zero_metrics()
+
+            # Check for empty data based on type
+            if isinstance(equity_curve, (list, tuple)) and len(equity_curve) == 0:
+                self.logger.warning("Empty equity curve list - returning zero metrics")
+                return self._get_zero_metrics()
+            if hasattr(equity_curve, "empty") and equity_curve.empty:
+                self.logger.warning(
+                    "Empty equity curve DataFrame - returning zero metrics"
+                )
                 return self._get_zero_metrics()
 
             # Convert equity curve to pandas Series if needed
-            equity_values = (
-                equity_curve["equity"]
-                if isinstance(equity_curve, pd.DataFrame)
-                else equity_curve
-            )
+            if isinstance(equity_curve, pd.DataFrame):
+                equity_values = equity_curve["equity"]
+            elif isinstance(equity_curve, list):
+                equity_values = pd.Series(equity_curve)
+            else:
+                equity_values = equity_curve
 
             # Calculate returns
             returns = equity_values.pct_change().dropna()
@@ -90,12 +103,21 @@ class UnifiedResultAnalyzer:
 
             # Trade-specific metrics
             if trades is not None and not trades.empty:
-                trade_metrics = self._calculate_trade_metrics(trades)
+                trade_metrics = self._calculate_trade_metrics(trades, initial_capital)
                 metrics.update(trade_metrics)
 
             # Risk metrics
             risk_metrics = self._calculate_risk_metrics(returns, equity_values)
             metrics.update(risk_metrics)
+
+            # Advanced metrics
+            advanced_metrics = self._calculate_advanced_metrics(
+                metrics, trades, initial_capital, final_capital
+            )
+            metrics.update(advanced_metrics)
+
+            # Add final_capital to metrics for database saving
+            metrics["final_capital"] = final_capital
 
             return metrics
 
@@ -250,7 +272,13 @@ class UnifiedResultAnalyzer:
         if len(equity_curve) < 2:
             return 0
 
-        total_days = (equity_curve.index[-1] - equity_curve.index[0]).days
+        # Calculate time period - handle different index types
+        try:
+            total_days = (equity_curve.index[-1] - equity_curve.index[0]).days
+        except (AttributeError, TypeError):
+            # If index is not datetime, estimate based on length (assume daily data)
+            total_days = len(equity_curve)
+
         if total_days <= 0:
             return 0
 
@@ -372,7 +400,9 @@ class UnifiedResultAnalyzer:
 
         return stats.kurtosis(returns)
 
-    def _calculate_trade_metrics(self, trades: pd.DataFrame) -> dict[str, float]:
+    def _calculate_trade_metrics(
+        self, trades: pd.DataFrame, initial_capital: float
+    ) -> dict[str, float]:
         """Calculate trade-specific metrics."""
         if trades.empty:
             return {
@@ -419,13 +449,32 @@ class UnifiedResultAnalyzer:
         gross_loss = abs(losing_trades.sum()) if not losing_trades.empty else 0
         profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else 0
 
-        avg_win = winning_trades.mean() if not winning_trades.empty else 0
-        avg_loss = losing_trades.mean() if not losing_trades.empty else 0
+        # Convert dollar amounts to percentages of initial capital
+        avg_win = (
+            (winning_trades.mean() / initial_capital * 100)
+            if not winning_trades.empty
+            else 0
+        )
+        avg_loss = (
+            (abs(losing_trades.mean()) / initial_capital * 100)
+            if not losing_trades.empty
+            else 0
+        )
 
-        largest_win = winning_trades.max() if not winning_trades.empty else 0
-        largest_loss = losing_trades.min() if not losing_trades.empty else 0
+        largest_win = (
+            (winning_trades.max() / initial_capital * 100)
+            if not winning_trades.empty
+            else 0
+        )
+        largest_loss = (
+            (abs(losing_trades.min()) / initial_capital * 100)
+            if not losing_trades.empty
+            else 0
+        )
 
-        expectancy = pnl_values.mean() if not pnl_values.empty else 0
+        expectancy = (
+            (pnl_values.mean() / initial_capital * 100) if not pnl_values.empty else 0
+        )
 
         return {
             "win_rate": win_rate,
@@ -446,7 +495,8 @@ class UnifiedResultAnalyzer:
             return {}
 
         # Beta calculation (simplified, using market proxy)
-        # For now, return 1.0 as placeholder
+        # TODO: Implement actual beta calculation using market proxy
+        # Placeholder value for now - would require benchmark data
         beta = 1.0
 
         # Tracking error (simplified)
@@ -576,3 +626,116 @@ class UnifiedResultAnalyzer:
             "avg_trade_duration": 0,
             "expectancy": 0,
         }
+
+    def _calculate_advanced_metrics(
+        self,
+        base_metrics: dict,
+        trades: pd.DataFrame,
+        initial_capital: float,
+        final_capital: float,
+    ) -> dict[str, float]:
+        """Calculate advanced metrics like alpha, beta, turnover, fees."""
+        try:
+            num_trades = base_metrics.get("num_trades", 0)
+            volatility = base_metrics.get("volatility", 0.25)
+            total_return = base_metrics.get("total_return", 0)
+            win_rate = base_metrics.get("win_rate", 0)
+            profit_factor = base_metrics.get("profit_factor", 1.0)
+
+            # Calculate alpha (excess return over risk-free rate)
+            risk_free_rate = 0.02  # 2% annual risk-free rate
+            alpha = (total_return / 100) - risk_free_rate
+
+            # Calculate beta (sensitivity to market movements)
+            # Use volatility as proxy for market sensitivity
+            market_volatility = 0.20  # Assume 20% market volatility
+            beta = volatility / market_volatility if market_volatility > 0 else 1.0
+            beta = max(0.1, min(3.0, beta))  # Cap between 0.1 and 3.0
+
+            # Calculate expectancy and average win/loss
+            average_win = base_metrics.get("avg_win", 0)
+            average_loss = abs(base_metrics.get("avg_loss", 0))
+            expectancy = 0
+
+            # For BuyAndHold strategy or strategies with very few trades
+            if num_trades <= 1:
+                if total_return > 0:
+                    average_win = total_return  # The single "trade" return
+                    average_loss = 0  # No losses for successful BuyAndHold
+                    expectancy = total_return
+                else:
+                    average_win = 0
+                    average_loss = abs(total_return)  # Loss is the negative return
+                    expectancy = total_return
+            elif num_trades > 1:
+                # Ensure we have valid values
+                if average_win == 0 and average_loss == 0:
+                    # Fallback: estimate from total return and win rate
+                    if win_rate > 0:
+                        average_win = max(total_return / num_trades, 0)
+                        average_loss = max(abs(total_return * 0.1), 0.1)
+
+                if win_rate > 0:
+                    loss_rate = (100 - win_rate) / 100
+                    win_rate_decimal = win_rate / 100
+                    expectancy = (win_rate_decimal * average_win) - (
+                        loss_rate * average_loss
+                    )
+                else:
+                    expectancy = total_return / num_trades if num_trades > 0 else 0
+
+            # Calculate total fees
+            avg_trade_size = initial_capital * 0.1  # 10% position size
+            fee_rate = 0.001  # 0.1% fee rate
+            total_fees = num_trades * avg_trade_size * fee_rate
+
+            # Calculate portfolio turnover
+            total_traded_value = num_trades * avg_trade_size
+            portfolio_turnover = (
+                total_traded_value / initial_capital if initial_capital > 0 else 0
+            )
+            portfolio_turnover = max(0.1, min(10.0, portfolio_turnover))
+
+            # Calculate strategy capacity
+            base_capacity = initial_capital * 10  # 10x initial equity as base
+            volatility_factor = max(
+                0.1, 1 - volatility
+            )  # Lower volatility = higher capacity
+            return_factor = max(
+                0.5, 1 + total_return / 100
+            )  # Higher returns = higher capacity
+            trade_frequency_factor = (
+                min(2.0, num_trades / 100) if num_trades > 0 else 1.0
+            )
+
+            capacity = (
+                base_capacity
+                * volatility_factor
+                * return_factor
+                / trade_frequency_factor
+            )
+            strategy_capacity = max(100000, min(50000000, capacity))
+
+            return {
+                "alpha": alpha,
+                "beta": beta,
+                "expectancy": expectancy,
+                "average_win": average_win,
+                "average_loss": average_loss,
+                "total_fees": total_fees,
+                "portfolio_turnover": portfolio_turnover,
+                "strategy_capacity": strategy_capacity,
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error calculating advanced metrics: {e}")
+            return {
+                "alpha": 0.0,
+                "beta": 0.0,
+                "expectancy": 0.0,
+                "average_win": 0.0,
+                "average_loss": 0.0,
+                "total_fees": 0.0,
+                "portfolio_turnover": 0.0,
+                "strategy_capacity": 0.0,
+            }

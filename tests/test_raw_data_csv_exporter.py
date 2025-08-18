@@ -73,7 +73,7 @@ class TestRawDataCSVExporter:
     def test_initialization(self, temp_dir):
         """Test proper initialization of the exporter."""
         output_dir = temp_dir / "csv_output"
-        exporter = RawDataCSVExporter(str(output_dir))
+        exporter = RawDataCSVExporter(None, str(output_dir))
 
         assert exporter.output_dir == output_dir
         assert output_dir.exists()  # Should be created during init
@@ -192,18 +192,19 @@ class TestRawDataCSVExporter:
     ):
         """Test successful export from quarterly reports."""
         output_dir = temp_dir / "data_exports"
-        exporter = RawDataCSVExporter(str(output_dir))
+        exporter = RawDataCSVExporter(None, str(output_dir))
 
         # Create mock HTML file
         html_file = temp_dir / "sample_report.html"
         html_file.write_text(sample_html_report, encoding="utf-8")
         mock_glob.return_value = [html_file]
 
-        # Mock the reports directory to exist
+        # Mock the reports directory to exist and the glob method
         with patch.object(Path, "exists", return_value=True):
-            result = exporter.export_from_quarterly_reports(
-                "Q4", "2023", "test.csv", "full"
-            )
+            with patch("pathlib.Path.glob", return_value=[html_file]):
+                result = exporter.export_from_quarterly_reports(
+                    "Q4", "2023", "test.csv", "full"
+                )
 
         # Should return list of paths to created CSV files
         assert result != []
@@ -221,7 +222,7 @@ class TestRawDataCSVExporter:
     ):
         """Test export with best-strategies format."""
         output_dir = temp_dir / "data_exports"
-        exporter = RawDataCSVExporter(str(output_dir))
+        exporter = RawDataCSVExporter(None, str(output_dir))
 
         # Create mock HTML file
         html_file = temp_dir / "sample_report.html"
@@ -313,6 +314,56 @@ class TestRawDataCSVExporter:
 
         # Should handle gracefully - might be empty or have partial data
         assert isinstance(extracted_data, list)
+
+    def test_collection_based_export(self, temp_dir):
+        """Test the new collection-based export functionality."""
+        from unittest.mock import MagicMock
+
+        # Mock database data
+        mock_strategy_data = [
+            MagicMock(
+                symbol="GC=F",
+                best_strategy="BuyAndHold",
+                sortino_ratio=0.82,
+                total_return=15.5,
+            ),
+            MagicMock(
+                symbol="KC=F",
+                best_strategy="lazy_trend_follower",
+                sortino_ratio=0.58,
+                total_return=-0.1,
+            ),
+            MagicMock(
+                symbol="HYG",
+                best_strategy="macd",
+                sortino_ratio=0.52,
+                total_return=24.9,
+            ),
+        ]
+
+        exporter = RawDataCSVExporter(None, str(temp_dir))
+
+        # Mock the dataframe conversion method
+        with patch.object(
+            exporter, "_strategies_data_to_dataframe"
+        ) as mock_df_converter:
+            mock_df = MagicMock()
+            mock_df.to_csv = MagicMock()
+            mock_df_converter.return_value = mock_df
+
+            result_paths = exporter._export_collection_based_files(
+                mock_strategy_data, "Q3", "2025", "best-strategies"
+            )
+
+            # Should create separate files for each collection
+            assert len(result_paths) == 2  # Commodities and Bonds collections
+
+            # Check file paths contain collection names
+            assert any("Commodities_Collection" in path for path in result_paths)
+            assert any("Bonds_Collection" in path for path in result_paths)
+
+            # Check directory structure is created
+            assert (temp_dir / "2025" / "Q3").exists()
 
 
 if __name__ == "__main__":

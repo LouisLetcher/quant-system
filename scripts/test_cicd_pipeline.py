@@ -66,7 +66,7 @@ def main():
         (["poetry", "build"], "Build Python package"),
         # 3. Unit Tests
         (
-            ["poetry", "run", "python", "scripts/test_local_validation.py"],
+            ["poetry", "run", "python", "scripts/ci_validation.py"],
             "Unit tests (validation)",
         ),
         # 4. Static Analysis

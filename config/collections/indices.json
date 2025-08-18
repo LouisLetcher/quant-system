@@ -1,0 +1,41 @@
+{
+  "indices": {
+    "name": "Indices Collection",
+    "asset_type": "stock",
+    "symbols": [
+      "SPY",
+      "VTI",
+      "QQQ",
+      "IWM",
+      "EFA",
+      "VEA",
+      "EEM",
+      "VWO",
+      "DIA",
+      "MDY",
+      "IJH",
+      "IJR",
+      "VXF",
+      "VXUS",
+      "ACWI",
+      "ITOT",
+      "IXUS",
+      "IEFA",
+      "IEMG",
+      "SCHB",
+      "SCHA",
+      "SCHM",
+      "SCHF",
+      "SCHY",
+      "SCHE",
+      "SCHC"
+    ],
+    "initial_capital": 10000,
+    "commission": 0.001,
+    "data_sources": {
+      "primary": ["yahoo_finance", "twelve_data"],
+      "fallback": ["alpha_vantage_enhanced"],
+      "comment": "Yahoo Finance and Twelve Data have excellent ETF and index coverage"
+    }
+  }
+}

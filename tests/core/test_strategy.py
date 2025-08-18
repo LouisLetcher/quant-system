@@ -9,7 +9,7 @@ import pytest
 
 from src.core.strategy import (
     BaseStrategy,
-    BuyAndHoldStrategy,
+    SimpleBuyAndHoldStrategy,
     StrategyFactory,
     create_strategy,
     list_available_strategies,
@@ -61,11 +61,11 @@ class TestBaseStrategy:
         strategy = MockStrategy()
         data = pd.DataFrame(
             {
-                "Open": [100, 101, 102],
-                "High": [105, 106, 107],
-                "Low": [95, 96, 97],
-                "Close": [102, 103, 104],
-                "Volume": [1000, 1100, 1200],
+                "open": [100, 101, 102],
+                "high": [105, 106, 107],
+                "low": [95, 96, 97],
+                "close": [102, 103, 104],
+                "volume": [1000, 1100, 1200],
             }
         )
 
@@ -75,13 +75,13 @@ class TestBaseStrategy:
         """Test validate_data with invalid data."""
         strategy = MockStrategy()
 
-        # Missing Volume column
+        # Missing volume column
         data = pd.DataFrame(
             {
-                "Open": [100, 101, 102],
-                "High": [105, 106, 107],
-                "Low": [95, 96, 97],
-                "Close": [102, 103, 104],
+                "open": [100, 101, 102],
+                "high": [105, 106, 107],
+                "low": [95, 96, 97],
+                "close": [102, 103, 104],
             }
         )
 
@@ -92,11 +92,11 @@ class TestBaseStrategy:
         strategy = MockStrategy()
         data = pd.DataFrame(
             {
-                "Open": [100, 101, 102],
-                "High": [105, 106, 107],
-                "Low": [95, 96, 97],
-                "Close": [102, 103, 104],
-                "Volume": [1000, 1100, 1200],
+                "open": [100, 101, 102],
+                "high": [105, 106, 107],
+                "low": [95, 96, 97],
+                "close": [102, 103, 104],
+                "volume": [1000, 1100, 1200],
             }
         )
 
@@ -106,18 +106,18 @@ class TestBaseStrategy:
         assert all(signal in [-1, 0, 1] for signal in signals)
 
 
-class TestBuyAndHoldStrategy:
-    """Test BuyAndHoldStrategy class."""
+class TestSimpleBuyAndHoldStrategy:
+    """Test SimpleBuyAndHoldStrategy class."""
 
     def test_init(self):
-        """Test BuyAndHoldStrategy initialization."""
-        strategy = BuyAndHoldStrategy()
-        assert strategy.name == "Buy and Hold"
+        """Test SimpleBuyAndHoldStrategy initialization."""
+        strategy = SimpleBuyAndHoldStrategy()
+        assert strategy.name == "Simple Buy and Hold"
         assert strategy.parameters == {}
 
     def test_generate_signals_empty_data(self):
         """Test signal generation with empty data."""
-        strategy = BuyAndHoldStrategy()
+        strategy = SimpleBuyAndHoldStrategy()
         data = pd.DataFrame()
 
         signals = strategy.generate_signals(data)
@@ -126,14 +126,14 @@ class TestBuyAndHoldStrategy:
 
     def test_generate_signals_single_row(self):
         """Test signal generation with single row."""
-        strategy = BuyAndHoldStrategy()
+        strategy = SimpleBuyAndHoldStrategy()
         data = pd.DataFrame(
             {
-                "Open": [100],
-                "High": [105],
-                "Low": [95],
-                "Close": [102],
-                "Volume": [1000],
+                "open": [100],
+                "high": [105],
+                "low": [95],
+                "close": [102],
+                "volume": [1000],
             }
         )
 
@@ -143,14 +143,14 @@ class TestBuyAndHoldStrategy:
 
     def test_generate_signals_multiple_rows(self):
         """Test signal generation with multiple rows."""
-        strategy = BuyAndHoldStrategy()
+        strategy = SimpleBuyAndHoldStrategy()
         data = pd.DataFrame(
             {
-                "Open": [100, 101, 102],
-                "High": [105, 106, 107],
-                "Low": [95, 96, 97],
-                "Close": [102, 103, 104],
-                "Volume": [1000, 1100, 1200],
+                "open": [100, 101, 102],
+                "high": [105, 106, 107],
+                "low": [95, 96, 97],
+                "close": [102, 103, 104],
+                "volume": [1000, 1100, 1200],
             }
         )
 
@@ -162,10 +162,10 @@ class TestBuyAndHoldStrategy:
 
     def test_get_strategy_info(self):
         """Test get_strategy_info method."""
-        strategy = BuyAndHoldStrategy()
+        strategy = SimpleBuyAndHoldStrategy()
         info = strategy.get_strategy_info()
 
-        assert info["name"] == "Buy and Hold"
+        assert info["name"] == "Simple Buy and Hold"
         assert info["type"] == "Base"
         assert info["parameters"] == {}
 
@@ -176,19 +176,21 @@ class TestStrategyFactory:
     def test_builtin_strategies_list(self):
         """Test that builtin strategies are properly registered."""
         assert "BuyAndHold" in StrategyFactory.BUILTIN_STRATEGIES
-        assert StrategyFactory.BUILTIN_STRATEGIES["BuyAndHold"] is BuyAndHoldStrategy
+        assert (
+            StrategyFactory.BUILTIN_STRATEGIES["BuyAndHold"] is SimpleBuyAndHoldStrategy
+        )
 
     def test_create_builtin_strategy(self):
         """Test creating builtin strategy."""
         strategy = StrategyFactory.create_strategy("BuyAndHold")
-        assert isinstance(strategy, BuyAndHoldStrategy)
-        assert strategy.name == "Buy and Hold"
+        assert isinstance(strategy, SimpleBuyAndHoldStrategy)
+        assert strategy.name == "Simple Buy and Hold"
 
     def test_create_builtin_strategy_with_parameters(self):
         """Test creating builtin strategy with parameters."""
-        # BuyAndHoldStrategy doesn't take parameters, but test the flow
+        # SimpleBuyAndHoldStrategy doesn't take parameters, but test the flow
         strategy = StrategyFactory.create_strategy("BuyAndHold", {})
-        assert isinstance(strategy, BuyAndHoldStrategy)
+        assert isinstance(strategy, SimpleBuyAndHoldStrategy)
 
     def test_create_nonexistent_strategy(self):
         """Test creating nonexistent strategy raises ValueError."""
@@ -214,7 +216,7 @@ class TestStrategyFactory:
         info = StrategyFactory.get_strategy_info("BuyAndHold")
 
         assert isinstance(info, dict)
-        assert info["name"] == "Buy and Hold"
+        assert info["name"] == "Simple Buy and Hold"
 
     def test_get_strategy_info_nonexistent(self):
         """Test getting strategy info for nonexistent strategy."""
@@ -230,12 +232,12 @@ class TestConvenienceFunctions:
     def test_create_strategy(self):
         """Test create_strategy convenience function."""
         strategy = create_strategy("BuyAndHold")
-        assert isinstance(strategy, BuyAndHoldStrategy)
+        assert isinstance(strategy, SimpleBuyAndHoldStrategy)
 
     def test_create_strategy_with_parameters(self):
         """Test create_strategy with parameters."""
         strategy = create_strategy("BuyAndHold", {})
-        assert isinstance(strategy, BuyAndHoldStrategy)
+        assert isinstance(strategy, SimpleBuyAndHoldStrategy)
 
     def test_list_available_strategies(self):
         """Test list_available_strategies convenience function."""
@@ -259,20 +261,20 @@ class TestIntegration:
 
         # Get strategy info
         info = StrategyFactory.get_strategy_info("BuyAndHold")
-        assert info["name"] == "Buy and Hold"
+        assert info["name"] == "Simple Buy and Hold"
 
         # Create strategy
         strategy = create_strategy("BuyAndHold")
-        assert isinstance(strategy, BuyAndHoldStrategy)
+        assert isinstance(strategy, SimpleBuyAndHoldStrategy)
 
         # Create test data
         data = pd.DataFrame(
             {
-                "Open": [100, 101, 102, 103, 104],
-                "High": [105, 106, 107, 108, 109],
-                "Low": [95, 96, 97, 98, 99],
-                "Close": [102, 103, 104, 105, 106],
-                "Volume": [1000, 1100, 1200, 1300, 1400],
+                "open": [100, 101, 102, 103, 104],
+                "high": [105, 106, 107, 108, 109],
+                "low": [95, 96, 97, 98, 99],
+                "close": [102, 103, 104, 105, 106],
+                "volume": [1000, 1100, 1200, 1300, 1400],
             }
         )
 
@@ -288,13 +290,13 @@ class TestIntegration:
     def test_strategy_with_custom_parameters_flow(self):
         """Test strategy workflow with custom parameters."""
         # Test that parameter passing works through the factory
-        # BuyAndHoldStrategy doesn't accept parameters, so test with empty dict
+        # SimpleBuyAndHoldStrategy doesn't accept parameters, so test with empty dict
         strategy = create_strategy("BuyAndHold", {})
-        assert isinstance(strategy, BuyAndHoldStrategy)
+        assert isinstance(strategy, SimpleBuyAndHoldStrategy)
 
         # Test with None parameters (should work)
         strategy2 = create_strategy("BuyAndHold", None)
-        assert isinstance(strategy2, BuyAndHoldStrategy)
+        assert isinstance(strategy2, SimpleBuyAndHoldStrategy)
 
         # The test verifies the parameter passing mechanism works
 
@@ -305,8 +307,8 @@ class TestIntegration:
 
         # Should be separate instances
         assert strategy1 is not strategy2
-        assert isinstance(strategy1, BuyAndHoldStrategy)
-        assert isinstance(strategy2, BuyAndHoldStrategy)
+        assert isinstance(strategy1, SimpleBuyAndHoldStrategy)
+        assert isinstance(strategy2, SimpleBuyAndHoldStrategy)
 
         # Should have same configuration
         assert strategy1.name == strategy2.name
