@@ -612,7 +612,7 @@ class UnifiedBacktestEngine:
             all_signals = strategy_instance.generate_signals(strategy_data)
         except Exception as e:
             self.logger.debug(
-                f"Strategy {strategy_instance.__class__.__name__} failed: {e}"
+                "Strategy %s failed: %s", strategy_instance.__class__.__name__, e
             )
             # If strategy fails, create zero signals
             all_signals = pd.Series(0, index=data.index)
@@ -706,7 +706,7 @@ class UnifiedBacktestEngine:
             except Exception as e:
                 # Log the actual error for debugging
                 self.logger.debug(
-                    f"Strategy {strategy_instance.__class__.__name__} failed: {e}"
+                    "Strategy %s failed: %s", strategy_instance.__class__.__name__, e
                 )
                 # Strategy failed - return 0 (no signal) to generate zero metrics
                 return 0
@@ -878,7 +878,7 @@ class UnifiedBacktestEngine:
             strategy_instance = StrategyFactory.create_strategy(strategy_name, {})
             return strategy_instance.__class__
         except Exception as e:
-            self.logger.error(f"Failed to load strategy {strategy_name}: {e}")
+            self.logger.error("Failed to load strategy %s: %s", strategy_name, e)
             return None
 
     def _get_default_parameters(self, strategy_name: str) -> dict[str, Any]:
