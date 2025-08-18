@@ -67,7 +67,7 @@ class RawDataCSVExporter:
             )
 
         # Use new query helper for better performance and consistency
-        from ..database.query_helpers import DatabaseQueryHelper
+        from src.database.query_helpers import DatabaseQueryHelper
 
         query_helper = DatabaseQueryHelper(self.db_session)
 
@@ -80,7 +80,9 @@ class RawDataCSVExporter:
             self.logger.warning("No best strategies found in database")
             return ""
 
-        self.logger.info(f"Found {len(strategies_data)} best strategies for CSV export")
+        self.logger.info(
+            "Found %s best strategies for CSV export", len(strategies_data)
+        )
 
         # For collection-based exports, create separate files per collection
         return self._export_collection_based_files(
@@ -157,7 +159,10 @@ class RawDataCSVExporter:
             output_paths.append(str(output_path))
 
             self.logger.info(
-                f"Exported {len(df)} records for {collection_name} to {output_path}"
+                "Exported %s records for %s to %s",
+                len(df),
+                collection_name,
+                output_path,
             )
 
         return output_paths
@@ -478,7 +483,7 @@ class RawDataCSVExporter:
         self,
         strategies_data: list[dict],
         export_format: str = "full",
-        columns: list[str] = None,
+        columns: Optional[list[str]] = None,
     ) -> pd.DataFrame:
         """Convert strategies data to DataFrame."""
 

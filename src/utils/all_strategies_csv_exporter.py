@@ -81,7 +81,7 @@ class AllStrategiesCSVExporter:
             self.logger.warning("No backtest results found")
             return ""
 
-        self.logger.info(f"Found {len(results)} backtest results for CSV export")
+        self.logger.info("Found %s backtest results for CSV export", len(results))
 
         # Convert to DataFrame
         data = []
@@ -145,7 +145,7 @@ class AllStrategiesCSVExporter:
         df.to_csv(output_path, index=False)
 
         self.logger.info(
-            f"Exported {len(df)} strategy-asset combinations to {output_path}"
+            "Exported %s strategy-asset combinations to %s", len(df), output_path
         )
         return str(output_path)
 

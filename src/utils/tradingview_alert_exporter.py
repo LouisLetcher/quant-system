@@ -74,7 +74,7 @@ class TradingViewAlertExporter:
             return self.export_alerts_from_reports(output_dir)
 
         # Use new query helper for consistent data access
-        from ..database.query_helpers import DatabaseQueryHelper
+        from src.database.query_helpers import DatabaseQueryHelper
 
         query_helper = DatabaseQueryHelper(self.db_session)
 
@@ -92,10 +92,13 @@ class TradingViewAlertExporter:
         import logging
 
         logger = logging.getLogger(__name__)
-        logger.debug(f"Found {len(strategies_data)} positive strategies for alerts")
+        logger.debug("Found %s positive strategies for alerts", len(strategies_data))
         for strategy in strategies_data:
             logger.debug(
-                f"  {strategy['symbol']}/{strategy['strategy']} - Sortino: {strategy['sortino_ratio']:.4f}"
+                "  %s/%s - Sortino: %.4f",
+                strategy["symbol"],
+                strategy["strategy"],
+                strategy["sortino_ratio"],
             )
 
         # Create year/quarter directory structure like reports

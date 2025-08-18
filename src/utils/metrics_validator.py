@@ -12,7 +12,7 @@ import pandas as pd
 from backtesting import Backtest
 from backtesting.lib import SignalStrategy
 
-from src.core.data_manager import DataManager
+from src.core.data_manager import UnifiedDataManager
 from src.core.result_analyzer import UnifiedResultAnalyzer
 from src.database import get_db_session
 from src.database.models import BestStrategy
@@ -44,7 +44,7 @@ class MetricsValidator:
 
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.data_manager = DataManager()
+        self.data_manager = UnifiedDataManager()
         self.result_analyzer = UnifiedResultAnalyzer()
 
     def validate_best_strategy_metrics(
