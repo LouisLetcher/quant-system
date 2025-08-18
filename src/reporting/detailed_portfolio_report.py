@@ -10,6 +10,7 @@ import json
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 
@@ -75,8 +76,8 @@ class DetailedPortfolioReporter:
         metric: str = "sortino_ratio",
     ) -> tuple[dict, dict]:
         """Analyze an asset using best strategy from database."""
-        from ..database import get_db_session
-        from ..database.models import BestStrategy
+        from src.database import get_db_session
+        from src.database.models import BestStrategy
 
         # Get best strategy from database for this symbol
         session = get_db_session()
@@ -99,16 +100,25 @@ class DetailedPortfolioReporter:
                     symbol, strategies, timeframes, start_date, end_date
                 )
             self.logger.debug(
-                f"Found BestStrategy for {symbol}: {best_strategy_record.best_strategy} with sortino {best_strategy_record.sortino_ratio:.4f}"
+                "Found BestStrategy for %s: %s with sortino %.4f",
+                symbol,
+                best_strategy_record.best_strategy,
+                best_strategy_record.sortino_ratio or 0,
             )
             self.logger.debug(
-                f"Advanced metrics - avg_win: {best_strategy_record.average_win}, beta: {best_strategy_record.beta}, total_fees: {best_strategy_record.total_fees}"
+                "Advanced metrics - avg_win: %s, beta: %s, total_fees: %s",
+                best_strategy_record.average_win,
+                best_strategy_record.beta,
+                best_strategy_record.total_fees,
             )
 
             # Check if this is a meaningful strategy (has actual trades)
             num_trades = best_strategy_record.num_trades or 0
             self.logger.debug(
-                f"{symbol} num_trades check: {num_trades} (type: {type(num_trades)})"
+                "%s num_trades check: %s (type: %s)",
+                symbol,
+                num_trades,
+                type(num_trades),
             )
             if num_trades == 0:
                 print(
@@ -117,10 +127,15 @@ class DetailedPortfolioReporter:
 
             # Use best strategy from database
             self.logger.debug(
-                f"Creating best_combination for {symbol} with strategy {best_strategy_record.best_strategy}"
+                "Creating best_combination for %s with strategy %s",
+                symbol,
+                best_strategy_record.best_strategy,
             )
             self.logger.debug(
-                f"Advanced metrics from DB - avg_win: {best_strategy_record.average_win}, alpha: {best_strategy_record.alpha}, beta: {best_strategy_record.beta}"
+                "Advanced metrics from DB - avg_win: %s, alpha: %s, beta: %s",
+                best_strategy_record.average_win,
+                best_strategy_record.alpha,
+                best_strategy_record.beta,
             )
             best_combination = {
                 "strategy": best_strategy_record.best_strategy,
@@ -170,8 +185,8 @@ class DetailedPortfolioReporter:
         self, symbol: str, metric: str = "sortino_ratio"
     ) -> list[dict]:
         """Get the best strategy for this symbol from BestStrategy table."""
-        from ..database import get_db_session
-        from ..database.models import BestStrategy
+        from src.database import get_db_session
+        from src.database.models import BestStrategy
 
         session = get_db_session()
         try:
@@ -301,11 +316,14 @@ class DetailedPortfolioReporter:
         strategy: str,
         start_date: str,
         end_date: str,
-        real_metrics: dict = None,
+        real_metrics: Optional[dict] = None,
     ) -> dict:
         """Generate detailed metrics for an asset/strategy combination using real data."""
         self.logger.debug(
-            f"_generate_detailed_metrics called for {symbol}/{strategy}, real_metrics={'provided' if real_metrics else 'None'}"
+            "_generate_detailed_metrics called for %s/%s, real_metrics=%s",
+            symbol,
+            strategy,
+            "provided" if real_metrics else "None",
         )
 
         # Use real metrics if provided, otherwise fall back to database query
@@ -328,11 +346,16 @@ class DetailedPortfolioReporter:
                 )
 
                 self.logger.debug(
-                    f"Database query for {symbol}/{strategy}: {'Found' if result else 'Not found'}"
+                    "Database query for %s/%s: %s",
+                    symbol,
+                    strategy,
+                    "Found" if result else "Not found",
                 )
                 if result:
                     self.logger.debug(
-                        f"Result sortino={result.sortino_ratio}, return={result.total_return}"
+                        "Result sortino=%s, return=%s",
+                        result.sortino_ratio,
+                        result.total_return,
                     )
                     real_metrics = {
                         "sortino_ratio": float(result.sortino_ratio or 0),
@@ -394,10 +417,20 @@ class DetailedPortfolioReporter:
 
         # Always use actual trade data for profit/equity calculations
         self.logger.debug(
-            f"{symbol}/{strategy} - DB total_return: {real_metrics['total_return']:.2f}%, Actual from trades: {actual_total_return:.2f}%, Orders: {num_orders}"
+            "%s/%s - DB total_return: %.2f%%, Actual from trades: %.2f%%, Orders: %s",
+            symbol,
+            strategy,
+            real_metrics["total_return"],
+            actual_total_return,
+            num_orders,
         )
         self.logger.debug(
-            f"{symbol}/{strategy} - Overview metrics: avg_win={real_metrics.get('average_win', 0)}, beta={real_metrics.get('beta', 0)}, total_fees={real_metrics.get('total_fees', 0)}"
+            "%s/%s - Overview metrics: avg_win=%s, beta=%s, total_fees=%s",
+            symbol,
+            strategy,
+            real_metrics.get("average_win", 0),
+            real_metrics.get("beta", 0),
+            real_metrics.get("total_fees", 0),
         )
 
         # Use real metrics in overview
@@ -450,11 +483,13 @@ class DetailedPortfolioReporter:
         start_date: str,
         end_date: str,
         all_combinations: list,
-        real_metrics: dict = None,
+        real_metrics: Optional[dict] = None,
     ) -> dict:
         """Generate detailed metrics including timeframe analysis."""
         self.logger.debug(
-            f"_generate_detailed_metrics_with_timeframe called for {symbol}/{strategy}"
+            "_generate_detailed_metrics_with_timeframe called for %s/%s",
+            symbol,
+            strategy,
         )
         base_metrics = self._generate_detailed_metrics(
             symbol, strategy, start_date, end_date, real_metrics
@@ -661,8 +696,8 @@ class DetailedPortfolioReporter:
         initial_value: float,
     ) -> list[dict]:
         """Get BuyAndHold strategy equity curve from database results."""
-        from ..database import get_db_session
-        from ..database.models import BacktestResult as DBBacktestResult
+        from src.database import get_db_session
+        from src.database.models import BacktestResult as DBBacktestResult
 
         try:
             # Get BuyAndHold results from database
