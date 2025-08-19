@@ -20,6 +20,7 @@ matplotlib = "^3.10"
 jinja2 = "^3.1"
 sqlalchemy = "^2.0"
 asyncpg = "^0.30"
+psycopg2-binary = "^2.9"
 alembic = "^1.15"
 bayesian-optimization = "^2.0"
 backtesting = "^0.6"
@@ -56,6 +57,7 @@ build-backend = "poetry.core.masonry.api"
 testpaths = ["tests"]
 addopts = ["--cov=src", "--cov-report=term", "-ra"]
 markers = ["integration: integration tests"]
+pythonpath = ["."]
 
 [tool.coverage.run]
 source = ["src"]

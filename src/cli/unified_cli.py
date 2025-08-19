@@ -2517,7 +2517,7 @@ def handle_validation_command(args):
 
         # Save detailed report if requested
         if args.output:
-            with open(args.output, "w") as f:
+            with Path(args.output).open("w") as f:
                 f.write(report)
                 f.write("\n\n=== Detailed Results ===\n\n")
                 import json

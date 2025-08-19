@@ -2,6 +2,4 @@
 
 from __future__ import annotations
 
-from .metrics_validator import MetricsValidator
-
-__all__ = ["MetricsValidator"]
+__all__ = []
