@@ -28,10 +28,7 @@ jobs:
       - name: Format check
         run: poetry run ruff format --check .
 
-      - name: Import sort check
-        run: poetry run isort --check-only src/ tests/ scripts/ --skip quant-strategies
-
-      - name: Lint
+      - name: Lint & Import sort
         run: poetry run ruff check .
 
       - name: Lint Markdown
