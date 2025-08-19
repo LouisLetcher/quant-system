@@ -29,6 +29,8 @@ from .result_analyzer import UnifiedResultAnalyzer
 
 warnings.filterwarnings("ignore")
 
+logger = logging.getLogger(__name__)
+
 
 def create_backtesting_strategy_adapter(strategy_instance):
     """Create a backtesting library compatible strategy from our strategy instance."""
@@ -61,15 +63,23 @@ def create_backtesting_strategy_adapter(strategy_instance):
                         signals, index=self.data.index, dtype=float
                     )
 
-                self.signals = self.I(lambda: aligned_signals.values, name="signals")
-            except Exception:
+                # Store signals as numpy array for proper indexing
+                self.signal_array = aligned_signals.values
+                self.current_bar = 0  # Track current bar manually
+
+            except Exception as e:
                 # If strategy fails, create zero signals
-                self.signals = self.I(lambda: [0] * len(self.data), name="signals")
+                logger.warning("Strategy signal generation failed: %s", e)
+                self.signal_array = np.array([0] * len(self.data))
+                self.current_bar = 0
 
         def next(self):
             """Execute trades based on our strategy signals."""
-            if len(self.signals) > 0:
-                current_signal = self.signals[-1]
+            # Use manual bar tracking for reliable signal indexing
+            if hasattr(self, "signal_array") and self.current_bar < len(
+                self.signal_array
+            ):
+                current_signal = self.signal_array[self.current_bar]
 
                 if current_signal == 1 and not self.position:
                     # Buy signal and no position - go long
@@ -83,6 +93,9 @@ def create_backtesting_strategy_adapter(strategy_instance):
                         self.sell()
                     except:
                         pass  # Shorting not allowed or failed
+
+                # Increment bar counter for next call
+                self.current_bar += 1
 
     return StrategyAdapter
 
@@ -431,6 +444,12 @@ class UnifiedBacktestEngine:
             last_data_point = pd.to_datetime(
                 cached_result.get("end_date", config.start_date)
             )
+            # Ensure timezone compatibility for comparison
+            if data.index[-1].tz is not None and last_data_point.tz is None:
+                last_data_point = last_data_point.tz_localize(data.index[-1].tz)
+            elif data.index[-1].tz is None and last_data_point.tz is not None:
+                last_data_point = last_data_point.tz_localize(None)
+
             if data.index[-1] <= last_data_point:
                 self.logger.info("No new data for %s/%s", symbol, strategy)
                 return self._dict_to_result(
@@ -468,6 +487,12 @@ class UnifiedBacktestEngine:
             # Prepare data for backtesting library (requires uppercase OHLCV)
             bt_data = self._prepare_data_for_backtesting_lib(data)
 
+            self.logger.debug("Original data index tz: %s", data.index.tz)
+            self.logger.debug(
+                "Prepared bt_data index tz: %s",
+                bt_data.index.tz if bt_data is not None else "None",
+            )
+
             if bt_data is None or bt_data.empty:
                 return BacktestResult(
                     symbol=symbol,
@@ -482,16 +507,25 @@ class UnifiedBacktestEngine:
             StrategyAdapter = create_backtesting_strategy_adapter(strategy_instance)
 
             # Run backtest using the backtesting library
+            self.logger.debug(
+                "Creating Backtest with data shape: %s, index range: %s to %s",
+                bt_data.shape,
+                bt_data.index[0],
+                bt_data.index[-1],
+            )
             bt = Backtest(
                 bt_data,
                 StrategyAdapter,
                 cash=config.initial_capital,
                 commission=config.commission,
                 exclusive_orders=True,
+                finalize_trades=True,  # Close open trades at end to count them
             )
 
             # Execute backtest
+            self.logger.debug("Running backtest...")
             bt_results = bt.run()
+            self.logger.debug("Backtest completed successfully")
 
             # Convert backtesting library results to our format
             result = self._convert_backtesting_results(bt_results, bt_data, config)
@@ -1065,39 +1099,90 @@ class UnifiedBacktestEngine:
             # Ensure no NaN values
             bt_data = bt_data.dropna()
 
+            # Remove timezone info from index if present (backtesting library expects naive datetimes)
+            if bt_data.index.tz is not None:
+                bt_data.index = bt_data.index.tz_localize(None)
+
             return bt_data
 
         except Exception as e:
             self.logger.error("Error preparing data for backtesting library: %s", e)
             return None
 
+    def _safe_float_convert(self, value) -> float:
+        """Safely convert value to float, handling Timestamp and other types."""
+        if pd.isna(value):
+            return 0.0
+        if isinstance(value, pd.Timestamp):
+            # Convert timestamp to number of days
+            return float(
+                value.value / (24 * 60 * 60 * 1000000000)
+            )  # nanoseconds to days
+        if isinstance(value, pd.Timedelta):
+            # Convert timedelta to number of days
+            return float(value.total_seconds() / (24 * 60 * 60))
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return 0.0
+
     def _extract_metrics_from_bt_results(self, bt_results) -> dict[str, Any]:
         """Extract metrics from backtesting library results."""
         try:
             metrics = {
                 # Core performance metrics
-                "total_return": float(bt_results.get("Return [%]", 0.0)),
-                "sharpe_ratio": float(bt_results.get("Sharpe Ratio", 0.0)),
-                "sortino_ratio": float(bt_results.get("Sortino Ratio", 0.0)),
-                "calmar_ratio": float(bt_results.get("Calmar Ratio", 0.0)),
+                "total_return": self._safe_float_convert(
+                    bt_results.get("Return [%]", 0.0)
+                ),
+                "sharpe_ratio": self._safe_float_convert(
+                    bt_results.get("Sharpe Ratio", 0.0)
+                ),
+                "sortino_ratio": self._safe_float_convert(
+                    bt_results.get("Sortino Ratio", 0.0)
+                ),
+                "calmar_ratio": self._safe_float_convert(
+                    bt_results.get("Calmar Ratio", 0.0)
+                ),
                 # Risk metrics
-                "max_drawdown": abs(float(bt_results.get("Max. Drawdown [%]", 0.0))),
-                "volatility": float(bt_results.get("Volatility [%]", 0.0)),
+                "max_drawdown": abs(
+                    self._safe_float_convert(bt_results.get("Max. Drawdown [%]", 0.0))
+                ),
+                "volatility": self._safe_float_convert(
+                    bt_results.get("Volatility [%]", 0.0)
+                ),
                 # Trade metrics
-                "num_trades": int(bt_results.get("# Trades", 0)),
-                "win_rate": float(bt_results.get("Win Rate [%]", 0.0)),
-                "profit_factor": float(bt_results.get("Profit Factor", 1.0)),
+                "num_trades": int(
+                    self._safe_float_convert(bt_results.get("# Trades", 0))
+                ),
+                "win_rate": self._safe_float_convert(
+                    bt_results.get("Win Rate [%]", 0.0)
+                ),
+                "profit_factor": self._safe_float_convert(
+                    bt_results.get("Profit Factor", 1.0)
+                ),
                 # Additional metrics
-                "best_trade": float(bt_results.get("Best Trade [%]", 0.0)),
-                "worst_trade": float(bt_results.get("Worst Trade [%]", 0.0)),
-                "avg_trade": float(bt_results.get("Avg. Trade [%]", 0.0)),
-                "avg_trade_duration": float(bt_results.get("Avg. Trade Duration", 0.0)),
+                "best_trade": self._safe_float_convert(
+                    bt_results.get("Best Trade [%]", 0.0)
+                ),
+                "worst_trade": self._safe_float_convert(
+                    bt_results.get("Worst Trade [%]", 0.0)
+                ),
+                "avg_trade": self._safe_float_convert(
+                    bt_results.get("Avg. Trade [%]", 0.0)
+                ),
+                "avg_trade_duration": self._safe_float_convert(
+                    bt_results.get("Avg. Trade Duration", 0.0)
+                ),
                 # Portfolio metrics
-                "start_value": float(bt_results.get("Start", 0.0)),
-                "end_value": float(bt_results.get("End", 0.0)),
-                "buy_hold_return": float(bt_results.get("Buy & Hold Return [%]", 0.0)),
+                "start_value": self._safe_float_convert(bt_results.get("Start", 0.0)),
+                "end_value": self._safe_float_convert(bt_results.get("End", 0.0)),
+                "buy_hold_return": self._safe_float_convert(
+                    bt_results.get("Buy & Hold Return [%]", 0.0)
+                ),
                 # Exposure
-                "exposure_time": float(bt_results.get("Exposure Time [%]", 0.0)),
+                "exposure_time": self._safe_float_convert(
+                    bt_results.get("Exposure Time [%]", 0.0)
+                ),
             }
 
             return metrics
@@ -1135,8 +1220,12 @@ class UnifiedBacktestEngine:
             result = {
                 "trades": trades_df,
                 "equity_curve": equity_curve_df,
-                "final_value": float(bt_results.get("End", config.initial_capital)),
-                "total_trades": int(bt_results.get("# Trades", 0)),
+                "final_value": self._safe_float_convert(
+                    bt_results.get("End", config.initial_capital)
+                ),
+                "total_trades": int(
+                    self._safe_float_convert(bt_results.get("# Trades", 0))
+                ),
             }
 
             return result
