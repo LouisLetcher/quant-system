@@ -18,7 +18,6 @@ from sqlalchemy.orm import Session
 from src.ai.ai_report_generator import AIReportGenerator
 from src.ai.llm_client import LLMClient
 from src.ai.models import AssetRecommendation, PortfolioRecommendation
-from src.core.result_analyzer import UnifiedResultAnalyzer
 from src.database.models import AIRecommendation, BacktestResult, BestStrategy
 from src.database.models import AssetRecommendation as DbAssetRecommendation
 
@@ -33,7 +32,6 @@ class AIInvestmentRecommendations:
         self.db_session = db_session
         self.logger = logging.getLogger(__name__)
         self.llm_client = LLMClient()
-        self.result_analyzer = UnifiedResultAnalyzer()
 
         # Risk tolerance levels
         self.risk_levels = {
