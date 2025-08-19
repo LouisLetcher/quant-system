@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "quant-system"
-version = "0.1.0"
+version = "2.0.0"
 description = "Comprehensive quantitative analysis system with multi-asset support, advanced portfolio optimization, and extensive backtesting capabilities"
 authors = ["Louis Letcher <heck.manu@icloud.com>"]
 license = "MIT"
