@@ -119,9 +119,9 @@ poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
 - ✅ Win rate and trade statistics
 - ✅ Volatility and correlation analysis
 
-### 9. Raw Data CSV Export
+### 9. CSV Export
 **Status**: ✅ **IMPLEMENTED**
-**Description**: Export raw portfolio data with best strategies and timeframes from existing quarterly reports.
+**Description**: Export portfolio data with best strategies and timeframes from existing quarterly reports.
 
 **Features**:
 - ✅ CSV export with symbol, best strategy, best timeframe, and performance metrics

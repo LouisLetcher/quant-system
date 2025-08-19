@@ -281,7 +281,12 @@ class YahooFinanceSource(DataSource):
             return {}
 
     def get_available_symbols(self, asset_type: str | None = None) -> List[str]:
-        """Get available symbols (placeholder implementation)."""
+        """Get available symbols - not implemented for Yahoo Finance source."""
+        # Yahoo Finance doesn't provide a direct API for symbol listing
+        # Would need external data or hardcoded list
+        self.logger.warning(
+            "get_available_symbols not implemented for Yahoo Finance source"
+        )
         return []
 
 
@@ -593,7 +598,12 @@ class AlphaVantageSource(DataSource):
         return result
 
     def get_available_symbols(self, asset_type: str | None = None) -> List[str]:
-        """Get available symbols (placeholder)."""
+        """Get available symbols - not implemented for Alpha Vantage source."""
+        # Alpha Vantage doesn't provide a direct API for symbol listing
+        # Would require subscription to premium endpoints or external data
+        self.logger.warning(
+            "get_available_symbols not implemented for Alpha Vantage source"
+        )
         return []
 
     def _get_function(self, interval: str) -> str:

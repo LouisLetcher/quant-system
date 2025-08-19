@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "quant-system"
-version = "0.1.0"
+version = "2.0.0"
 description = "Comprehensive quantitative analysis system with multi-asset support, advanced portfolio optimization, and extensive backtesting capabilities"
 authors = ["Louis Letcher <heck.manu@icloud.com>"]
 license = "MIT"
@@ -9,43 +9,50 @@ packages = [{ include = "src", from = "." }]
 
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
-fastapi = "^0.116"
-uvicorn = "^0.34"
-pydantic = "^2.11"
-yfinance = "^0.2"
-yfinance-cache = "^0.7"
+# Core data analysis
 pandas = "^2.3"
 numpy = "^2.3.2"
-matplotlib = "^3.10"
-jinja2 = "^3.1"
-sqlalchemy = "^2.0"
-asyncpg = "^0.30"
-alembic = "^1.15"
-bayesian-optimization = "^2.0"
-backtesting = "^0.6"
-requests = "^2.32.4"
 scipy = "^1.11.0"
-scikit-learn = "^1.5.0"
-aiohttp = "^3.9.0"
-plotly = "^5.18.0"
-seaborn = "^0.13.0"
-tqdm = "^4.66.0"
-pytz = "^2025.2"
-python-dateutil = "^2.8.2"
-click = "^8.1.0"
+# Backtesting
+backtesting = "^0.6"
+# Database
+sqlalchemy = "^2.0"
+psycopg2-binary = "^2.9"
+# Data sources
+yfinance = "^0.2"
+requests = "^2.32.4"
+# Web scraping
 beautifulsoup4 = "^4.13.4"
+# Configuration
+pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
 # Essential dev tools only
-black = "^25.1"
-isort = "^6.0"
 ruff = "^0.12"
 pytest = "^8.4"
 pytest-cov = "^6.2"
 pre-commit = "^4.3"
 
-[tool.poetry.scripts]
-start = "uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
+[tool.poetry.group.security.dependencies]
+# Security scanning tools
+bandit = "^1.7"
+safety = "^3.0"
+
+[tool.poetry.group.jupyter.dependencies]
+# Optional for data analysis
+jupyter = "^1.0"
+jupyterlab = "^4.0"
+plotly = "^5.18.0"
+matplotlib = "^3.10"
+seaborn = "^0.13.0"
+
+[tool.poetry.group.api.dependencies]
+# Optional API dependencies
+fastapi = "^0.116"
+uvicorn = "^0.34"
+pydantic = "^2.11"
+
+
 
 [build-system]
 requires = ["poetry-core"]
@@ -56,6 +63,7 @@ build-backend = "poetry.core.masonry.api"
 testpaths = ["tests"]
 addopts = ["--cov=src", "--cov-report=term", "-ra"]
 markers = ["integration: integration tests"]
+pythonpath = ["."]
 
 [tool.coverage.run]
 source = ["src"]
@@ -93,42 +101,5 @@ warn_unreachable = false
 strict_equality = false
 
 [[tool.mypy.overrides]]
-module = [
-    "yfinance.*",
-    "backtesting.*",
-    "plotly.*",
-    "seaborn.*",
-    "bayesian_optimization.*",
-    "src.backtesting_engine.algorithms.quantconnect.*",
-    "src.backtesting_engine.algorithms.original.*"
-]
+module = ["yfinance.*", "backtesting.*"]
 ignore_missing_imports = true
-ignore_errors = true
-
-[tool.black]
-line-length = 88
-target-version = ['py312']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-known_first_party = ["src"]
-
-[tool.bandit]
-exclude_dirs = ["tests", ".venv", "build", "dist"]
-skips = ["B101"]  # Skip assert_used test
