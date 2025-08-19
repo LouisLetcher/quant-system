@@ -170,11 +170,9 @@ docstring-code-line-length = "dynamic"
 max-args = 10
 
 [lint.isort]
-known-local-folder = ["bayes_opt"]
+known-first-party = ["src"]
 required-imports = ["from __future__ import annotations"]
-# ruff format
 force-single-line = false
-force-wrap-aliases = false
 split-on-trailing-comma = false
 
 [lint.pydocstyle]
