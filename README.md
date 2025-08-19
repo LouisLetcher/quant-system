@@ -1,6 +1,6 @@
-# Quant Trading System
+# Quant System
 
-A comprehensive quantitative trading and backtesting system built for institutional-grade portfolio analysis. Docker-based setup with production-grade features for analyzing stocks, bonds, crypto, forex, and commodities across global markets.
+A comprehensive quantitative backtesting system built for institutional-grade collection analysis. Docker-based setup with production-grade features for analyzing stocks, bonds, crypto, forex, and commodities across global markets.
 
 ## 🚀 Quick Start
 
@@ -37,8 +37,7 @@ docker-compose run --rm quant bash
 ### Core Capabilities
 - **Multi-Asset Support**: Stocks, bonds, crypto, forex, commodities via multiple data sources
 - **AI Investment Recommendations**: Performance-based portfolio optimization with confidence scoring
-- **Backtesting Engine**: Institutional-grade performance analysis with advanced metrics
-- **Metrics Validation**: Compare custom metrics against `backtesting` library for accuracy verification
+- **Backtesting Library Integration**: Direct integration with `backtesting` library for institutional-grade performance analysis
 - **Portfolio Analysis**: Risk-adjusted returns, correlation analysis, drawdown attribution
 - **Data Integration**: PostgreSQL storage with Yahoo Finance, Bybit, Alpha Vantage APIs
 - **Report Generation**: Automated quarterly HTML reports, CSV exports, TradingView alerts
@@ -65,20 +64,24 @@ quant-system/
 
 ## 📈 Usage
 
-### Backtest Commands
+### Portfolio Commands
 ```bash
-# Individual asset backtests
-docker-compose run --rm quant python -m src.cli.unified_cli backtest single \
-  --symbol AAPL \
+# Portfolio backtests with real data
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
+  --symbols AAPL MSFT TSLA \
   --strategy BuyAndHold \
   --start-date 2023-01-01 \
   --end-date 2024-12-31
 
-# Portfolio collection backtests
-docker-compose run --rm quant python -m src.cli.unified_cli backtest batch \
-  --collection config/collections/stocks.json \
-  --strategy BuyAndHold \
-  --metric sortino_ratio
+# Test all strategies and timeframes
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
+  --symbols TLT IEF SHY \
+  --start-date 2023-01-01 \
+  --end-date 2024-12-31
+
+# Get best performing strategies
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio best \
+  --limit 10
 
 # AI-powered portfolio recommendations
 docker-compose run --rm quant python -m src.cli.unified_cli ai portfolio_recommend \
@@ -189,20 +192,7 @@ docker-compose run --rm quant python -m src.cli.unified_cli ai export \
   --quarter Q3 --year 2025
 ```
 
-### Metrics Validation
-```bash
-# Validate metrics for a single best strategy
-docker-compose run --rm quant python -m src.cli.unified_cli validate strategy \
-  AAPL BuyAndHold --timeframe 1d --tolerance 0.05
 
-# Batch validation of top 10 best strategies
-docker-compose run --rm quant python -m src.cli.unified_cli validate batch \
-  --limit 10 --tolerance 0.05
-
-# Validate specific symbols with detailed report
-docker-compose run --rm quant python -m src.cli.unified_cli validate batch \
-  --symbols AAPL MSFT TSLA --limit 5 --output validation_report.txt
-```
 
 ### CSV Data Export
 ```bash

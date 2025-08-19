@@ -41,7 +41,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: docker-compose run --rm quant python -m pytest --tb=short -x tests/test_raw_data_csv_exporter.py
+        entry: docker-compose run --rm quant pytest
         language: system
         types: [python]
         pass_filenames: false
