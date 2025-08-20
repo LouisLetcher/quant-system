@@ -58,32 +58,47 @@ def save_direct_backtest_to_database(result_dict: dict, metric: str = "sortino_r
         session.add(db_result)
         session.flush()  # Get the ID
 
-        # Save real trades from backtesting library
+        # Save trades from backtesting library as entry/exit pairs (consistent with unified_cli.py)
         if result_dict["trades"] is not None and not result_dict["trades"].empty:
             trades_df = result_dict["trades"]
+            current_equity = 10000.0  # Initial capital
 
             for _, trade_row in trades_df.iterrows():
-                # Convert backtesting library trade format to our database format
-                trade_type = "BUY" if trade_row["Size"] > 0 else "SELL"
+                # Each backtesting library trade is a round-trip, create entry and exit
+                entry_value = float(trade_row["Size"]) * float(trade_row["EntryPrice"])
+                exit_value = float(trade_row["Size"]) * float(trade_row["ExitPrice"])
 
-                trade_record = Trade(
+                # Create ENTRY trade record
+                entry_trade = Trade(
                     backtest_result_id=db_result.id,
                     symbol=symbol,
                     strategy=result_dict["strategy"],
                     timeframe=result_dict["timeframe"],
                     trade_datetime=trade_row["EntryTime"],
-                    side=trade_type,
-                    size=abs(float(trade_row["Size"])),
+                    side="BUY",
+                    size=float(trade_row["Size"]),
                     price=float(trade_row["EntryPrice"]),
-                    equity_before=10000.0,  # Use initial capital
-                    equity_after=10000.0
-                    + (
-                        abs(float(trade_row["Size"]))
-                        * float(trade_row["EntryPrice"])
-                        * (1 if trade_type == "BUY" else -1)
-                    ),
+                    equity_before=current_equity,
+                    equity_after=current_equity - entry_value,
                 )
-                session.add(trade_record)
+                session.add(entry_trade)
+                current_equity -= entry_value
+
+                # Create EXIT trade record
+                exit_trade = Trade(
+                    backtest_result_id=db_result.id,
+                    symbol=symbol,
+                    strategy=result_dict["strategy"],
+                    timeframe=result_dict["timeframe"],
+                    trade_datetime=trade_row["ExitTime"],
+                    side="SELL",
+                    size=float(trade_row["Size"]),
+                    price=float(trade_row["ExitPrice"]),
+                    equity_before=current_equity,
+                    equity_after=current_equity + exit_value,
+                )
+                session.add(exit_trade)
+                current_equity += exit_value
 
         # Update BestStrategy table
         update_best_strategy_direct(session, result_dict, metric)

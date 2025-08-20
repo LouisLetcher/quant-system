@@ -4,9 +4,9 @@ services:
     image: postgres:15-alpine
     container_name: quant-postgres
     environment:
-      - POSTGRES_DB=quant_system
-      - POSTGRES_USER=quantuser
-      - POSTGRES_PASSWORD=quantpass
+      - POSTGRES_DB=${POSTGRES_DB:-quant_system}
+      - POSTGRES_USER=${POSTGRES_USER:-quantuser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-quantpass}
     ports:
       - "5433:5432"
     volumes:
@@ -19,9 +19,9 @@ services:
     image: dpage/pgadmin4:latest
     container_name: quant-pgadmin
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@quant.local
-      - PGADMIN_DEFAULT_PASSWORD=quantpass
-      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-admin@quant.local}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-quantpass}
+      - PGADMIN_CONFIG_SERVER_MODE=${PGADMIN_CONFIG_SERVER_MODE:-False}
     ports:
       - "5050:80"
     depends_on:
@@ -37,11 +37,23 @@ services:
     image: quant-system:local
     container_name: quant-system
     environment:
-      - ENVIRONMENT=local
-      - CACHE_DIR=/app/cache
-      - LOG_LEVEL=INFO
-      - DATABASE_URL=postgresql://quantuser:quantpass@postgres:5432/quant_system
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - CACHE_DIR=${CACHE_DIR:-/app/cache}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://quantuser:quantpass@postgres:5432/quant_system}
       - PYTHONPATH=/app
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
+      - TWELVE_DATA_API_KEY=${TWELVE_DATA_API_KEY}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - TIINGO_API_KEY=${TIINGO_API_KEY}
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY}
+      - BYBIT_API_KEY=${BYBIT_API_KEY}
+      - BYBIT_API_SECRET=${BYBIT_API_SECRET}
+      - BYBIT_TESTNET=${BYBIT_TESTNET:-false}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-3-5-sonnet-20241022}
     volumes:
       - ./cache:/app/cache
       - ./exports:/app/exports

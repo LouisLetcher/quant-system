@@ -290,15 +290,25 @@ class AIRecommendation(Base):
     __tablename__ = "ai_recommendations"
     __table_args__ = (
         Index("idx_ai_created_at", "created_at"),
-        Index("idx_ai_risk_profile", "risk_profile"),
+        Index("idx_ai_risk_tolerance", "risk_tolerance"),
         {"schema": "backtests"},
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    risk_profile = Column(String(50), nullable=False)
     portfolio_name = Column(String(255))
-    recommendation_data = Column(JSONB, nullable=False)
-    confidence_score = Column(Numeric(5, 4))
+    quarter = Column(String(10))
+    year = Column(Integer)
+    risk_tolerance = Column(String(50))
+    total_score = Column(Numeric(10, 4))
+    confidence = Column(Numeric(5, 4))
+    diversification_score = Column(Numeric(5, 4))
+    total_assets = Column(Integer)
+    expected_return = Column(Numeric(10, 4))
+    portfolio_risk = Column(Numeric(10, 4))
+    overall_reasoning = Column(Text)
+    warnings = Column(ARRAY(String))
+    correlation_analysis = Column(JSONB)
+    llm_model = Column(String(100))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
