@@ -429,9 +429,17 @@ class UnifiedBacktestEngine:
         # Check if we have new data since last cached result
         if cached_result and last_update:
             last_data_point = pd.to_datetime(
-                cached_result.get("end_date", config.start_date)
+                cached_result.get("end_date", config.start_date), utc=True
             )
-            if data.index[-1] <= last_data_point:
+
+            # Ensure data index is in UTC for comparison
+            data_last_point = data.index[-1]
+            if data_last_point.tz is None:
+                data_last_point = data_last_point.tz_localize("UTC")
+            else:
+                data_last_point = data_last_point.tz_convert("UTC")
+
+            if data_last_point <= last_data_point:
                 self.logger.info("No new data for %s/%s", symbol, strategy)
                 return self._dict_to_result(
                     cached_result, symbol, strategy, parameters, config

@@ -50,7 +50,6 @@ def save_direct_backtest_to_database(result_dict: dict, metric: str = "sortino_r
             volatility=metrics.get("volatility", 0.0),
             downside_deviation=0.0,  # Not available from backtesting library directly
             win_rate=metrics.get("win_rate", 0.0),
-            trades_count=metrics.get("num_trades", 0),
             average_win=0.0,  # Could be calculated from trades if needed
             average_loss=0.0,
             parameters={},
@@ -70,19 +69,19 @@ def save_direct_backtest_to_database(result_dict: dict, metric: str = "sortino_r
                 trade_record = Trade(
                     backtest_result_id=db_result.id,
                     symbol=symbol,
+                    strategy=result_dict["strategy"],
+                    timeframe=result_dict["timeframe"],
                     trade_datetime=trade_row["EntryTime"],
-                    trade_type=trade_type,
+                    side=trade_type,
+                    size=abs(float(trade_row["Size"])),
                     price=float(trade_row["EntryPrice"]),
-                    quantity=abs(float(trade_row["Size"])),
-                    value=abs(float(trade_row["Size"]))
-                    * float(trade_row["EntryPrice"]),
-                    fees=float(trade_row.get("Commission", 0)),
-                    equity_after_trade=0.0,  # Would need calculation
-                    holdings_after_trade=float(trade_row["Size"]),
-                    cash_after_trade=0.0,  # Would need calculation
-                    net_profit=float(trade_row["PnL"]),
-                    unrealized_pnl=0.0,
-                    entry_reason=f"{trade_type} signal from {strategy}",
+                    equity_before=10000.0,  # Use initial capital
+                    equity_after=10000.0
+                    + (
+                        abs(float(trade_row["Size"]))
+                        * float(trade_row["EntryPrice"])
+                        * (1 if trade_type == "BUY" else -1)
+                    ),
                 )
                 session.add(trade_record)
 
@@ -118,7 +117,6 @@ def update_best_strategy_direct(
     )
 
     current_metric_value = metrics.get(metric, 0)
-    current_num_trades = metrics.get("num_trades", 0)
 
     # Determine if this is better
     is_better = False
@@ -126,48 +124,33 @@ def update_best_strategy_direct(
         is_better = True
     else:
         existing_metric_value = getattr(existing, metric, 0) or 0
-        existing_num_trades = existing.num_trades or 0
 
-        # Prefer strategies with actual trades
-        if current_num_trades > 0 and existing_num_trades == 0:
-            is_better = True
-        elif current_num_trades == 0 and existing_num_trades > 0:
-            is_better = False
+        # Compare by metric (higher is better for most metrics)
+        if metric == "max_drawdown":
+            is_better = current_metric_value < existing_metric_value
         else:
-            # Compare by metric (higher is better for most metrics)
-            if metric == "max_drawdown":
-                is_better = current_metric_value < existing_metric_value
-            else:
-                is_better = current_metric_value > existing_metric_value
+            is_better = current_metric_value > existing_metric_value
 
     if is_better:
         if existing:
             # Update existing record
-            existing.best_strategy = strategy
+            existing.strategy = strategy
             existing.sortino_ratio = metrics.get("sortino_ratio", 0)
+            existing.calmar_ratio = metrics.get("calmar_ratio", 0)
             existing.sharpe_ratio = metrics.get("sharpe_ratio", 0)
             existing.total_return = metrics.get("total_return", 0)
             existing.max_drawdown = metrics.get("max_drawdown", 0)
-            existing.volatility = metrics.get("volatility", 0)
-            existing.win_rate = metrics.get("win_rate", 0)
-            existing.num_trades = metrics.get("num_trades", 0)
-            existing.profit_factor = metrics.get("profit_factor", 1.0)
         else:
             # Create new record
             new_best = BestStrategy(
                 symbol=symbol,
                 timeframe=timeframe,
-                best_strategy=strategy,
+                strategy=strategy,
                 sortino_ratio=metrics.get("sortino_ratio", 0),
+                calmar_ratio=metrics.get("calmar_ratio", 0),
                 sharpe_ratio=metrics.get("sharpe_ratio", 0),
                 total_return=metrics.get("total_return", 0),
                 max_drawdown=metrics.get("max_drawdown", 0),
-                volatility=metrics.get("volatility", 0),
-                win_rate=metrics.get("win_rate", 0),
-                num_trades=metrics.get("num_trades", 0),
-                profit_factor=metrics.get("profit_factor", 1.0),
-                risk_score=metrics.get("max_drawdown", 0)
-                + metrics.get("volatility", 0),
             )
             session.add(new_best)
 

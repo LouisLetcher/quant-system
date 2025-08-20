@@ -75,6 +75,7 @@ class BacktestResult(Base):
     name = Column(String(255), nullable=False)
     symbols = Column(ARRAY(Text), nullable=False)
     strategy = Column(String(100), nullable=False)
+    timeframe = Column(String(10), nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     initial_capital = Column(Numeric(20, 2), nullable=False)
@@ -177,6 +178,64 @@ class PortfolioConfiguration(Base):
         return metrics
 
 
+class BestStrategy(Base):
+    """Best performing strategy for each symbol/timeframe combination."""
+
+    __tablename__ = "best_strategies"
+    __table_args__ = (
+        UniqueConstraint("symbol", "timeframe", name="uq_best_symbol_timeframe"),
+        Index("idx_best_symbol_timeframe", "symbol", "timeframe"),
+        Index("idx_best_sortino", "sortino_ratio"),
+        {"schema": "backtests"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    symbol = Column(String(20), nullable=False)
+    timeframe = Column(String(10), nullable=False)
+    strategy = Column(String(100), nullable=False)
+
+    # Performance metrics
+    sortino_ratio = Column(Numeric(10, 4))
+    calmar_ratio = Column(Numeric(10, 4))
+    sharpe_ratio = Column(Numeric(10, 4))
+    total_return = Column(Numeric(10, 4))
+    max_drawdown = Column(Numeric(10, 4))
+
+    # Additional data
+    backtest_result_id = Column(UUID(as_uuid=True))
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Trade(Base):
+    """Individual trades from backtesting."""
+
+    __tablename__ = "trades"
+    __table_args__ = (
+        Index("idx_trade_symbol_strategy", "symbol", "strategy"),
+        Index("idx_trade_datetime", "trade_datetime"),
+        {"schema": "backtests"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    symbol = Column(String(20), nullable=False)
+    strategy = Column(String(100), nullable=False)
+    timeframe = Column(String(10), nullable=False)
+
+    # Trade details
+    trade_datetime = Column(DateTime(timezone=True), nullable=False)
+    side = Column(String(10), nullable=False)  # 'Buy' or 'Sell'
+    size = Column(Numeric(15, 6), nullable=False)
+    price = Column(Numeric(15, 6), nullable=False)
+
+    # Trade metadata
+    equity_before = Column(Numeric(15, 2))
+    equity_after = Column(Numeric(15, 2))
+    backtest_result_id = Column(UUID(as_uuid=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 # Add relationship to BacktestResult
 BacktestResult.portfolio_id = Column(
     UUID(as_uuid=True), ForeignKey("portfolios.configurations.id")
@@ -223,3 +282,46 @@ class OptimizationResult(Base):
 
     def __repr__(self) -> str:
         return f"<OptimizationResult(strategy='{self.strategy}', best_sortino={self.best_sortino_ratio})>"
+
+
+class AIRecommendation(Base):
+    """AI-generated investment recommendations."""
+
+    __tablename__ = "ai_recommendations"
+    __table_args__ = (
+        Index("idx_ai_created_at", "created_at"),
+        Index("idx_ai_risk_profile", "risk_profile"),
+        {"schema": "backtests"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    risk_profile = Column(String(50), nullable=False)
+    portfolio_name = Column(String(255))
+    recommendation_data = Column(JSONB, nullable=False)
+    confidence_score = Column(Numeric(5, 4))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AssetRecommendation(Base):
+    """Individual asset recommendations from AI analysis."""
+
+    __tablename__ = "asset_recommendations"
+    __table_args__ = (
+        Index("idx_asset_rec_symbol", "symbol"),
+        Index("idx_asset_rec_confidence", "confidence_score"),
+        {"schema": "backtests"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ai_recommendation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("backtests.ai_recommendations.id"),
+        nullable=False,
+    )
+    symbol = Column(String(20), nullable=False)
+    strategy = Column(String(100), nullable=False)
+    timeframe = Column(String(10), nullable=False)
+    recommendation_type = Column(String(10), nullable=False)  # BUY, SELL, HOLD
+    confidence_score = Column(Numeric(5, 4), nullable=False)
+    reasoning = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
