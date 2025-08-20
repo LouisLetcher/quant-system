@@ -2185,7 +2185,6 @@ def handle_strategy_command(args):
 
 def handle_csv_export_command(args):
     """Handle CSV export command."""
-    from src.database import get_db_session
     from src.utils.raw_data_csv_exporter import RawDataCSVExporter
 
     # Only do collection-based exports (no portfolio_raw_data.csv)
@@ -2212,10 +2211,30 @@ def handle_csv_export_command(args):
             print("❌ Quarter and year required for quarterly export")
             return
 
-        print(f"📊 Extracting data from quarterly reports: {args.year} {args.quarter}")
+        print(f"📊 Extracting data from database: {args.year} {args.quarter}")
 
-        output_paths = exporter.export_from_quarterly_reports(
-            args.quarter, args.year, args.output, "full"
+        # Extract portfolio name from portfolio file if provided
+        portfolio_name = "all"
+        if args.portfolio:
+            portfolio_path = Path(args.portfolio)
+            if portfolio_path.exists():
+                import json
+
+                try:
+                    with portfolio_path.open() as f:
+                        portfolio_config = json.load(f)
+                        portfolio_key = list(portfolio_config.keys())[0]
+                        portfolio_name = portfolio_key
+                except Exception:
+                    portfolio_name = portfolio_path.stem
+
+        output_paths = exporter.export_from_database_primary(
+            args.quarter,
+            args.year,
+            args.output,
+            "quarterly",
+            portfolio_name,
+            args.portfolio,
         )
 
         if output_paths:
@@ -2234,19 +2253,32 @@ def handle_csv_export_command(args):
             return
 
         try:
-            db_session = get_db_session()
-            exporter_with_db = RawDataCSVExporter(db_session=db_session)
-
             print(
                 f"📊 Exporting best strategies from database: {args.year} {args.quarter}"
             )
 
-            output_paths = exporter_with_db.export_from_database(
+            # Extract portfolio name from portfolio file if provided
+            portfolio_name = "all"
+            if args.portfolio:
+                portfolio_path = Path(args.portfolio)
+                if portfolio_path.exists():
+                    import json
+
+                    try:
+                        with portfolio_path.open() as f:
+                            portfolio_config = json.load(f)
+                            portfolio_key = list(portfolio_config.keys())[0]
+                            portfolio_name = portfolio_key
+                    except Exception:
+                        portfolio_name = portfolio_path.stem
+
+            output_paths = exporter.export_from_database_primary(
                 quarter=args.quarter,
                 year=args.year,
                 output_filename=args.output,
-                export_format=args.format,
-                columns=args.columns,
+                export_format="best-strategies",
+                portfolio_name=portfolio_name,
+                portfolio_path=args.portfolio,
             )
 
             if output_paths:
@@ -2258,7 +2290,6 @@ def handle_csv_export_command(args):
             else:
                 print("❌ No data found for export criteria")
 
-            db_session.close()
             return
 
         except Exception as e:

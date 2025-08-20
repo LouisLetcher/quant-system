@@ -11,22 +11,18 @@ A comprehensive quantitative backtesting system built for institutional-grade co
 git clone <repository-url>
 cd quant-system
 
-# Build and run
-docker-compose up --build
+# Start PostgreSQL database and services
+docker-compose up -d postgres pgadmin
 
-# Run portfolio backtest (stocks example)
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
-  --symbols AAPL MSFT TSLA \
-  --strategy BuyAndHold \
-  --start-date 2023-01-01 \
-  --end-date 2024-12-31
+# Build and run main system
+docker-compose build quant
+docker-compose run --rm quant python -m src.cli.unified_cli --help
 
-# Run bond portfolio analysis
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
-  --symbols TLT IEF SHY \
-  --strategy MeanReversion \
-  --start-date 2023-01-01 \
-  --end-date 2024-12-31
+# Run comprehensive collection backtesting
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/collections/bonds.json \
+  --metric sortino_ratio \
+  --period max
 
 # Interactive shell
 docker-compose run --rm quant bash
@@ -64,38 +60,96 @@ quant-system/
 
 ## 📈 Usage
 
-### Portfolio Commands
+### Portfolio Management
 ```bash
-# Portfolio backtests with real data
+# Comprehensive collection testing (generates HTML reports + database data)
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
+  --portfolio config/collections/bonds.json \
+  --metric sortino_ratio \
+  --period max
+
+# Single symbol backtest
 docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
-  --symbols AAPL MSFT TSLA \
+  --symbols TLT IEF SHY \
   --strategy BuyAndHold \
   --start-date 2023-01-01 \
   --end-date 2024-12-31
 
-# Test all strategies and timeframes
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
-  --symbols TLT IEF SHY \
-  --start-date 2023-01-01 \
-  --end-date 2024-12-31
+# Compare multiple portfolios
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio compare \
+  config/collections/stocks_traderfox_us_tech.json config/collections/bonds.json
 
-# Get best performing strategies
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio best \
-  --limit 10
+# Generate investment plan based on backtest results
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio plan \
+  --portfolio config/collections/bonds.json
+```
 
-# AI-powered portfolio recommendations
+### AI Investment Recommendations
+```bash
+# Generate AI portfolio recommendations (creates markdown + HTML reports)
 docker-compose run --rm quant python -m src.cli.unified_cli ai portfolio_recommend \
   --portfolio config/collections/bonds.json \
   --risk-tolerance moderate
+
+# Get specific recommendations by quarter
+docker-compose run --rm quant python -m src.cli.unified_cli ai recommend \
+  --quarter Q3_2025 --risk-tolerance aggressive
+
+# Explain asset recommendations
+docker-compose run --rm quant python -m src.cli.unified_cli ai explain \
+  --symbol TLT --timeframe 1d
 ```
 
 ### Data Management
 ```bash
-# Cache statistics
-docker-compose run --rm quant python -m src.cli.unified_cli cache stats
+# Download market data for collections
+docker-compose run --rm quant python -m src.cli.unified_cli data download \
+  --symbols TLT IEF SHY --asset-type bonds
 
-# Clear cache
-docker-compose run --rm quant python -m src.cli.unified_cli cache clear
+# Show available data sources
+docker-compose run --rm quant python -m src.cli.unified_cli data sources
+
+# List symbols by asset type
+docker-compose run --rm quant python -m src.cli.unified_cli data symbols --asset-type bonds
+
+# Cache management
+docker-compose run --rm quant python -m src.cli.unified_cli cache stats
+docker-compose run --rm quant python -m src.cli.unified_cli cache clear --older-than-days 30
+```
+
+### Strategy Development
+```bash
+# List available strategies
+docker-compose run --rm quant python -m src.cli.unified_cli strategy list
+
+# Get strategy details
+docker-compose run --rm quant python -m src.cli.unified_cli strategy info --strategy BuyAndHold
+
+# Test custom strategy
+docker-compose run --rm quant python -m src.cli.unified_cli strategy test \
+  --strategy-file external_strategies/my_strategy.py
+```
+
+### Optimization
+```bash
+# Optimize single strategy parameters
+docker-compose run --rm quant python -m src.cli.unified_cli optimize single \
+  --symbol TLT --strategy RSI --method genetic --iterations 100
+
+# Batch optimization across multiple symbols
+docker-compose run --rm quant python -m src.cli.unified_cli optimize batch \
+  --symbols TLT IEF SHY --strategies RSI BollingerBands --workers 4
+```
+
+### Analysis & Reporting
+```bash
+# Generate comprehensive analysis reports
+docker-compose run --rm quant python -m src.cli.unified_cli analyze report \
+  --portfolio config/collections/bonds.json
+
+# Compare strategy performance
+docker-compose run --rm quant python -m src.cli.unified_cli analyze compare \
+  --symbols TLT IEF SHY --strategies BuyAndHold RSI
 ```
 
 ## 🔧 Configuration
@@ -180,43 +234,49 @@ docker-compose run --rm quant pytest
 
 ## 📊 Export & Reporting
 
-### AI Recommendations
+### Export & Reporting
 ```bash
-# Generate AI portfolio recommendations
-docker-compose run --rm quant python -m src.cli.unified_cli ai portfolio_recommend \
-  --portfolio config/collections/stocks.json \
-  --risk-tolerance moderate
-
-# Export recommendations to JSON
-docker-compose run --rm quant python -m src.cli.unified_cli ai export \
+# Export collection-specific CSV data from database (quarterly summary)
+docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
+  --portfolio config/collections/bonds.json --format quarterly \
   --quarter Q3 --year 2025
-```
 
-
-
-### CSV Data Export
-```bash
-# Export best strategies by quarter (organized by year/quarter/collection)
+# Export best strategies by quarter for all collections
 docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
   --format best-strategies --quarter Q3 --year 2025
 
-# Export full quarterly data
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
-  --format quarterly --quarter Q3 --year 2025
+# Export TradingView alerts with proper naming convention
+docker-compose run --rm quant python -m src.utils.tradingview_alert_exporter \
+  --output bonds_collection_tradingview_alerts_Q3_2025
+
+# Generate AI investment recommendations (markdown format)
+docker-compose run --rm quant python -m src.cli.unified_cli ai portfolio_recommend \
+  --portfolio config/collections/bonds.json \
+  --risk-tolerance moderate
+
+# Organize reports by quarter/year
+docker-compose run --rm quant python -m src.cli.unified_cli reports organize
+
+# List available reports
+docker-compose run --rm quant python -m src.cli.unified_cli reports list
+
+# Get latest report for portfolio
+docker-compose run --rm quant python -m src.cli.unified_cli reports latest \
+  --portfolio config/collections/bonds.json
 ```
 
-### TradingView Alert Export
+### Validation & Testing
 ```bash
-# Auto-organized by quarter/year (recommended)
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-tradingview \
-  --quarter Q3 --year 2025
+# Validate strategy metrics against backtesting library
+docker-compose run --rm quant python -m src.cli.unified_cli validate strategy \
+  --symbol TLT --strategy BuyAndHold
 
-# Export for specific collection
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-tradingview \
-  --collection stocks --quarter Q3 --year 2025
+# Batch validate multiple strategies
+docker-compose run --rm quant python -m src.cli.unified_cli validate batch \
+  --symbols TLT IEF SHY --strategies BuyAndHold RSI
 ```
 
-**Alert Format**: Includes strategy, timeframe, Sortino ratio, profit metrics, and TradingView placeholders like `{{close}}`, `{{timenow}}`, `{{strategy.order.action}}`.
+**TradingView Alert Format**: Includes strategy, timeframe, Sortino ratio, profit metrics, and placeholders like `{{close}}`, `{{timenow}}`, `{{strategy.order.action}}`.
 
 ## 📁 Output & Storage
 

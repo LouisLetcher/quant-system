@@ -171,15 +171,16 @@ Qty: {{{{strategy.order.contracts}}}}
 
         # Write to file if specified
         if output_file:
-            # Check if output_file is just a filename or has path
-            output_path = Path(output_file)
-            if output_path.parent == Path():
-                # Just filename provided, organize by quarter/year
-                organized_dir = self.organize_output_path("exports/tradingview_alerts")
-                output_path = organized_dir / output_file
+            # Always organize by quarter/year following export naming convention
+            organized_dir = self.organize_output_path("exports/tradingview_alerts")
+
+            # Generate proper filename based on collection and quarter/year
+            if output_file.endswith(".md"):
+                filename = output_file
             else:
-                # Full path provided, create parent directories
-                output_path.parent.mkdir(parents=True, exist_ok=True)
+                filename = f"{output_file}.md"
+
+            output_path = organized_dir / filename
 
             with output_path.open("w", encoding="utf-8") as f:
                 f.write("# TradingView Alert Messages\n\n")
