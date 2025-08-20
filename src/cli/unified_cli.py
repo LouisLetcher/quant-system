@@ -908,7 +908,11 @@ def handle_single_backtest(args):
         # Save to database for consistency with portfolio tests
         try:
             _save_backtest_to_database(
-                result, f"single_{args.symbol}_{args.strategy}", config, "sortino_ratio", args.timeframe
+                result,
+                f"single_{args.symbol}_{args.strategy}",
+                config,
+                "sortino_ratio",
+                args.timeframe,
             )
             print("  ✅ Results saved to database")
         except Exception as e:
@@ -1271,7 +1275,11 @@ def handle_portfolio_backtest(args):
 
 
 def _save_backtest_to_database(
-    backtest_result, name_prefix: str = "", config=None, metric: str = "sortino_ratio", timeframe: str = "1d"
+    backtest_result,
+    name_prefix: str = "",
+    config=None,
+    metric: str = "sortino_ratio",
+    timeframe: str = "1d",
 ):
     """Save backtest result to PostgreSQL database and update best strategies."""
     from datetime import datetime
@@ -1582,7 +1590,12 @@ def _get_best_overall_strategy_from_db(metric: str = "sortino_ratio") -> str:
 
 
 def _update_best_strategy(
-    session, backtest_result, run_id: str, timeframe: str, db_result, metric: str = "sortino_ratio"
+    session,
+    backtest_result,
+    run_id: str,
+    timeframe: str,
+    db_result,
+    metric: str = "sortino_ratio",
 ):
     """Update best_strategies table if this result is better than existing."""
     from src.database.models import BestStrategy
