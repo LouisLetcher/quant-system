@@ -1378,10 +1378,10 @@ def _save_backtest_to_database(
             for _, trade_row in backtest_result.trades.iterrows():
                 # Backtesting library returns complete round-trip trades
                 # Each row has EntryTime, ExitTime, EntryPrice, ExitPrice
-                
+
                 entry_value = float(trade_row["Size"]) * float(trade_row["EntryPrice"])
                 exit_value = float(trade_row["Size"]) * float(trade_row["ExitPrice"])
-                
+
                 # Create ENTRY trade record
                 entry_trade = Trade(
                     backtest_result_id=db_result.id,
@@ -1396,10 +1396,10 @@ def _save_backtest_to_database(
                     equity_after=current_equity - entry_value,
                 )
                 session.add(entry_trade)
-                
+
                 current_equity -= entry_value
                 current_holdings += float(trade_row["Size"])
-                
+
                 # Create EXIT trade record
                 exit_trade = Trade(
                     backtest_result_id=db_result.id,
@@ -1414,7 +1414,7 @@ def _save_backtest_to_database(
                     equity_after=current_equity + exit_value,
                 )
                 session.add(exit_trade)
-                
+
                 current_equity += exit_value
                 current_holdings -= float(trade_row["Size"])
 

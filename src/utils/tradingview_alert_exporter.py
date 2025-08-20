@@ -105,15 +105,15 @@ class TradingViewAlertExporter:
 
         # Get key metrics for context
         sharpe_ratio = metrics.get("Sharpe Ratio", "N/A")
-        net_profit = metrics.get("Net Profit", "N/A")
-        win_rate = metrics.get("Win Rate", "N/A")
+        sortino_ratio = metrics.get("Sortino Ratio", "N/A")
+        calmar_ratio = metrics.get("Calmar Ratio", "N/A")
 
         alert_message = f"""🚨 QUANT SIGNAL: {symbol} 📊
 Strategy: {strategy}
 Timeframe: {timeframe}
 📈 Sharpe: {sharpe_ratio}
-💰 Profit: {net_profit}
-🎯 Win Rate: {win_rate}
+📊 Sortino: {sortino_ratio}
+⚖️ Calmar: {calmar_ratio}
 
 Price: {{{{close}}}}
 Time: {{{{timenow}}}}

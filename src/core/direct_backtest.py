@@ -124,6 +124,10 @@ def run_direct_backtest(
         trades = None
         if hasattr(result, "_trades") and not result._trades.empty:
             trades = result._trades.copy()
+        elif hasattr(bt, "_data") and hasattr(bt, "_results"):
+            # Extract from backtest object if available
+            if hasattr(result, "_trades"):
+                trades = result._trades
 
         return {
             "symbol": symbol,
