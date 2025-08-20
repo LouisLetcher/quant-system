@@ -19,13 +19,15 @@ class TestDetailedPortfolioReporter:
 
     @patch("src.reporting.detailed_portfolio_report.get_sync_engine")
     @patch("src.reporting.detailed_portfolio_report.sessionmaker")
-    def test_generate_comprehensive_report_basic(self, mock_sessionmaker, mock_get_sync_engine):
+    def test_generate_comprehensive_report_basic(
+        self, mock_sessionmaker, mock_get_sync_engine
+    ):
         """Test basic comprehensive report generation."""
         # Setup mock database session
         mock_session = MagicMock()
         mock_sessionmaker.return_value = mock_session
         mock_get_sync_engine.return_value = MagicMock()
-        
+
         # Mock database query results
         mock_session.return_value.query.return_value.filter_by.return_value.order_by.return_value.all.return_value = []
 
@@ -91,7 +93,9 @@ class TestIntegration:
 
     @patch("src.reporting.detailed_portfolio_report.get_sync_engine")
     @patch("src.reporting.detailed_portfolio_report.sessionmaker")
-    def test_complete_workflow_single_asset(self, mock_sessionmaker, mock_get_sync_engine):
+    def test_complete_workflow_single_asset(
+        self, mock_sessionmaker, mock_get_sync_engine
+    ):
         """Test complete workflow with single asset."""
         # Setup mock database session
         mock_session = MagicMock()
