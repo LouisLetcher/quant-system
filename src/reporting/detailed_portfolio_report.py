@@ -133,6 +133,37 @@ class DetailedPortfolioReporter:
 
         return equity_curve
 
+    def _generate_backtest_plot(self, symbol: str, strategy: str, timeframe: str, start_date: str, end_date: str) -> str | None:
+        """Generate interactive plot from backtesting library."""
+        try:
+            from src.core.direct_backtest import run_direct_backtest
+            from bokeh.io import save
+            from bokeh.resources import CDN
+            from bokeh.embed import file_html
+            import tempfile
+            
+            # Run fresh backtest to get plot
+            result = run_direct_backtest(
+                symbol=symbol,
+                strategy_name=strategy,
+                start_date=start_date,
+                end_date=end_date,
+                timeframe=timeframe
+            )
+            
+            if hasattr(result, 'backtest_instance'):
+                # Generate the plot
+                plot = result.backtest_instance.plot()
+                
+                # Convert to HTML string
+                html = file_html(plot, CDN, f"{symbol} - {strategy} ({timeframe})")
+                return html
+                
+        except Exception as e:
+            print(f"Warning: Could not generate plot for {symbol}/{strategy}: {e}")
+            
+        return None
+
     def _create_html_report(
         self, portfolio_config: dict, assets_data: dict, start_date: str, end_date: str
     ) -> str:
@@ -261,6 +292,11 @@ class DetailedPortfolioReporter:
                     <div class="metric-label">Calmar Ratio</div>
                     <div class="metric-value">{overview.get("calmar_ratio", 0):.3f}</div>
                 </div>
+            </div>
+            
+            <h3>Interactive Chart</h3>
+            <div class="plot-container">
+                {self._generate_backtest_plot(symbol, data["best_strategy"], data["best_timeframe"], start_date, end_date) or "<p>Plot generation failed</p>"}
             </div>
 
             <h3>Trading Orders</h3>
