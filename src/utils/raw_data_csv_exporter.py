@@ -15,6 +15,9 @@ from typing import Any
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from src.database.db_connection import get_db_session
+from src.database.models import BestStrategy
+
 
 class RawDataCSVExporter:
     """
@@ -32,6 +35,182 @@ class RawDataCSVExporter:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.reports_dir = Path("exports/reports")
         self.logger = logging.getLogger(__name__)
+
+    def export_from_database_primary(
+        self,
+        quarter: str,
+        year: str,
+        output_filename: str | None = None,
+        export_format: str = "full",
+        portfolio_name: str = "all",
+        portfolio_path: str | None = None,
+    ) -> list[str]:
+        """
+        Export data directly from database - primary data source for CSV exports.
+        Filters by specific collection symbols if portfolio is provided.
+
+        Args:
+            quarter: Quarter (Q1, Q2, Q3, Q4)
+            year: Year (YYYY)
+            output_filename: Custom filename, auto-generated if None
+            export_format: 'full', 'best-strategies', or 'quarterly'
+            portfolio_name: Portfolio collection name for filtering
+            portfolio_path: Path to portfolio config file for symbol filtering
+
+        Returns:
+            List of paths to exported CSV files
+        """
+        output_files = []
+
+        try:
+            db_session = get_db_session()
+
+            # Load portfolio symbols for filtering if portfolio path provided
+            portfolio_symbols = None
+            if portfolio_path:
+                try:
+                    import json
+                    from pathlib import Path
+
+                    with Path(portfolio_path).open() as f:
+                        portfolio_config = json.load(f)
+                        # Get the first (and usually only) portfolio config
+                        portfolio_key = list(portfolio_config.keys())[0]
+                        portfolio_symbols = portfolio_config[portfolio_key].get(
+                            "symbols", []
+                        )
+                        portfolio_name = portfolio_key  # Use actual collection name
+                        self.logger.info(
+                            "Filtering by %s symbols from %s collection",
+                            len(portfolio_symbols),
+                            portfolio_name,
+                        )
+                except Exception as e:
+                    self.logger.warning("Could not load portfolio config: %s", e)
+
+            # Query best strategies from database with optional symbol filtering
+            query = db_session.query(BestStrategy)
+
+            if portfolio_symbols:
+                query = query.filter(BestStrategy.symbol.in_(portfolio_symbols))
+
+            best_strategies = query.all()
+
+            if not best_strategies:
+                self.logger.warning(
+                    "No strategies found in database for specified filters"
+                )
+                return output_files
+
+            self.logger.info(
+                "Found %s strategies in database for %s collection",
+                len(best_strategies),
+                portfolio_name,
+            )
+
+            # Convert to DataFrame
+            data = []
+            for strategy in best_strategies:
+                data.append(
+                    {
+                        "Symbol": strategy.symbol,
+                        "Strategy": strategy.strategy,
+                        "Timeframe": strategy.timeframe,
+                        "Sortino_Ratio": strategy.sortino_ratio or 0.0,
+                        "Sharpe_Ratio": strategy.sharpe_ratio or 0.0,
+                        "Calmar_Ratio": strategy.calmar_ratio or 0.0,
+                        "Total_Return": strategy.total_return or 0.0,
+                        "Max_Drawdown": strategy.max_drawdown or 0.0,
+                        "Updated_At": strategy.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                        if strategy.updated_at
+                        else "",
+                        "Quarter": quarter,
+                        "Year": year,
+                    }
+                )
+
+            df = pd.DataFrame(data)
+
+            # Create output directory following standard naming convention
+            csv_output_dir = Path("exports/csv") / year / quarter
+            csv_output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Generate filename following naming convention
+            if output_filename:
+                base_filename = output_filename.replace(".csv", "")
+            else:
+                # Use actual collection name from portfolio, not generic names
+                base_filename = f"{portfolio_name}_collection"
+
+            if export_format == "best-strategies":
+                filename = f"{base_filename}_best_strategies_{quarter}_{year}.csv"
+                # Keep only one row per symbol with highest Sortino ratio
+                df = (
+                    df.sort_values("Sortino_Ratio", ascending=False)
+                    .groupby("Symbol")
+                    .first()
+                    .reset_index()
+                )
+                # Select and rename columns for best strategies format
+                df = df[
+                    ["Symbol", "Strategy", "Timeframe", "Sortino_Ratio", "Total_Return"]
+                ].rename(
+                    columns={
+                        "Symbol": "Asset",
+                        "Strategy": "Best_Strategy",
+                        "Timeframe": "Best_Timeframe",
+                        "Sortino_Ratio": "Sortino_Ratio",
+                        "Total_Return": "Total_Return_Pct",
+                    }
+                )
+            elif export_format == "quarterly":
+                filename = f"{base_filename}_quarterly_summary_{quarter}_{year}.csv"
+                # Create summary statistics
+                summary_data = []
+                for symbol in df["Symbol"].unique():
+                    symbol_data = df[df["Symbol"] == symbol]
+                    best_strategy = symbol_data.loc[
+                        symbol_data["Sortino_Ratio"].idxmax()
+                    ]
+                    summary_data.append(
+                        {
+                            "Asset": symbol,
+                            "Best_Strategy": best_strategy["Strategy"],
+                            "Best_Timeframe": best_strategy["Timeframe"],
+                            "Best_Sortino": best_strategy["Sortino_Ratio"],
+                            "Strategies_Tested": len(symbol_data),
+                            "Avg_Return": symbol_data["Total_Return"].mean(),
+                            "Best_Return": symbol_data["Total_Return"].max(),
+                        }
+                    )
+                df = pd.DataFrame(summary_data)
+            else:  # full
+                filename = f"{base_filename}_detailed_results_{quarter}_{year}.csv"
+                # Keep all data with proper column names
+                df = df.rename(
+                    columns={
+                        "Symbol": "Asset",
+                        "Strategy": "Strategy_Name",
+                        "Timeframe": "Time_Resolution",
+                    }
+                )
+
+            output_file = csv_output_dir / filename
+
+            # Export to CSV
+            df.to_csv(output_file, index=False)
+            output_files.append(str(output_file))
+
+            self.logger.info("Exported %s records to %s", len(df), output_file)
+
+            return output_files
+
+        except Exception as e:
+            self.logger.error("Failed to export from database: %s", e)
+            return output_files
+        finally:
+            if "db_session" in locals():
+                db_session.close()
 
     def export_from_quarterly_reports(
         self,
@@ -338,3 +517,88 @@ class RawDataCSVExporter:
             return card_data
 
         return None
+
+    def _export_from_database(
+        self, quarter: str, year: str, export_format: str = "full"
+    ) -> list[str]:
+        """
+        Export data directly from database when HTML reports have no data.
+
+        Args:
+            quarter: Quarter (Q1, Q2, Q3, Q4)
+            year: Year (YYYY)
+            export_format: Export format ('full', 'best-strategies', 'quarterly')
+
+        Returns:
+            List of generated CSV file paths
+        """
+        output_files = []
+
+        try:
+            db_session = get_db_session()
+
+            # Query all best strategies from database
+            best_strategies = db_session.query(BestStrategy).all()
+
+            if not best_strategies:
+                self.logger.warning("No strategies found in database")
+                return output_files
+
+            self.logger.info("Found %s strategies in database", len(best_strategies))
+
+            # Convert to DataFrame
+            data = []
+            for strategy in best_strategies:
+                data.append(
+                    {
+                        "Symbol": strategy.symbol,
+                        "Strategy": strategy.strategy,
+                        "Timeframe": strategy.timeframe,
+                        "Sortino_Ratio": strategy.sortino_ratio,
+                        "Sharpe_Ratio": strategy.sharpe_ratio,
+                        "Calmar_Ratio": strategy.calmar_ratio,
+                        "Total_Return": strategy.total_return,
+                        "Max_Drawdown": strategy.max_drawdown,
+                        "Updated_At": strategy.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                        if strategy.updated_at
+                        else "",
+                    }
+                )
+
+            df = pd.DataFrame(data)
+
+            # Create output directory
+            csv_output_dir = Path("exports/csv") / year / quarter
+            csv_output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Generate filename
+            if export_format == "best-strategies":
+                filename = f"database_best_strategies_{quarter}_{year}.csv"
+                # Keep only one row per symbol with highest Sortino ratio
+                df = (
+                    df.sort_values("Sortino_Ratio", ascending=False)
+                    .groupby("Symbol")
+                    .first()
+                    .reset_index()
+                )
+            elif export_format == "quarterly":
+                filename = f"database_quarterly_summary_{quarter}_{year}.csv"
+            else:  # full
+                filename = f"database_all_strategies_{quarter}_{year}.csv"
+
+            output_file = csv_output_dir / filename
+
+            # Export to CSV
+            df.to_csv(output_file, index=False)
+            output_files.append(str(output_file))
+
+            self.logger.info("Exported %s records to %s", len(df), output_file)
+
+            return output_files
+
+        except Exception as e:
+            self.logger.error("Failed to export from database: %s", e)
+            return output_files
+        finally:
+            if "db_session" in locals():
+                db_session.close()
