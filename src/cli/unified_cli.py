@@ -908,7 +908,11 @@ def handle_single_backtest(args):
         # Save to database for consistency with portfolio tests
         try:
             _save_backtest_to_database(
-                result, f"single_{args.symbol}_{args.strategy}", config, "sortino_ratio"
+                result,
+                f"single_{args.symbol}_{args.strategy}",
+                config,
+                "sortino_ratio",
+                args.timeframe,
             )
             print("  ✅ Results saved to database")
         except Exception as e:
@@ -1007,6 +1011,8 @@ def handle_portfolio_test_all(args):
     import webbrowser
     from datetime import datetime
 
+    from src.cli.direct_backtest_cli import save_direct_backtest_to_database
+    from src.core.direct_backtest import run_direct_backtest
     from src.reporting.detailed_portfolio_report import DetailedPortfolioReporter
 
     logger = logging.getLogger(__name__)
@@ -1047,27 +1053,15 @@ def handle_portfolio_test_all(args):
     if hasattr(args, "end_date") and args.end_date:
         end_date = datetime.strptime(args.end_date, "%Y-%m-%d")
 
-    # Get all available strategies dynamically
-    try:
-        from src.core.strategy import StrategyFactory
-
-        strategy_factory = StrategyFactory()
-        strategies_dict = strategy_factory.list_strategies()
-        all_strategies = strategies_dict["all"]
-        print(f"🔍 Found {len(all_strategies)} available strategies")
-        print(f"   - Built-in: {strategies_dict['builtin']}")
-        print(f"   - External: {strategies_dict['external']}")
-    except Exception as e:
-        logger.warning("Could not load strategy factory: %s", e)
-        # Fallback to basic strategies
-        all_strategies = ["rsi", "macd", "bollinger_bands", "sma_crossover"]
-        print(f"🔍 Using fallback strategies: {len(all_strategies)} strategies")
+    # Use specified strategies or fallback
+    all_strategies = ["BuyAndHold", "rsi", "macd", "bollinger_bands"]
+    print(f"🔍 Testing with strategies: {all_strategies}")
 
     # Determine timeframes to test
-    if args.test_timeframes:
-        timeframes_to_test = ["1min", "5min", "15min", "30min", "1h", "4h", "1d", "1wk"]
-    else:
+    if hasattr(args, "timeframes") and args.timeframes:
         timeframes_to_test = args.timeframes
+    else:
+        timeframes_to_test = ["1d", "1wk"]
 
     total_combinations = (
         len(portfolio_config["symbols"]) * len(all_strategies) * len(timeframes_to_test)
@@ -1087,96 +1081,52 @@ def handle_portfolio_test_all(args):
     print(f"📈 Primary Metric: {args.metric}")
     print("=" * 70)
 
-    # Download data first
-    print("📥 Downloading data...")
+    print("\n📊 Running direct backtests...")
 
-    # Setup components (single-threaded to avoid multiprocessing issues)
-    data_manager = UnifiedDataManager()
-    UnifiedCacheManager()
-
-    # Download data for all symbols
-    for symbol in portfolio_config["symbols"]:
-        try:
-            data = data_manager.get_data(
-                symbol=symbol,
-                start_date=start_date.strftime("%Y-%m-%d"),
-                end_date=end_date.strftime("%Y-%m-%d"),
-            )
-            if data is not None and len(data) > 0:
-                print(f"  ✅ {symbol}: {len(data)} data points")
-            else:
-                print(f"  ❌ {symbol}: No data available")
-        except Exception as e:
-            print(f"  ❌ {symbol}: Error - {e!s}")
-
-    print("\n📊 Running backtests and generating comprehensive report...")
-
-    # Setup backtesting engine
-    cache_manager = UnifiedCacheManager()
-    backtest_engine = UnifiedBacktestEngine(data_manager, cache_manager, max_workers=2)
-
-    # Run actual backtests for each symbol-strategy combination
-    backtest_results = {}
-    total_tests = len(portfolio_config["symbols"]) * len(all_strategies)
+    # Run actual backtests for each symbol-strategy-timeframe combination
+    total_tests = (
+        len(portfolio_config["symbols"]) * len(all_strategies) * len(timeframes_to_test)
+    )
     current_test = 0
 
     for symbol in portfolio_config["symbols"]:
-        backtest_results[symbol] = {}
         for strategy in all_strategies:
-            current_test += 1
-            print(
-                f"  🔄 Testing {symbol} with {strategy} ({current_test}/{total_tests})"
-            )
-
-            try:
-                config = BacktestConfig(
-                    symbols=[symbol],
-                    strategies=[strategy],
-                    start_date=start_date.strftime("%Y-%m-%d"),
-                    end_date=end_date.strftime("%Y-%m-%d"),
-                    initial_capital=portfolio_config.get("initial_capital", 10000),
-                    commission=portfolio_config.get("commission", 0.001),
-                    save_trades=True,  # Enable trade history saving
-                    override_old_trades=not args.keep_old_trades,  # Override by default, unless user wants to keep
+            for timeframe in timeframes_to_test:
+                current_test += 1
+                print(
+                    f"  🔄 Testing {symbol} with {strategy} on {timeframe} ({current_test}/{total_tests})"
                 )
 
-                result = backtest_engine.run_backtest(symbol, strategy, config)
-                backtest_results[symbol][strategy] = result
-
-                # Save to database
                 try:
-                    _save_backtest_to_database(
-                        result, f"{symbol}_{strategy}", config, args.metric
-                    )
-                except Exception as db_error:
-                    logger.warning(
-                        "Failed to save %s/%s to database: %s",
-                        symbol,
-                        strategy,
-                        db_error,
+                    # Use direct backtest library
+                    result_dict = run_direct_backtest(
+                        symbol=symbol,
+                        strategy_name=strategy,
+                        start_date=start_date.strftime("%Y-%m-%d"),
+                        end_date=end_date.strftime("%Y-%m-%d"),
+                        timeframe=timeframe,
+                        initial_capital=portfolio_config.get("initial_capital", 10000),
+                        commission=portfolio_config.get("commission", 0.001),
                     )
 
-            except Exception as e:
-                print(f"    ❌ Error testing {symbol} with {strategy}: {e}")
-                # Create a failed result
-                backtest_results[symbol][strategy] = BacktestResult(
-                    symbol=symbol,
-                    strategy=strategy,
-                    parameters={},
-                    metrics={
-                        "total_return": 0.0,
-                        "final_value": portfolio_config.get("initial_capital", 10000),
-                        "sortino_ratio": 0.0,
-                        "sharpe_ratio": 0.0,
-                        "max_drawdown": 0.0,
-                    },
-                    config=config,
-                    start_date=start_date.strftime("%Y-%m-%d"),
-                    end_date=end_date.strftime("%Y-%m-%d"),
-                    error=str(e),
-                )
+                    # Save to database using new direct approach
+                    if not result_dict.get("error"):
+                        save_direct_backtest_to_database(result_dict, args.metric)
+
+                        metrics = result_dict["metrics"]
+                        print(
+                            f"    ✅ Return: {metrics.get('total_return', 0):.2f}%, Sharpe: {metrics.get('sharpe_ratio', 0):.3f}"
+                        )
+                    else:
+                        print(f"    ❌ Error: {result_dict['error']}")
+
+                except Exception as e:
+                    print(
+                        f"    ❌ Error testing {symbol} with {strategy} on {timeframe}: {e}"
+                    )
 
     # Generate detailed report with actual results
+    print("\n📊 Generating comprehensive HTML report...")
     reporter = DetailedPortfolioReporter()
     report_path = reporter.generate_comprehensive_report(
         portfolio_config=portfolio_config,
@@ -1184,7 +1134,6 @@ def handle_portfolio_test_all(args):
         end_date=end_date.strftime("%Y-%m-%d"),
         strategies=all_strategies,
         timeframes=timeframes_to_test,
-        metric=args.metric,
     )
 
     print(f"\n📱 Comprehensive report generated: {report_path}")
@@ -1207,7 +1156,7 @@ def handle_portfolio_test_all(args):
             # Calculate average metric scores for each strategy
             strategy_scores = {}
             for best_strategy in best_strategies:
-                strategy_name = best_strategy.best_strategy
+                strategy_name = best_strategy.strategy
                 metric_value = getattr(best_strategy, args.metric, 0)
 
                 if strategy_name not in strategy_scores:
@@ -1249,14 +1198,19 @@ def handle_portfolio_test_all(args):
         session.close()
 
     # Get the best overall strategy from the database
-    best_strategy_name = _get_best_overall_strategy_from_db(args.metric)
-    print(f"\n🏆 Best Overall Strategy: {best_strategy_name}")
+    try:
+        best_strategy_name = _get_best_overall_strategy_from_db(args.metric)
+        print(f"\n🏆 Best Overall Strategy: {best_strategy_name}")
+    except Exception as e:
+        logger.warning("Could not determine best strategy: %s", e)
+        print("\n🏆 Best Overall Strategy: Check the detailed report")
+
     print(
         "\n📊 Each asset analyzed with detailed KPIs, order history, and equity curves"
     )
     print("💾 Report size optimized with compression")
 
-    if args.open_browser:
+    if hasattr(args, "open_browser") and args.open_browser:
         import os
 
         webbrowser.open(f"file://{os.path.abspath(report_path)}")
@@ -1304,7 +1258,7 @@ def handle_portfolio_backtest(args):
 
     # Save to database
     try:
-        _save_backtest_to_database(result, "PORTFOLIO", config)
+        _save_backtest_to_database(result, "PORTFOLIO", config, "sortino_ratio", "1d")
         logger.info("Backtest results saved to database")
     except Exception as e:
         logger.warning("Failed to save to database: %s", e)
@@ -1321,7 +1275,11 @@ def handle_portfolio_backtest(args):
 
 
 def _save_backtest_to_database(
-    backtest_result, name_prefix: str = "", config=None, metric: str = "sortino_ratio"
+    backtest_result,
+    name_prefix: str = "",
+    config=None,
+    metric: str = "sortino_ratio",
+    timeframe: str = "1d",
 ):
     """Save backtest result to PostgreSQL database and update best strategies."""
     from datetime import datetime
@@ -1441,19 +1399,15 @@ def _save_backtest_to_database(
                 trade_record = Trade(
                     backtest_result_id=db_result.id,
                     symbol=backtest_result.symbol,
+                    strategy=backtest_result.strategy,
+                    timeframe=getattr(backtest_result.config, "timeframe", "1d"),
                     trade_datetime=trade_row["timestamp"],
-                    trade_type=trade_type,
+                    side=trade_type,
+                    size=float(trade_row["size"]),
                     price=float(trade_row["price"]),
-                    quantity=float(trade_row["size"]),
-                    value=trade_value,
-                    equity_after_trade=current_equity
+                    equity_before=current_equity,
+                    equity_after=current_equity
                     + (current_holdings * float(trade_row["price"])),
-                    holdings_after_trade=current_holdings,
-                    cash_after_trade=current_equity,
-                    fees=fees,
-                    net_profit=float(trade_row.get("pnl", 0)),
-                    unrealized_pnl=0.0,  # Could be calculated if needed
-                    entry_reason=f"{trade_type} signal from {backtest_result.strategy}",
                 )
                 session.add(trade_record)
 
@@ -1565,7 +1519,8 @@ def _save_backtest_to_database(
                 session,
                 backtest_result,
                 run_id,
-                getattr(backtest_result.config, "timeframe", "1d"),
+                getattr(backtest_result.config, "timeframe", timeframe),
+                db_result,
                 metric,
             )
 
@@ -1595,7 +1550,7 @@ def _get_best_overall_strategy_from_db(metric: str = "sortino_ratio") -> str:
         # Calculate average metric scores for each strategy
         strategy_scores = {}
         for best_strategy in best_strategies:
-            strategy_name = best_strategy.best_strategy
+            strategy_name = best_strategy.strategy
             metric_value = getattr(best_strategy, metric, 0)
 
             if strategy_name not in strategy_scores:
@@ -1635,7 +1590,12 @@ def _get_best_overall_strategy_from_db(metric: str = "sortino_ratio") -> str:
 
 
 def _update_best_strategy(
-    session, backtest_result, run_id: str, timeframe: str, metric: str = "sortino_ratio"
+    session,
+    backtest_result,
+    run_id: str,
+    timeframe: str,
+    db_result,
+    metric: str = "sortino_ratio",
 ):
     """Update best_strategies table if this result is better than existing."""
     from src.database.models import BestStrategy
@@ -1737,34 +1697,13 @@ def _update_best_strategy(
             best_strategy = BestStrategy(
                 symbol=backtest_result.symbol,
                 timeframe=timeframe,
-                best_strategy=backtest_result.strategy,
+                strategy=backtest_result.strategy,
                 sortino_ratio=current_sortino,
-                sharpe_ratio=float(backtest_result.metrics.get("sharpe_ratio", 0)),
                 calmar_ratio=float(backtest_result.metrics.get("calmar_ratio", 0)),
-                profit_factor=float(backtest_result.metrics.get("profit_factor", 0)),
+                sharpe_ratio=float(backtest_result.metrics.get("sharpe_ratio", 0)),
                 total_return=float(backtest_result.metrics.get("total_return", 0)),
                 max_drawdown=max_dd,
-                volatility=volatility,
-                win_rate=float(backtest_result.metrics.get("win_rate", 0)),
-                num_trades=int(backtest_result.metrics.get("num_trades", 0)),
-                alpha=float(backtest_result.metrics.get("alpha", 0)),
-                beta=float(backtest_result.metrics.get("beta", 1)),
-                expectancy=float(backtest_result.metrics.get("expectancy", 0)),
-                average_win=float(backtest_result.metrics.get("average_win", 0)),
-                average_loss=float(backtest_result.metrics.get("average_loss", 0)),
-                total_fees=float(backtest_result.metrics.get("total_fees", 0)),
-                portfolio_turnover=float(
-                    backtest_result.metrics.get("portfolio_turnover", 0)
-                ),
-                strategy_capacity=float(
-                    backtest_result.metrics.get("strategy_capacity", 1000000)
-                ),
-                risk_score=risk_score,
-                risk_per_trade=risk_per_trade,
-                stop_loss_pct=stop_loss,
-                take_profit_pct=take_profit,
-                best_parameters=backtest_result.parameters or {},
-                backtest_run_id=run_id,
+                backtest_result_id=db_result.id,
             )
             session.add(best_strategy)
 

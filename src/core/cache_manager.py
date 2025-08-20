@@ -219,10 +219,26 @@ class UnifiedCacheManager:
                 # Filter by date range if specified
                 if start_date or end_date:
                     if start_date:
-                        start = pd.to_datetime(start_date)
+                        start = pd.to_datetime(start_date, utc=True)
+                        # If data index is timezone-aware, ensure comparison consistency
+                        if hasattr(data.index, "tz") and data.index.tz is not None:
+                            if start.tz is None:
+                                start = start.tz_localize("UTC")
+                        else:
+                            # If data index is timezone-naive but start is aware, make start naive
+                            if start.tz is not None:
+                                start = start.tz_localize(None)
                         data = data[data.index >= start]
                     if end_date:
-                        end = pd.to_datetime(end_date)
+                        end = pd.to_datetime(end_date, utc=True)
+                        # If data index is timezone-aware, ensure comparison consistency
+                        if hasattr(data.index, "tz") and data.index.tz is not None:
+                            if end.tz is None:
+                                end = end.tz_localize("UTC")
+                        else:
+                            # If data index is timezone-naive but end is aware, make end naive
+                            if end.tz is not None:
+                                end = end.tz_localize(None)
                         data = data[data.index <= end]
 
                 return data if not data.empty else None
@@ -636,9 +652,11 @@ class UnifiedCacheManager:
                     key=row[0],
                     cache_type=row[1],
                     symbol=row[2],
-                    created_at=datetime.fromisoformat(row[3]),
-                    last_accessed=datetime.fromisoformat(row[4]),
-                    expires_at=datetime.fromisoformat(row[5]) if row[5] else None,
+                    created_at=datetime.fromisoformat(row[3]).replace(tzinfo=None),
+                    last_accessed=datetime.fromisoformat(row[4]).replace(tzinfo=None),
+                    expires_at=datetime.fromisoformat(row[5]).replace(tzinfo=None)
+                    if row[5]
+                    else None,
                     size_bytes=row[6],
                     source=row[7],
                     interval=row[8],
@@ -654,14 +672,23 @@ class UnifiedCacheManager:
         """Check if cache entry is expired."""
         if not entry.expires_at:
             return False
-        return datetime.now() > entry.expires_at
+
+        from datetime import timezone
+
+        # Always use UTC for consistent comparison
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        expires_at = entry.expires_at
+
+        return now > expires_at
 
     def _update_access_time(self, key: str) -> None:
         """Update last access time."""
+        from datetime import timezone
+
         with sqlite3.connect(self.metadata_db) as conn:
             conn.execute(
                 "UPDATE cache_entries SET last_accessed = ? WHERE key = ?",
-                (datetime.now().isoformat(), key),
+                (datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), key),
             )
 
     def _remove_entry(self, key: str) -> None:
