@@ -42,7 +42,7 @@ safety = "^3.0"
 # Optional for data analysis
 jupyter = "^1.0"
 jupyterlab = "^4.0"
-plotly = "^5.18.0"
+plotly = "^6.3.0"
 matplotlib = "^3.10"
 seaborn = "^0.13.0"
 
