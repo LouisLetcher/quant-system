@@ -1317,7 +1317,7 @@ def _save_backtest_to_database(
             max_drawdown=float(backtest_result.metrics.get("max_drawdown", 0)),
             volatility=float(backtest_result.metrics.get("volatility", 0)),
             win_rate=float(backtest_result.metrics.get("win_rate", 0)),
-            num_trades=int(backtest_result.metrics.get("num_trades", 0)),
+            trades_count=int(backtest_result.metrics.get("num_trades", 0)),
             alpha=float(backtest_result.metrics.get("alpha", 0)),
             beta=float(backtest_result.metrics.get("beta", 1)),
             expectancy=float(backtest_result.metrics.get("expectancy", 0)),
@@ -1376,40 +1376,47 @@ def _save_backtest_to_database(
             current_holdings = 0.0
 
             for _, trade_row in backtest_result.trades.iterrows():
-                # Calculate portfolio state after trade
-                if trade_row["action"] == "buy":
-                    trade_type = "BUY"
-                    current_holdings += float(trade_row["size"])
-                    current_equity -= float(trade_row["size"]) * float(
-                        trade_row["price"]
-                    )
-                else:
-                    trade_type = "SELL"
-                    current_holdings -= float(trade_row["size"])
-                    current_equity += float(trade_row["size"]) * float(
-                        trade_row["price"]
-                    )
-
-                # Calculate fees
-                trade_value = float(trade_row["size"]) * float(trade_row["price"])
-                fees = trade_value * config.commission if config else 0
-                current_equity -= fees
-
-                # Create trade record
-                trade_record = Trade(
+                # Backtesting library returns complete round-trip trades
+                # Each row has EntryTime, ExitTime, EntryPrice, ExitPrice
+                
+                entry_value = float(trade_row["Size"]) * float(trade_row["EntryPrice"])
+                exit_value = float(trade_row["Size"]) * float(trade_row["ExitPrice"])
+                
+                # Create ENTRY trade record
+                entry_trade = Trade(
                     backtest_result_id=db_result.id,
                     symbol=backtest_result.symbol,
                     strategy=backtest_result.strategy,
-                    timeframe=getattr(backtest_result.config, "timeframe", "1d"),
-                    trade_datetime=trade_row["timestamp"],
-                    side=trade_type,
-                    size=float(trade_row["size"]),
-                    price=float(trade_row["price"]),
+                    timeframe=getattr(backtest_result.config, "timeframe", timeframe),
+                    trade_datetime=trade_row["EntryTime"],
+                    side="BUY",
+                    size=float(trade_row["Size"]),
+                    price=float(trade_row["EntryPrice"]),
                     equity_before=current_equity,
-                    equity_after=current_equity
-                    + (current_holdings * float(trade_row["price"])),
+                    equity_after=current_equity - entry_value,
                 )
-                session.add(trade_record)
+                session.add(entry_trade)
+                
+                current_equity -= entry_value
+                current_holdings += float(trade_row["Size"])
+                
+                # Create EXIT trade record
+                exit_trade = Trade(
+                    backtest_result_id=db_result.id,
+                    symbol=backtest_result.symbol,
+                    strategy=backtest_result.strategy,
+                    timeframe=getattr(backtest_result.config, "timeframe", timeframe),
+                    trade_datetime=trade_row["ExitTime"],
+                    side="SELL",
+                    size=float(trade_row["Size"]),
+                    price=float(trade_row["ExitPrice"]),
+                    equity_before=current_equity,
+                    equity_after=current_equity + exit_value,
+                )
+                session.add(exit_trade)
+                
+                current_equity += exit_value
+                current_holdings -= float(trade_row["Size"])
 
         # Recalculate correct final_value and total_return from actual trade data
         logger = logging.getLogger(__name__)
@@ -1478,7 +1485,7 @@ def _save_backtest_to_database(
             # Update the database record with correct values (ensure all are Python native types)
             db_result.final_value = float(final_trade_equity)
             db_result.total_return = float(actual_total_return)
-            db_result.num_trades = len(backtest_result.trades)
+            db_result.trades_count = len(backtest_result.trades)
 
             # For advanced metrics, ensure complete type conversion
             import builtins
