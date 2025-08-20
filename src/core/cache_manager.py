@@ -219,10 +219,26 @@ class UnifiedCacheManager:
                 # Filter by date range if specified
                 if start_date or end_date:
                     if start_date:
-                        start = pd.to_datetime(start_date)
+                        start = pd.to_datetime(start_date, utc=True)
+                        # If data index is timezone-aware, ensure comparison consistency
+                        if hasattr(data.index, "tz") and data.index.tz is not None:
+                            if start.tz is None:
+                                start = start.tz_localize("UTC")
+                        else:
+                            # If data index is timezone-naive but start is aware, make start naive
+                            if start.tz is not None:
+                                start = start.tz_localize(None)
                         data = data[data.index >= start]
                     if end_date:
-                        end = pd.to_datetime(end_date)
+                        end = pd.to_datetime(end_date, utc=True)
+                        # If data index is timezone-aware, ensure comparison consistency
+                        if hasattr(data.index, "tz") and data.index.tz is not None:
+                            if end.tz is None:
+                                end = end.tz_localize("UTC")
+                        else:
+                            # If data index is timezone-naive but end is aware, make end naive
+                            if end.tz is not None:
+                                end = end.tz_localize(None)
                         data = data[data.index <= end]
 
                 return data if not data.empty else None

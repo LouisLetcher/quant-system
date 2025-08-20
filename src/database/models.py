@@ -282,3 +282,46 @@ class OptimizationResult(Base):
 
     def __repr__(self) -> str:
         return f"<OptimizationResult(strategy='{self.strategy}', best_sortino={self.best_sortino_ratio})>"
+
+
+class AIRecommendation(Base):
+    """AI-generated investment recommendations."""
+
+    __tablename__ = "ai_recommendations"
+    __table_args__ = (
+        Index("idx_ai_created_at", "created_at"),
+        Index("idx_ai_risk_profile", "risk_profile"),
+        {"schema": "backtests"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    risk_profile = Column(String(50), nullable=False)
+    portfolio_name = Column(String(255))
+    recommendation_data = Column(JSONB, nullable=False)
+    confidence_score = Column(Numeric(5, 4))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AssetRecommendation(Base):
+    """Individual asset recommendations from AI analysis."""
+
+    __tablename__ = "asset_recommendations"
+    __table_args__ = (
+        Index("idx_asset_rec_symbol", "symbol"),
+        Index("idx_asset_rec_confidence", "confidence_score"),
+        {"schema": "backtests"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    ai_recommendation_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("backtests.ai_recommendations.id"),
+        nullable=False,
+    )
+    symbol = Column(String(20), nullable=False)
+    strategy = Column(String(100), nullable=False)
+    timeframe = Column(String(10), nullable=False)
+    recommendation_type = Column(String(10), nullable=False)  # BUY, SELL, HOLD
+    confidence_score = Column(Numeric(5, 4), nullable=False)
+    reasoning = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

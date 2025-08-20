@@ -50,19 +50,16 @@ class SimpleCSVExporter:
                 csv_data.append(
                     {
                         "Symbol": bs.symbol,
-                        "Best_Strategy": bs.best_strategy,
+                        "Best_Strategy": bs.strategy,
                         "Timeframe": bs.timeframe,
                         "Sortino_Ratio": float(bs.sortino_ratio or 0),
                         "Sharpe_Ratio": float(bs.sharpe_ratio or 0),
                         "Total_Return_Percent": float(bs.total_return or 0),
                         "Max_Drawdown_Percent": float(bs.max_drawdown or 0),
-                        "Volatility_Percent": float(bs.volatility or 0),
-                        "Win_Rate_Percent": float(bs.win_rate or 0),
-                        "Number_of_Trades": int(bs.num_trades or 0),
-                        "Profit_Factor": float(bs.profit_factor or 1),
-                        "Data_Source": "backtesting_library",
-                        "Last_Updated": bs.last_updated.strftime("%Y-%m-%d %H:%M:%S")
-                        if bs.last_updated
+                        "Calmar_Ratio": float(bs.calmar_ratio or 0),
+                        "Data_Source": "backtesting_library_real_data",
+                        "Last_Updated": bs.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                        if bs.updated_at
                         else "",
                     }
                 )
@@ -173,16 +170,16 @@ class SimpleCSVExporter:
                 csv_data.append(
                     {
                         "Symbol": trade.symbol,
+                        "Strategy": trade.strategy,
+                        "Timeframe": trade.timeframe,
                         "Trade_DateTime": trade.trade_datetime.strftime(
                             "%Y-%m-%d %H:%M:%S"
                         ),
-                        "Trade_Type": trade.trade_type,
+                        "Trade_Type": trade.side,
                         "Price": float(trade.price),
-                        "Quantity": float(trade.quantity),
-                        "Value": float(trade.value),
-                        "Fees": float(trade.fees),
-                        "Net_Profit": float(trade.net_profit),
-                        "Entry_Reason": trade.entry_reason,
+                        "Size": float(trade.size),
+                        "Equity_Before": float(trade.equity_before or 0),
+                        "Equity_After": float(trade.equity_after or 0),
                         "Data_Source": "backtesting_library_real_trades",
                     }
                 )

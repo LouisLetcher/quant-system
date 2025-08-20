@@ -908,7 +908,7 @@ def handle_single_backtest(args):
         # Save to database for consistency with portfolio tests
         try:
             _save_backtest_to_database(
-                result, f"single_{args.symbol}_{args.strategy}", config, "sortino_ratio"
+                result, f"single_{args.symbol}_{args.strategy}", config, "sortino_ratio", args.timeframe
             )
             print("  ✅ Results saved to database")
         except Exception as e:
@@ -1152,7 +1152,7 @@ def handle_portfolio_test_all(args):
             # Calculate average metric scores for each strategy
             strategy_scores = {}
             for best_strategy in best_strategies:
-                strategy_name = best_strategy.best_strategy
+                strategy_name = best_strategy.strategy
                 metric_value = getattr(best_strategy, args.metric, 0)
 
                 if strategy_name not in strategy_scores:
@@ -1254,7 +1254,7 @@ def handle_portfolio_backtest(args):
 
     # Save to database
     try:
-        _save_backtest_to_database(result, "PORTFOLIO", config)
+        _save_backtest_to_database(result, "PORTFOLIO", config, "sortino_ratio", "1d")
         logger.info("Backtest results saved to database")
     except Exception as e:
         logger.warning("Failed to save to database: %s", e)
@@ -1271,7 +1271,7 @@ def handle_portfolio_backtest(args):
 
 
 def _save_backtest_to_database(
-    backtest_result, name_prefix: str = "", config=None, metric: str = "sortino_ratio"
+    backtest_result, name_prefix: str = "", config=None, metric: str = "sortino_ratio", timeframe: str = "1d"
 ):
     """Save backtest result to PostgreSQL database and update best strategies."""
     from datetime import datetime
@@ -1391,19 +1391,15 @@ def _save_backtest_to_database(
                 trade_record = Trade(
                     backtest_result_id=db_result.id,
                     symbol=backtest_result.symbol,
+                    strategy=backtest_result.strategy,
+                    timeframe=getattr(backtest_result.config, "timeframe", "1d"),
                     trade_datetime=trade_row["timestamp"],
-                    trade_type=trade_type,
+                    side=trade_type,
+                    size=float(trade_row["size"]),
                     price=float(trade_row["price"]),
-                    quantity=float(trade_row["size"]),
-                    value=trade_value,
-                    equity_after_trade=current_equity
+                    equity_before=current_equity,
+                    equity_after=current_equity
                     + (current_holdings * float(trade_row["price"])),
-                    holdings_after_trade=current_holdings,
-                    cash_after_trade=current_equity,
-                    fees=fees,
-                    net_profit=float(trade_row.get("pnl", 0)),
-                    unrealized_pnl=0.0,  # Could be calculated if needed
-                    entry_reason=f"{trade_type} signal from {backtest_result.strategy}",
                 )
                 session.add(trade_record)
 
@@ -1515,7 +1511,8 @@ def _save_backtest_to_database(
                 session,
                 backtest_result,
                 run_id,
-                getattr(backtest_result.config, "timeframe", "1d"),
+                getattr(backtest_result.config, "timeframe", timeframe),
+                db_result,
                 metric,
             )
 
@@ -1545,7 +1542,7 @@ def _get_best_overall_strategy_from_db(metric: str = "sortino_ratio") -> str:
         # Calculate average metric scores for each strategy
         strategy_scores = {}
         for best_strategy in best_strategies:
-            strategy_name = best_strategy.best_strategy
+            strategy_name = best_strategy.strategy
             metric_value = getattr(best_strategy, metric, 0)
 
             if strategy_name not in strategy_scores:
@@ -1585,7 +1582,7 @@ def _get_best_overall_strategy_from_db(metric: str = "sortino_ratio") -> str:
 
 
 def _update_best_strategy(
-    session, backtest_result, run_id: str, timeframe: str, metric: str = "sortino_ratio"
+    session, backtest_result, run_id: str, timeframe: str, db_result, metric: str = "sortino_ratio"
 ):
     """Update best_strategies table if this result is better than existing."""
     from src.database.models import BestStrategy
@@ -1687,34 +1684,13 @@ def _update_best_strategy(
             best_strategy = BestStrategy(
                 symbol=backtest_result.symbol,
                 timeframe=timeframe,
-                best_strategy=backtest_result.strategy,
+                strategy=backtest_result.strategy,
                 sortino_ratio=current_sortino,
-                sharpe_ratio=float(backtest_result.metrics.get("sharpe_ratio", 0)),
                 calmar_ratio=float(backtest_result.metrics.get("calmar_ratio", 0)),
-                profit_factor=float(backtest_result.metrics.get("profit_factor", 0)),
+                sharpe_ratio=float(backtest_result.metrics.get("sharpe_ratio", 0)),
                 total_return=float(backtest_result.metrics.get("total_return", 0)),
                 max_drawdown=max_dd,
-                volatility=volatility,
-                win_rate=float(backtest_result.metrics.get("win_rate", 0)),
-                num_trades=int(backtest_result.metrics.get("num_trades", 0)),
-                alpha=float(backtest_result.metrics.get("alpha", 0)),
-                beta=float(backtest_result.metrics.get("beta", 1)),
-                expectancy=float(backtest_result.metrics.get("expectancy", 0)),
-                average_win=float(backtest_result.metrics.get("average_win", 0)),
-                average_loss=float(backtest_result.metrics.get("average_loss", 0)),
-                total_fees=float(backtest_result.metrics.get("total_fees", 0)),
-                portfolio_turnover=float(
-                    backtest_result.metrics.get("portfolio_turnover", 0)
-                ),
-                strategy_capacity=float(
-                    backtest_result.metrics.get("strategy_capacity", 1000000)
-                ),
-                risk_score=risk_score,
-                risk_per_trade=risk_per_trade,
-                stop_loss_pct=stop_loss,
-                take_profit_pct=take_profit,
-                best_parameters=backtest_result.parameters or {},
-                backtest_run_id=run_id,
+                backtest_result_id=db_result.id,
             )
             session.add(best_strategy)
 

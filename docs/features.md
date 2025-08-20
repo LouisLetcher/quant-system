@@ -4,9 +4,9 @@ This document provides a complete overview of implemented and planned features i
 
 ## ✅ Core Features (Implemented)
 
-### 1. Unified Backtesting Engine
+### 1. Direct Backtesting Library Integration
 **Status**: ✅ **IMPLEMENTED**
-**Description**: Core backtesting infrastructure supporting multiple strategies and assets.
+**Description**: Direct integration with the `backtesting` library for institutional-grade performance analysis.
 
 **Features**:
 - ✅ Single asset and portfolio backtesting
@@ -153,7 +153,7 @@ docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
 ## 🎯 High Priority Features (Planned)
 
 ### 1. AI Investment Recommendations
-**Status**: 🔄 **PLANNED**
+**Status**: ✅ **IMPLEMENTED**
 **Description**: AI-powered analysis of backtest results to recommend optimal asset allocation and investment decisions.
 
 **Features**:
@@ -242,7 +242,7 @@ docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
 - **Visualization**: Plotly.js for interactive charts
 - **Infrastructure**: Docker, Docker Compose
 - **Testing**: Pytest with coverage reporting
-- **Code Quality**: Black, isort, Ruff, markdownlint
+- **Code Quality**: Ruff (formatting and linting), MyPy, markdownlint
 
 ### Performance Characteristics
 - **Portfolio Size**: Tested with 220+ crypto symbols

@@ -50,7 +50,6 @@ def save_direct_backtest_to_database(result_dict: dict, metric: str = "sortino_r
             volatility=metrics.get("volatility", 0.0),
             downside_deviation=0.0,  # Not available from backtesting library directly
             win_rate=metrics.get("win_rate", 0.0),
-            trades_count=metrics.get("num_trades", 0),
             average_win=0.0,  # Could be calculated from trades if needed
             average_loss=0.0,
             parameters={},
@@ -118,7 +117,6 @@ def update_best_strategy_direct(
     )
 
     current_metric_value = metrics.get(metric, 0)
-    current_num_trades = metrics.get("num_trades", 0)
 
     # Determine if this is better
     is_better = False
@@ -126,19 +124,12 @@ def update_best_strategy_direct(
         is_better = True
     else:
         existing_metric_value = getattr(existing, metric, 0) or 0
-        existing_num_trades = existing.num_trades or 0
 
-        # Prefer strategies with actual trades
-        if current_num_trades > 0 and existing_num_trades == 0:
-            is_better = True
-        elif current_num_trades == 0 and existing_num_trades > 0:
-            is_better = False
+        # Compare by metric (higher is better for most metrics)
+        if metric == "max_drawdown":
+            is_better = current_metric_value < existing_metric_value
         else:
-            # Compare by metric (higher is better for most metrics)
-            if metric == "max_drawdown":
-                is_better = current_metric_value < existing_metric_value
-            else:
-                is_better = current_metric_value > existing_metric_value
+            is_better = current_metric_value > existing_metric_value
 
     if is_better:
         if existing:
