@@ -17,23 +17,25 @@ class TestDetailedPortfolioReporter:
         reporter = DetailedPortfolioReporter()
         assert reporter.report_organizer is not None
 
-    @patch("src.reporting.detailed_portfolio_report.get_db_session")
-    def test_generate_comprehensive_report_basic(self, mock_get_session):
+    @patch("src.reporting.detailed_portfolio_report.get_sync_engine")
+    @patch("src.reporting.detailed_portfolio_report.sessionmaker")
+    def test_generate_comprehensive_report_basic(self, mock_sessionmaker, mock_get_sync_engine):
         """Test basic comprehensive report generation."""
         # Setup mock database session
         mock_session = MagicMock()
-        mock_get_session.return_value = mock_session
+        mock_sessionmaker.return_value = mock_session
+        mock_get_sync_engine.return_value = MagicMock()
         
         # Mock database query results
-        mock_session.query.return_value.filter_by.return_value.order_by.return_value.all.return_value = []
-        
+        mock_session.return_value.query.return_value.filter_by.return_value.order_by.return_value.all.return_value = []
+
         reporter = DetailedPortfolioReporter()
 
         portfolio_config = {"symbols": ["AAPL", "MSFT"], "name": "Test Portfolio"}
 
         result = reporter.generate_comprehensive_report(
             portfolio_config=portfolio_config,
-            start_date="2023-01-01", 
+            start_date="2023-01-01",
             end_date="2023-12-31",
             strategies=["BuyAndHold"],
         )
@@ -54,7 +56,7 @@ class TestDetailedPortfolioReporter:
             reporter.generate_comprehensive_report(
                 portfolio_config=portfolio_config,
                 start_date="2023-01-01",
-                end_date="2023-12-31", 
+                end_date="2023-12-31",
                 strategies=["BuyAndHold"],
             )
 
@@ -68,7 +70,7 @@ class TestDetailedPortfolioReporter:
     def test_generate_equity_curve_empty(self):
         """Test equity curve generation with empty orders."""
         reporter = DetailedPortfolioReporter()
-        result = reporter._generate_equity_curve([])
+        result = reporter._generate_simple_equity_curve([])
         assert result == []
 
     def test_generate_equity_curve_with_orders(self):
@@ -78,7 +80,7 @@ class TestDetailedPortfolioReporter:
             {"date": "2023-01-01", "equity": 10000},
             {"date": "2023-01-02", "equity": 10100},
         ]
-        result = reporter._generate_equity_curve(orders)
+        result = reporter._generate_simple_equity_curve(orders)
         assert len(result) == 2
         assert result[0]["date"] == "2023-01-01"
         assert result[0]["equity"] == 10000
@@ -87,21 +89,23 @@ class TestDetailedPortfolioReporter:
 class TestIntegration:
     """Integration tests for the complete reporting workflow."""
 
-    @patch("src.reporting.detailed_portfolio_report.get_db_session")
-    def test_complete_workflow_single_asset(self, mock_get_session):
+    @patch("src.reporting.detailed_portfolio_report.get_sync_engine")
+    @patch("src.reporting.detailed_portfolio_report.sessionmaker")
+    def test_complete_workflow_single_asset(self, mock_sessionmaker, mock_get_sync_engine):
         """Test complete workflow with single asset."""
         # Setup mock database session
         mock_session = MagicMock()
-        mock_get_session.return_value = mock_session
-        
+        mock_sessionmaker.return_value = mock_session
+        mock_get_sync_engine.return_value = MagicMock()
+
         # Mock database query results
-        mock_session.query.return_value.filter_by.return_value.order_by.return_value.all.return_value = []
+        mock_session.return_value.query.return_value.filter_by.return_value.order_by.return_value.all.return_value = []
 
         reporter = DetailedPortfolioReporter()
 
         portfolio_config = {
             "symbols": ["AAPL"],
-            "name": "Single Asset Portfolio", 
+            "name": "Single Asset Portfolio",
             "allocation": {"AAPL": 1.0},
         }
 
@@ -128,6 +132,6 @@ class TestIntegration:
             reporter.generate_comprehensive_report(
                 portfolio_config=invalid_config,
                 start_date="2023-01-01",
-                end_date="2023-12-31", 
+                end_date="2023-12-31",
                 strategies=["BuyAndHold"],
             )
