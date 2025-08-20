@@ -75,6 +75,7 @@ class BacktestResult(Base):
     name = Column(String(255), nullable=False)
     symbols = Column(ARRAY(Text), nullable=False)
     strategy = Column(String(100), nullable=False)
+    timeframe = Column(String(10), nullable=False)
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     initial_capital = Column(Numeric(20, 2), nullable=False)
@@ -175,6 +176,64 @@ class PortfolioConfiguration(Base):
                 [m for m in self.secondary_metrics if m != self.optimization_metric]
             )
         return metrics
+
+
+class BestStrategy(Base):
+    """Best performing strategy for each symbol/timeframe combination."""
+
+    __tablename__ = "best_strategies"
+    __table_args__ = (
+        UniqueConstraint("symbol", "timeframe", name="uq_best_symbol_timeframe"),
+        Index("idx_best_symbol_timeframe", "symbol", "timeframe"),
+        Index("idx_best_sortino", "sortino_ratio"),
+        {"schema": "backtests"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    symbol = Column(String(20), nullable=False)
+    timeframe = Column(String(10), nullable=False)
+    strategy = Column(String(100), nullable=False)
+
+    # Performance metrics
+    sortino_ratio = Column(Numeric(10, 4))
+    calmar_ratio = Column(Numeric(10, 4))
+    sharpe_ratio = Column(Numeric(10, 4))
+    total_return = Column(Numeric(10, 4))
+    max_drawdown = Column(Numeric(10, 4))
+
+    # Additional data
+    backtest_result_id = Column(UUID(as_uuid=True))
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Trade(Base):
+    """Individual trades from backtesting."""
+
+    __tablename__ = "trades"
+    __table_args__ = (
+        Index("idx_trade_symbol_strategy", "symbol", "strategy"),
+        Index("idx_trade_datetime", "trade_datetime"),
+        {"schema": "backtests"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    symbol = Column(String(20), nullable=False)
+    strategy = Column(String(100), nullable=False)
+    timeframe = Column(String(10), nullable=False)
+
+    # Trade details
+    trade_datetime = Column(DateTime(timezone=True), nullable=False)
+    side = Column(String(10), nullable=False)  # 'Buy' or 'Sell'
+    size = Column(Numeric(15, 6), nullable=False)
+    price = Column(Numeric(15, 6), nullable=False)
+
+    # Trade metadata
+    equity_before = Column(Numeric(15, 2))
+    equity_after = Column(Numeric(15, 2))
+    backtest_result_id = Column(UUID(as_uuid=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 # Add relationship to BacktestResult

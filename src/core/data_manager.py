@@ -570,9 +570,16 @@ class AlphaVantageSource(DataSource):
                 col.split(". ")[-1].lower().replace(" ", "_") for col in df.columns
             ]
 
-            # Filter by date range
-            start = pd.to_datetime(start_date)
-            end = pd.to_datetime(end_date)
+            # Filter by date range using UTC timezone
+            start = pd.to_datetime(start_date, utc=True)
+            end = pd.to_datetime(end_date, utc=True)
+
+            # Convert data index to UTC for consistent comparison
+            if df.index.tz is None:
+                df.index = df.index.tz_localize("UTC")
+            else:
+                df.index = df.index.tz_convert("UTC")
+
             df = df[(df.index >= start) & (df.index <= end)]
 
             return self.standardize_data(df) if not df.empty else None

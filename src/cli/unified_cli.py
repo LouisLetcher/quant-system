@@ -1007,6 +1007,8 @@ def handle_portfolio_test_all(args):
     import webbrowser
     from datetime import datetime
 
+    from src.cli.direct_backtest_cli import save_direct_backtest_to_database
+    from src.core.direct_backtest import run_direct_backtest
     from src.reporting.detailed_portfolio_report import DetailedPortfolioReporter
 
     logger = logging.getLogger(__name__)
@@ -1047,27 +1049,15 @@ def handle_portfolio_test_all(args):
     if hasattr(args, "end_date") and args.end_date:
         end_date = datetime.strptime(args.end_date, "%Y-%m-%d")
 
-    # Get all available strategies dynamically
-    try:
-        from src.core.strategy import StrategyFactory
-
-        strategy_factory = StrategyFactory()
-        strategies_dict = strategy_factory.list_strategies()
-        all_strategies = strategies_dict["all"]
-        print(f"🔍 Found {len(all_strategies)} available strategies")
-        print(f"   - Built-in: {strategies_dict['builtin']}")
-        print(f"   - External: {strategies_dict['external']}")
-    except Exception as e:
-        logger.warning("Could not load strategy factory: %s", e)
-        # Fallback to basic strategies
-        all_strategies = ["rsi", "macd", "bollinger_bands", "sma_crossover"]
-        print(f"🔍 Using fallback strategies: {len(all_strategies)} strategies")
+    # Use specified strategies or fallback
+    all_strategies = ["BuyAndHold", "rsi", "macd", "bollinger_bands"]
+    print(f"🔍 Testing with strategies: {all_strategies}")
 
     # Determine timeframes to test
-    if args.test_timeframes:
-        timeframes_to_test = ["1min", "5min", "15min", "30min", "1h", "4h", "1d", "1wk"]
-    else:
+    if hasattr(args, "timeframes") and args.timeframes:
         timeframes_to_test = args.timeframes
+    else:
+        timeframes_to_test = ["1d", "1wk"]
 
     total_combinations = (
         len(portfolio_config["symbols"]) * len(all_strategies) * len(timeframes_to_test)
@@ -1087,96 +1077,52 @@ def handle_portfolio_test_all(args):
     print(f"📈 Primary Metric: {args.metric}")
     print("=" * 70)
 
-    # Download data first
-    print("📥 Downloading data...")
+    print("\n📊 Running direct backtests...")
 
-    # Setup components (single-threaded to avoid multiprocessing issues)
-    data_manager = UnifiedDataManager()
-    UnifiedCacheManager()
-
-    # Download data for all symbols
-    for symbol in portfolio_config["symbols"]:
-        try:
-            data = data_manager.get_data(
-                symbol=symbol,
-                start_date=start_date.strftime("%Y-%m-%d"),
-                end_date=end_date.strftime("%Y-%m-%d"),
-            )
-            if data is not None and len(data) > 0:
-                print(f"  ✅ {symbol}: {len(data)} data points")
-            else:
-                print(f"  ❌ {symbol}: No data available")
-        except Exception as e:
-            print(f"  ❌ {symbol}: Error - {e!s}")
-
-    print("\n📊 Running backtests and generating comprehensive report...")
-
-    # Setup backtesting engine
-    cache_manager = UnifiedCacheManager()
-    backtest_engine = UnifiedBacktestEngine(data_manager, cache_manager, max_workers=2)
-
-    # Run actual backtests for each symbol-strategy combination
-    backtest_results = {}
-    total_tests = len(portfolio_config["symbols"]) * len(all_strategies)
+    # Run actual backtests for each symbol-strategy-timeframe combination
+    total_tests = (
+        len(portfolio_config["symbols"]) * len(all_strategies) * len(timeframes_to_test)
+    )
     current_test = 0
 
     for symbol in portfolio_config["symbols"]:
-        backtest_results[symbol] = {}
         for strategy in all_strategies:
-            current_test += 1
-            print(
-                f"  🔄 Testing {symbol} with {strategy} ({current_test}/{total_tests})"
-            )
-
-            try:
-                config = BacktestConfig(
-                    symbols=[symbol],
-                    strategies=[strategy],
-                    start_date=start_date.strftime("%Y-%m-%d"),
-                    end_date=end_date.strftime("%Y-%m-%d"),
-                    initial_capital=portfolio_config.get("initial_capital", 10000),
-                    commission=portfolio_config.get("commission", 0.001),
-                    save_trades=True,  # Enable trade history saving
-                    override_old_trades=not args.keep_old_trades,  # Override by default, unless user wants to keep
+            for timeframe in timeframes_to_test:
+                current_test += 1
+                print(
+                    f"  🔄 Testing {symbol} with {strategy} on {timeframe} ({current_test}/{total_tests})"
                 )
 
-                result = backtest_engine.run_backtest(symbol, strategy, config)
-                backtest_results[symbol][strategy] = result
-
-                # Save to database
                 try:
-                    _save_backtest_to_database(
-                        result, f"{symbol}_{strategy}", config, args.metric
-                    )
-                except Exception as db_error:
-                    logger.warning(
-                        "Failed to save %s/%s to database: %s",
-                        symbol,
-                        strategy,
-                        db_error,
+                    # Use direct backtest library
+                    result_dict = run_direct_backtest(
+                        symbol=symbol,
+                        strategy_name=strategy,
+                        start_date=start_date.strftime("%Y-%m-%d"),
+                        end_date=end_date.strftime("%Y-%m-%d"),
+                        timeframe=timeframe,
+                        initial_capital=portfolio_config.get("initial_capital", 10000),
+                        commission=portfolio_config.get("commission", 0.001),
                     )
 
-            except Exception as e:
-                print(f"    ❌ Error testing {symbol} with {strategy}: {e}")
-                # Create a failed result
-                backtest_results[symbol][strategy] = BacktestResult(
-                    symbol=symbol,
-                    strategy=strategy,
-                    parameters={},
-                    metrics={
-                        "total_return": 0.0,
-                        "final_value": portfolio_config.get("initial_capital", 10000),
-                        "sortino_ratio": 0.0,
-                        "sharpe_ratio": 0.0,
-                        "max_drawdown": 0.0,
-                    },
-                    config=config,
-                    start_date=start_date.strftime("%Y-%m-%d"),
-                    end_date=end_date.strftime("%Y-%m-%d"),
-                    error=str(e),
-                )
+                    # Save to database using new direct approach
+                    if not result_dict.get("error"):
+                        save_direct_backtest_to_database(result_dict, args.metric)
+
+                        metrics = result_dict["metrics"]
+                        print(
+                            f"    ✅ Return: {metrics.get('total_return', 0):.2f}%, Sharpe: {metrics.get('sharpe_ratio', 0):.3f}"
+                        )
+                    else:
+                        print(f"    ❌ Error: {result_dict['error']}")
+
+                except Exception as e:
+                    print(
+                        f"    ❌ Error testing {symbol} with {strategy} on {timeframe}: {e}"
+                    )
 
     # Generate detailed report with actual results
+    print("\n📊 Generating comprehensive HTML report...")
     reporter = DetailedPortfolioReporter()
     report_path = reporter.generate_comprehensive_report(
         portfolio_config=portfolio_config,
@@ -1184,7 +1130,6 @@ def handle_portfolio_test_all(args):
         end_date=end_date.strftime("%Y-%m-%d"),
         strategies=all_strategies,
         timeframes=timeframes_to_test,
-        metric=args.metric,
     )
 
     print(f"\n📱 Comprehensive report generated: {report_path}")
@@ -1249,14 +1194,19 @@ def handle_portfolio_test_all(args):
         session.close()
 
     # Get the best overall strategy from the database
-    best_strategy_name = _get_best_overall_strategy_from_db(args.metric)
-    print(f"\n🏆 Best Overall Strategy: {best_strategy_name}")
+    try:
+        best_strategy_name = _get_best_overall_strategy_from_db(args.metric)
+        print(f"\n🏆 Best Overall Strategy: {best_strategy_name}")
+    except Exception as e:
+        logger.warning("Could not determine best strategy: %s", e)
+        print("\n🏆 Best Overall Strategy: Check the detailed report")
+
     print(
         "\n📊 Each asset analyzed with detailed KPIs, order history, and equity curves"
     )
     print("💾 Report size optimized with compression")
 
-    if args.open_browser:
+    if hasattr(args, "open_browser") and args.open_browser:
         import os
 
         webbrowser.open(f"file://{os.path.abspath(report_path)}")

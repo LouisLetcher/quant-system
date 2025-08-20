@@ -636,9 +636,11 @@ class UnifiedCacheManager:
                     key=row[0],
                     cache_type=row[1],
                     symbol=row[2],
-                    created_at=datetime.fromisoformat(row[3]),
-                    last_accessed=datetime.fromisoformat(row[4]),
-                    expires_at=datetime.fromisoformat(row[5]) if row[5] else None,
+                    created_at=datetime.fromisoformat(row[3]).replace(tzinfo=None),
+                    last_accessed=datetime.fromisoformat(row[4]).replace(tzinfo=None),
+                    expires_at=datetime.fromisoformat(row[5]).replace(tzinfo=None)
+                    if row[5]
+                    else None,
                     size_bytes=row[6],
                     source=row[7],
                     interval=row[8],
@@ -654,14 +656,23 @@ class UnifiedCacheManager:
         """Check if cache entry is expired."""
         if not entry.expires_at:
             return False
-        return datetime.now() > entry.expires_at
+
+        from datetime import timezone
+
+        # Always use UTC for consistent comparison
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        expires_at = entry.expires_at
+
+        return now > expires_at
 
     def _update_access_time(self, key: str) -> None:
         """Update last access time."""
+        from datetime import timezone
+
         with sqlite3.connect(self.metadata_db) as conn:
             conn.execute(
                 "UPDATE cache_entries SET last_accessed = ? WHERE key = ?",
-                (datetime.now().isoformat(), key),
+                (datetime.now(timezone.utc).replace(tzinfo=None).isoformat(), key),
             )
 
     def _remove_entry(self, key: str) -> None:

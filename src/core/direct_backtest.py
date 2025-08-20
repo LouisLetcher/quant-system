@@ -58,6 +58,13 @@ def run_direct_backtest(
             }
         )[["Open", "High", "Low", "Close", "Volume"]]
 
+        # Convert to UTC then remove timezone for backtesting library compatibility
+        if bt_data.index.tz is None:
+            bt_data.index = bt_data.index.tz_localize("UTC")
+        else:
+            bt_data.index = bt_data.index.tz_convert("UTC")
+        bt_data.index = bt_data.index.tz_localize(None)
+
         # Create strategy
         strategy = StrategyFactory.create_strategy(strategy_name)
         StrategyClass = create_backtesting_strategy_adapter(strategy)
