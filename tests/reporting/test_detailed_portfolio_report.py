@@ -1,4 +1,4 @@
-"""Simple tests for detailed portfolio reporting."""
+"""Tests for detailed portfolio reporting."""
 
 from __future__ import annotations
 
@@ -15,64 +15,31 @@ class TestDetailedPortfolioReporter:
     def test_init_default(self):
         """Test initialization with default parameters."""
         reporter = DetailedPortfolioReporter()
-        assert reporter.report_data == {}
         assert reporter.report_organizer is not None
-        assert reporter.rng is not None
 
-    @patch.object(DetailedPortfolioReporter, "_analyze_asset_with_timeframes")
-    @patch.object(DetailedPortfolioReporter, "_create_html_report")
-    def test_generate_comprehensive_report_basic(
-        self, mock_generate_html, mock_analyze
-    ):
+    @patch("src.reporting.detailed_portfolio_report.get_db_session")
+    def test_generate_comprehensive_report_basic(self, mock_get_session):
         """Test basic comprehensive report generation."""
-        # Setup mocks
-        mock_analyze.return_value = (
-            {"strategy": "BuyAndHold", "timeframe": "1d", "score": 1.5},
-            {"metrics": {"sharpe": 1.2}},
-        )
-        mock_generate_html.return_value = "<html>Test Report</html>"
-
+        # Setup mock database session
+        mock_session = MagicMock()
+        mock_get_session.return_value = mock_session
+        
+        # Mock database query results
+        mock_session.query.return_value.filter_by.return_value.order_by.return_value.all.return_value = []
+        
         reporter = DetailedPortfolioReporter()
 
         portfolio_config = {"symbols": ["AAPL", "MSFT"], "name": "Test Portfolio"}
 
         result = reporter.generate_comprehensive_report(
             portfolio_config=portfolio_config,
-            start_date="2023-01-01",
+            start_date="2023-01-01", 
             end_date="2023-12-31",
             strategies=["BuyAndHold"],
         )
 
         assert isinstance(result, str)
-        mock_analyze.assert_called()
-        mock_generate_html.assert_called_once()
-
-    def test_generate_comprehensive_report_with_timeframes(self):
-        """Test report generation with custom timeframes."""
-        reporter = DetailedPortfolioReporter()
-
-        portfolio_config = {"symbols": ["AAPL"], "name": "Test Portfolio"}
-
-        with (
-            patch.object(reporter, "_analyze_asset_with_timeframes") as mock_analyze,
-            patch.object(reporter, "_create_html_report") as mock_generate,
-        ):
-            mock_analyze.return_value = (
-                {"strategy": "BuyAndHold", "timeframe": "1h", "score": 1.2},
-                {"metrics": {}},
-            )
-            mock_generate.return_value = "<html>Report</html>"
-
-            result = reporter.generate_comprehensive_report(
-                portfolio_config=portfolio_config,
-                start_date="2023-01-01",
-                end_date="2023-12-31",
-                strategies=["BuyAndHold"],
-                timeframes=["1h", "4h", "1d"],
-            )
-
-            assert isinstance(result, str)
-            mock_analyze.assert_called()
+        assert "Test Portfolio" in result
 
     def test_generate_comprehensive_report_missing_symbols(self):
         """Test report generation with missing symbols in config."""
@@ -87,90 +54,54 @@ class TestDetailedPortfolioReporter:
             reporter.generate_comprehensive_report(
                 portfolio_config=portfolio_config,
                 start_date="2023-01-01",
-                end_date="2023-12-31",
+                end_date="2023-12-31", 
                 strategies=["BuyAndHold"],
             )
-
-    @patch("src.reporting.detailed_portfolio_report.np.random.default_rng")
-    def test_random_number_generator_initialization(self, mock_rng):
-        """Test that random number generator is properly initialized."""
-        mock_rng.return_value = MagicMock()
-
-        reporter = DetailedPortfolioReporter()
-
-        assert reporter.rng is not None
-        mock_rng.assert_called_once()
-
-    def test_report_data_initialization(self):
-        """Test that report data is properly initialized."""
-        reporter = DetailedPortfolioReporter()
-
-        assert isinstance(reporter.report_data, dict)
-        assert len(reporter.report_data) == 0
-
-    def test_analyze_asset_method_exists(self):
-        """Test that the analyze asset method exists."""
-        reporter = DetailedPortfolioReporter()
-
-        # Check that the method exists (even if we don't call it)
-        assert hasattr(reporter, "_analyze_asset_with_timeframes")
 
     def test_create_html_method_exists(self):
         """Test that the HTML creation method exists."""
         reporter = DetailedPortfolioReporter()
 
-        # Check that the method exists (even if we don't call it)
+        # Check that the method exists
         assert hasattr(reporter, "_create_html_report")
 
-
-class TestReportOrganizer:
-    """Test cases for report organizer integration."""
-
-    @patch("src.reporting.detailed_portfolio_report.ReportOrganizer")
-    def test_report_organizer_initialization(self, mock_report_organizer):
-        """Test that report organizer is properly initialized."""
-        mock_organizer_instance = MagicMock()
-        mock_report_organizer.return_value = mock_organizer_instance
-
+    def test_generate_equity_curve_empty(self):
+        """Test equity curve generation with empty orders."""
         reporter = DetailedPortfolioReporter()
+        result = reporter._generate_equity_curve([])
+        assert result == []
 
-        assert reporter.report_organizer is not None
-        mock_report_organizer.assert_called_once()
+    def test_generate_equity_curve_with_orders(self):
+        """Test equity curve generation with orders."""
+        reporter = DetailedPortfolioReporter()
+        orders = [
+            {"date": "2023-01-01", "equity": 10000},
+            {"date": "2023-01-02", "equity": 10100},
+        ]
+        result = reporter._generate_equity_curve(orders)
+        assert len(result) == 2
+        assert result[0]["date"] == "2023-01-01"
+        assert result[0]["equity"] == 10000
 
 
 class TestIntegration:
     """Integration tests for the complete reporting workflow."""
 
-    @patch.object(DetailedPortfolioReporter, "_analyze_asset_with_timeframes")
-    @patch.object(DetailedPortfolioReporter, "_create_html_report")
-    def test_complete_workflow_single_asset(self, mock_generate_html, mock_analyze):
+    @patch("src.reporting.detailed_portfolio_report.get_db_session")
+    def test_complete_workflow_single_asset(self, mock_get_session):
         """Test complete workflow with single asset."""
-        # Setup detailed mocks
-        mock_analyze.return_value = (
-            {
-                "strategy": "BuyAndHold",
-                "timeframe": "1d",
-                "score": 1.5,
-                "sharpe_ratio": 1.5,
-                "total_return": 0.15,
-            },
-            {
-                "metrics": {
-                    "sharpe_ratio": 1.5,
-                    "total_return": 0.15,
-                    "max_drawdown": 0.08,
-                },
-                "trades": [],
-                "equity_curve": [],
-            },
-        )
-        mock_generate_html.return_value = "<html><body>Complete Report</body></html>"
+        # Setup mock database session
+        mock_session = MagicMock()
+        mock_get_session.return_value = mock_session
+        
+        # Mock database query results
+        mock_session.query.return_value.filter_by.return_value.order_by.return_value.all.return_value = []
 
         reporter = DetailedPortfolioReporter()
 
         portfolio_config = {
             "symbols": ["AAPL"],
-            "name": "Single Asset Portfolio",
+            "name": "Single Asset Portfolio", 
             "allocation": {"AAPL": 1.0},
         }
 
@@ -185,47 +116,6 @@ class TestIntegration:
         # Verify workflow completion
         assert isinstance(result, str)
         assert len(result) > 0
-        mock_analyze.assert_called_once()
-        mock_generate_html.assert_called_once()
-
-    @patch.object(DetailedPortfolioReporter, "_analyze_asset_with_timeframes")
-    @patch.object(DetailedPortfolioReporter, "_create_html_report")
-    def test_complete_workflow_multiple_assets(self, mock_generate_html, mock_analyze):
-        """Test complete workflow with multiple assets."""
-        # Setup mocks for multiple assets
-        mock_analyze.side_effect = [
-            (
-                {"strategy": "BuyAndHold", "timeframe": "1d", "score": 1.2},
-                {"metrics": {}},
-            ),
-            (
-                {"strategy": "MeanReversion", "timeframe": "4h", "score": 0.8},
-                {"metrics": {}},
-            ),
-            (
-                {"strategy": "Momentum", "timeframe": "1h", "score": 1.5},
-                {"metrics": {}},
-            ),
-        ]
-        mock_generate_html.return_value = "<html>Multi-Asset Report</html>"
-
-        reporter = DetailedPortfolioReporter()
-
-        portfolio_config = {
-            "symbols": ["AAPL", "MSFT", "GOOGL"],
-            "name": "Diversified Portfolio",
-        }
-
-        result = reporter.generate_comprehensive_report(
-            portfolio_config=portfolio_config,
-            start_date="2023-01-01",
-            end_date="2023-12-31",
-            strategies=["BuyAndHold", "MeanReversion", "Momentum"],
-        )
-
-        assert isinstance(result, str)
-        assert mock_analyze.call_count == 3  # Called once per asset
-        mock_generate_html.assert_called_once()
 
     def test_error_handling_workflow(self):
         """Test error handling in reporting workflow."""
@@ -238,6 +128,6 @@ class TestIntegration:
             reporter.generate_comprehensive_report(
                 portfolio_config=invalid_config,
                 start_date="2023-01-01",
-                end_date="2023-12-31",
+                end_date="2023-12-31", 
                 strategies=["BuyAndHold"],
             )

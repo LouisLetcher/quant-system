@@ -47,9 +47,8 @@ pytest -n auto
 
 ### Formatting and Linting
 ```bash
-black .          # Format code
-isort .          # Sort imports
-ruff check .     # Lint code
+ruff check .     # Lint and format code
+ruff format .    # Format code (alternative)
 mypy src/        # Type checking
 ```
 
@@ -61,9 +60,7 @@ safety check     # Dependency vulnerabilities
 
 ### Pre-commit Hooks
 Pre-commit hooks run automatically on git commit:
-- Code formatting (Black)
-- Import sorting (isort)
-- Linting (Ruff)
+- Code formatting and linting (Ruff)
 - Type checking (MyPy)
 - Security scanning (Bandit)
 
@@ -71,13 +68,15 @@ Pre-commit hooks run automatically on git commit:
 
 ```
 src/
+├── ai/                   # AI recommendation system
 ├── backtesting_engine/   # Strategies submodule (quant-strategies repo)
 │   └── algorithms/python/ # Python strategy implementations (40+ strategies)
+├── cli/                  # Command-line interface
 ├── core/                 # Core system components
 │   ├── data_manager.py   # Data fetching and management
-│   ├── portfolio_manager.py # Portfolio management
-│   └── strategy.py       # Trading strategies
-├── cli/                  # Command-line interface
+│   ├── direct_backtest.py # Direct backtesting library integration
+│   └── portfolio_manager.py # Portfolio management
+├── database/             # Database models and operations
 ├── portfolio/            # Portfolio optimization
 ├── reporting/            # Report generation
 └── utils/                # Utility functions

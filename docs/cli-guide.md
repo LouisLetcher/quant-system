@@ -39,9 +39,15 @@ Options:
   --open-browser         Auto-open results in browser
 ```
 
-### Test All Portfolios
+### Test All Strategies and Timeframes
 ```bash
-python -m src.cli.unified_cli portfolio test-all [options]
+python -m src.cli.unified_cli portfolio test-all --symbols SYMBOL1,SYMBOL2 [options]
+
+Options:
+  --symbols SYMBOLS      Comma-separated symbols to test
+  --start-date DATE      Start date (YYYY-MM-DD)
+  --end-date DATE        End date (YYYY-MM-DD)
+  --strategies LIST      Comma-separated strategies to test
 ```
 
 ## Data Commands

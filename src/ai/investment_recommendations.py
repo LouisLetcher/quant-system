@@ -486,8 +486,8 @@ class AIInvestmentRecommendations:
                 end_date = datetime(int(year), end_month + 1, 1)
 
             query = query.filter(
-                BestStrategy.last_updated >= start_date,
-                BestStrategy.last_updated < end_date,
+                BestStrategy.updated_at >= start_date,
+                BestStrategy.updated_at < end_date,
             )
 
         # Order by primary metric (Sortino ratio) descending
@@ -499,24 +499,17 @@ class AIInvestmentRecommendations:
         return [
             {
                 "symbol": result.symbol,
-                "strategy": result.best_strategy,
+                "strategy": result.strategy,
                 "sortino_ratio": float(result.sortino_ratio or 0),
                 "calmar_ratio": float(result.calmar_ratio or 0),
                 "sharpe_ratio": float(result.sharpe_ratio or 0),
-                "profit_factor": float(result.profit_factor or 0),
-                "max_drawdown": float(result.max_drawdown or 0),
-                "volatility": float(result.volatility or 0),
-                "win_rate": float(result.win_rate or 0),
                 "total_return": float(result.total_return or 0),
-                "num_trades": int(result.num_trades or 0),
-                "created_at": result.last_updated.isoformat()
-                if result.last_updated
+                "max_drawdown": float(result.max_drawdown or 0),
+                "created_at": result.updated_at.isoformat()
+                if result.updated_at
                 else None,
-                "initial_capital": 10000,  # Default value for BestStrategy
-                "final_value": 10000
-                * (
-                    1 + float(result.total_return or 0) / 100
-                ),  # Calculate from total_return
+                "initial_capital": 10000,  # Default value
+                "final_value": 10000 * (1 + float(result.total_return or 0) / 100),
             }
             for result in results
         ]
@@ -654,17 +647,15 @@ class AIInvestmentRecommendations:
             # Normalize metrics for scoring
             sortino_score = min(max(asset["sortino_ratio"], 0), 5) / 5.0
             calmar_score = min(max(asset["calmar_ratio"], 0), 5) / 5.0
-            profit_factor_score = min(max(asset["profit_factor"] - 1, 0), 2) / 2.0
-            drawdown_score = max(0, 1 - abs(asset["max_drawdown"]))
-            win_rate_score = asset["win_rate"]
+            drawdown_score = max(0, 1 - abs(asset["max_drawdown"]) / 100)
+            return_score = min(max(asset["total_return"] / 100, 0), 1.0)
 
-            # Calculate weighted score
+            # Calculate weighted score using available metrics
             score = (
-                sortino_score * self.scoring_weights["sortino_ratio"]
-                + calmar_score * self.scoring_weights["calmar_ratio"]
-                + profit_factor_score * self.scoring_weights["profit_factor"]
-                + drawdown_score * self.scoring_weights["max_drawdown"]
-                + win_rate_score * self.scoring_weights["win_rate"]
+                sortino_score * 0.4  # Primary metric
+                + calmar_score * 0.3  # Secondary metric
+                + return_score * 0.2  # Return component
+                + drawdown_score * 0.1  # Risk component
             )
 
             asset["score"] = self._ensure_python_type(score)
@@ -1140,23 +1131,25 @@ class AIInvestmentRecommendations:
             # Create main AI recommendation record
             ai_rec = AIRecommendation(
                 portfolio_name=portfolio_name or "default",
-                quarter=quarter_only,
-                year=year,
-                risk_tolerance=portfolio_rec.risk_profile,
-                total_score=self._ensure_python_type(portfolio_rec.total_score),
-                confidence=self._ensure_python_type(portfolio_rec.confidence),
-                diversification_score=self._ensure_python_type(
-                    portfolio_rec.diversification_score
-                ),
-                total_assets=len(portfolio_rec.recommendations),
-                expected_return=total_return,
-                portfolio_risk=portfolio_risk,
-                overall_reasoning=portfolio_rec.overall_reasoning,
-                warnings=self._ensure_python_type(portfolio_rec.warnings),
-                correlation_analysis=self._ensure_python_type(
-                    portfolio_rec.correlation_analysis
-                ),
-                llm_model=llm_model,
+                risk_profile=portfolio_rec.risk_profile,
+                confidence_score=self._ensure_python_type(portfolio_rec.confidence),
+                recommendation_data={
+                    "total_score": self._ensure_python_type(portfolio_rec.total_score),
+                    "diversification_score": self._ensure_python_type(
+                        portfolio_rec.diversification_score
+                    ),
+                    "quarter": quarter_only,
+                    "year": year,
+                    "total_assets": len(portfolio_rec.recommendations),
+                    "expected_return": total_return,
+                    "portfolio_risk": portfolio_risk,
+                    "overall_reasoning": portfolio_rec.overall_reasoning,
+                    "warnings": self._ensure_python_type(portfolio_rec.warnings),
+                    "correlation_analysis": self._ensure_python_type(
+                        portfolio_rec.correlation_analysis
+                    ),
+                    "llm_model": llm_model,
+                },
             )
 
             self.db_session.add(ai_rec)
