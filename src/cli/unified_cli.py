@@ -903,7 +903,7 @@ def handle_single_backtest(args):
         print(f"  Sharpe Ratio: {metrics.get('sharpe_ratio', 0):.3f}")
         print(f"  Max Drawdown: {metrics.get('max_drawdown', 0):.2f}%")
         print(f"  Win Rate: {metrics.get('win_rate', 0):.1f}%")
-        print(f"  Number of Trades: {metrics.get('num_trades', 0)}")
+        print(f"  Number of Trades: {metrics.get('trades_count', 0)}")
 
         # Save to database for consistency with portfolio tests
         try:
@@ -1317,7 +1317,7 @@ def _save_backtest_to_database(
             max_drawdown=float(backtest_result.metrics.get("max_drawdown", 0)),
             volatility=float(backtest_result.metrics.get("volatility", 0)),
             win_rate=float(backtest_result.metrics.get("win_rate", 0)),
-            num_trades=int(backtest_result.metrics.get("num_trades", 0)),
+            trades_count=int(backtest_result.metrics.get("trades_count", 0)),
             alpha=float(backtest_result.metrics.get("alpha", 0)),
             beta=float(backtest_result.metrics.get("beta", 1)),
             expectancy=float(backtest_result.metrics.get("expectancy", 0)),
@@ -1376,40 +1376,47 @@ def _save_backtest_to_database(
             current_holdings = 0.0
 
             for _, trade_row in backtest_result.trades.iterrows():
-                # Calculate portfolio state after trade
-                if trade_row["action"] == "buy":
-                    trade_type = "BUY"
-                    current_holdings += float(trade_row["size"])
-                    current_equity -= float(trade_row["size"]) * float(
-                        trade_row["price"]
-                    )
-                else:
-                    trade_type = "SELL"
-                    current_holdings -= float(trade_row["size"])
-                    current_equity += float(trade_row["size"]) * float(
-                        trade_row["price"]
-                    )
+                # Backtesting library returns complete round-trip trades
+                # Each row has EntryTime, ExitTime, EntryPrice, ExitPrice
 
-                # Calculate fees
-                trade_value = float(trade_row["size"]) * float(trade_row["price"])
-                fees = trade_value * config.commission if config else 0
-                current_equity -= fees
+                entry_value = float(trade_row["Size"]) * float(trade_row["EntryPrice"])
+                exit_value = float(trade_row["Size"]) * float(trade_row["ExitPrice"])
 
-                # Create trade record
-                trade_record = Trade(
+                # Create ENTRY trade record
+                entry_trade = Trade(
                     backtest_result_id=db_result.id,
                     symbol=backtest_result.symbol,
                     strategy=backtest_result.strategy,
-                    timeframe=getattr(backtest_result.config, "timeframe", "1d"),
-                    trade_datetime=trade_row["timestamp"],
-                    side=trade_type,
-                    size=float(trade_row["size"]),
-                    price=float(trade_row["price"]),
+                    timeframe=getattr(backtest_result.config, "timeframe", timeframe),
+                    trade_datetime=trade_row["EntryTime"],
+                    side="BUY",
+                    size=float(trade_row["Size"]),
+                    price=float(trade_row["EntryPrice"]),
                     equity_before=current_equity,
-                    equity_after=current_equity
-                    + (current_holdings * float(trade_row["price"])),
+                    equity_after=current_equity - entry_value,
                 )
-                session.add(trade_record)
+                session.add(entry_trade)
+
+                current_equity -= entry_value
+                current_holdings += float(trade_row["Size"])
+
+                # Create EXIT trade record
+                exit_trade = Trade(
+                    backtest_result_id=db_result.id,
+                    symbol=backtest_result.symbol,
+                    strategy=backtest_result.strategy,
+                    timeframe=getattr(backtest_result.config, "timeframe", timeframe),
+                    trade_datetime=trade_row["ExitTime"],
+                    side="SELL",
+                    size=float(trade_row["Size"]),
+                    price=float(trade_row["ExitPrice"]),
+                    equity_before=current_equity,
+                    equity_after=current_equity + exit_value,
+                )
+                session.add(exit_trade)
+
+                current_equity += exit_value
+                current_holdings -= float(trade_row["Size"])
 
         # Recalculate correct final_value and total_return from actual trade data
         logger = logging.getLogger(__name__)
@@ -1478,7 +1485,7 @@ def _save_backtest_to_database(
             # Update the database record with correct values (ensure all are Python native types)
             db_result.final_value = float(final_trade_equity)
             db_result.total_return = float(actual_total_return)
-            db_result.num_trades = len(backtest_result.trades)
+            db_result.trades_count = len(backtest_result.trades)
 
             # For advanced metrics, ensure complete type conversion
             import builtins
@@ -1491,7 +1498,7 @@ def _save_backtest_to_database(
             # Also update the backtest_result metrics so best strategy update uses correct values
             backtest_result.metrics["final_capital"] = final_trade_equity
             backtest_result.metrics["total_return"] = actual_total_return
-            backtest_result.metrics["num_trades"] = len(backtest_result.trades)
+            backtest_result.metrics["trades_count"] = len(backtest_result.trades)
             backtest_result.metrics["average_win"] = actual_avg_win
             backtest_result.metrics["average_loss"] = actual_avg_loss
             backtest_result.metrics["win_rate"] = actual_win_rate
@@ -1614,20 +1621,20 @@ def _update_best_strategy(
     # For max_drawdown, lower is better; for all others, higher is better
     # Prefer strategies with actual trades over strategies with no trades
     is_better = False
-    current_num_trades = int(backtest_result.metrics.get("num_trades", 0))
+    current_trades_count = int(backtest_result.metrics.get("trades_count", 0))
 
     if not existing:
         is_better = True
     else:
         existing_metric_value = getattr(existing, metric, 0) or 0
-        existing_num_trades = existing.num_trades or 0
+        existing_trades_count = existing.trades_count or 0
 
         # Prefer strategies with actual trades
-        if current_num_trades > 0 and existing_num_trades == 0:
+        if current_trades_count > 0 and existing_trades_count == 0:
             is_better = True
-        elif current_num_trades == 0 and existing_num_trades > 0:
+        elif current_trades_count == 0 and existing_trades_count > 0:
             is_better = False
-        elif current_num_trades == 0 and existing_num_trades == 0:
+        elif current_trades_count == 0 and existing_trades_count == 0:
             # Both have no trades - skip this strategy entirely
             is_better = False
         else:
@@ -1671,7 +1678,7 @@ def _update_best_strategy(
             existing.max_drawdown = max_dd
             existing.volatility = volatility
             existing.win_rate = float(backtest_result.metrics.get("win_rate", 0))
-            existing.num_trades = int(backtest_result.metrics.get("num_trades", 0))
+            existing.trades_count = int(backtest_result.metrics.get("trades_count", 0))
             existing.alpha = float(backtest_result.metrics.get("alpha", 0))
             existing.beta = float(backtest_result.metrics.get("beta", 1))
             existing.expectancy = float(backtest_result.metrics.get("expectancy", 0))
@@ -1755,7 +1762,7 @@ def save_optimization_to_database(
                 max_drawdown=float(metrics.get("max_drawdown", 0)),
                 volatility=float(metrics.get("volatility", 0)),
                 win_rate=float(metrics.get("win_rate", 0)),
-                num_trades=int(metrics.get("num_trades", 0)),
+                trades_count=int(metrics.get("trades_count", 0)),
                 iteration_number=i + 1,
                 optimization_metric="sortino_ratio",
                 portfolio_name=portfolio_name,
@@ -1828,7 +1835,7 @@ def _update_best_optimization_result(
             existing.best_max_drawdown = float(best_metrics.get("max_drawdown", 0))
             existing.best_volatility = float(best_metrics.get("volatility", 0))
             existing.best_win_rate = float(best_metrics.get("win_rate", 0))
-            existing.best_num_trades = int(best_metrics.get("num_trades", 0))
+            existing.best_trades_count = int(best_metrics.get("trades_count", 0))
             existing.best_parameters = optimization_result.best_parameters
             existing.total_iterations = optimization_result.total_evaluations
             existing.optimization_time_seconds = optimization_result.optimization_time
@@ -1848,7 +1855,7 @@ def _update_best_optimization_result(
                 best_max_drawdown=float(best_metrics.get("max_drawdown", 0)),
                 best_volatility=float(best_metrics.get("volatility", 0)),
                 best_win_rate=float(best_metrics.get("win_rate", 0)),
-                best_num_trades=int(best_metrics.get("num_trades", 0)),
+                best_trades_count=int(best_metrics.get("trades_count", 0)),
                 best_parameters=optimization_result.best_parameters,
                 total_iterations=optimization_result.total_evaluations,
                 optimization_time_seconds=optimization_result.optimization_time,
