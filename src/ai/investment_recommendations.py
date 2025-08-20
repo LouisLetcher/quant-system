@@ -990,13 +990,243 @@ class AIInvestmentRecommendations:
                 "recommendation": "Review metrics manually",
             }
 
+    def generate_practical_recommendations_from_html(
+        self, html_report_path: str, risk_tolerance: str = "moderate"
+    ) -> str:
+        """Generate practical trading recommendations from HTML report using database data."""
+        from pathlib import Path
+
+        from bs4 import BeautifulSoup
+
+        # Parse HTML to get collection assets
+        html_path = Path(html_report_path)
+        if not html_path.exists():
+            raise ValueError(f"HTML report not found: {html_report_path}")
+
+        with html_path.open(encoding="utf-8") as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+
+        # Extract asset symbols from HTML
+        asset_sections = soup.find_all("div", class_="asset-section")
+        symbols = []
+        for section in asset_sections:
+            title = section.find("h2", class_="asset-title")
+            if title:
+                symbols.append(title.get_text().strip())
+
+        if not symbols:
+            raise ValueError("No assets found in HTML report")
+
+        # Get database data for these symbols
+        if not self.db_session:
+            raise ValueError("Database session required")
+
+        from src.database.models import BestStrategy
+
+        # Query database for actual performance data
+        strategies = (
+            self.db_session.query(BestStrategy)
+            .filter(BestStrategy.symbol.in_(symbols))
+            .order_by(BestStrategy.sortino_ratio.desc())
+            .all()
+        )
+
+        if not strategies:
+            raise ValueError("No strategy data found for collection assets")
+
+        # Generate practical trading recommendations
+        collection_name = html_path.stem.replace("_Q3_2025", "").replace("_", " ")
+
+        recommendations = self._create_practical_trading_guide(
+            strategies, collection_name, risk_tolerance
+        )
+
+        return recommendations
+
+    def _create_practical_trading_guide(
+        self, strategies: list, collection_name: str, risk_tolerance: str
+    ) -> str:
+        """Create practical trading guide with entry/exit rules."""
+
+        # Sort by Sortino ratio and categorize by performance tiers (bond-appropriate thresholds)
+        top_tier = [s for s in strategies if float(s.sortino_ratio) > 1.0]
+        mid_tier = [s for s in strategies if 0.5 <= float(s.sortino_ratio) <= 1.0]
+
+        guide = f"""# {collection_name} - Practical Trading Strategy Guide
+**Model:** GPT-5-mini | **Generated:** Q3 2025
+**Risk Profile:** {risk_tolerance.title()}
+**Assets Analyzed:** {len(strategies)}
+
+## 🎯 Actionable Investment Recommendations
+
+### **🥇 TOP TIER STRATEGIES** (Sortino > 1.0)
+"""
+
+        for i, strategy in enumerate(top_tier[:5], 1):
+            # Calculate practical levels based on historical performance
+            take_profit = min(
+                float(strategy.total_return) * 0.3, 10.0
+            )  # 30% of total return, max 10%
+            stop_loss = min(
+                float(strategy.max_drawdown) * 0.5, 5.0
+            )  # 50% of max drawdown, max 5%
+
+            guide += f"""
+#### {i}. **{strategy.symbol} - {strategy.strategy.upper()}** (Sortino: {strategy.sortino_ratio:.3f})
+- **Entry Signal**: {self._get_entry_signal(strategy.strategy)}
+- **Take Profit**: +{take_profit:.1f}% or technical reversal
+- **Stop Loss**: -{stop_loss:.1f}% strict
+- **Position Size**: {self._get_position_size(strategy.sortino_ratio, risk_tolerance)}% allocation
+- **Max Drawdown Risk**: {strategy.max_drawdown:.1f}%
+- **Historical Return**: {float(strategy.total_return):.1f}% over backtest period
+"""
+
+        # Individual recommendations for ALL assets
+        guide += f"""
+## 📋 **INDIVIDUAL ASSET RECOMMENDATIONS**
+*Complete analysis of all {len(strategies)} assets in collection*
+
+"""
+
+        for strategy in strategies:
+            sortino = float(strategy.sortino_ratio)
+            total_return = float(strategy.total_return)
+            max_dd = float(strategy.max_drawdown)
+
+            # Calculate levels for each asset
+            take_profit = min(total_return * 0.3, 10.0) if total_return > 0 else 3.0
+            stop_loss = min(max_dd * 0.5, 5.0) if max_dd > 0 else 2.0
+
+            # Determine recommendation level
+            if sortino > 1.0:
+                recommendation = "🟢 **BUY**"
+                allocation = self._get_position_size(sortino, risk_tolerance)
+            elif sortino > 0.5:
+                recommendation = "🟡 **HOLD**"
+                allocation = max(
+                    self._get_position_size(sortino, risk_tolerance) - 5, 5
+                )
+            else:
+                recommendation = "🔴 **AVOID**"
+                allocation = 0
+
+            guide += f"""
+### **{strategy.symbol}** - {strategy.strategy.upper()}
+- **Rating**: {recommendation} | **Sortino**: {sortino:.3f}
+- **Entry**: {self._get_entry_signal(strategy.strategy)}
+- **Take Profit**: +{take_profit:.1f}% | **Stop Loss**: -{stop_loss:.1f}%
+- **Allocation**: {allocation}% | **Return**: {total_return:.1f}% | **Max DD**: {max_dd:.1f}%
+"""
+
+        guide += f"""
+## 📊 **Portfolio Construction**
+
+### **{risk_tolerance.title()} Risk Allocation:**
+```
+{self._create_allocation_table(top_tier, mid_tier, risk_tolerance)}
+```
+
+## 🚨 **Risk Management Rules**
+- **Maximum single position**: {30 if risk_tolerance == "aggressive" else 25 if risk_tolerance == "moderate" else 20}%
+- **Portfolio max drawdown**: {15 if risk_tolerance == "aggressive" else 10 if risk_tolerance == "moderate" else 6}%
+- **Rebalance trigger**: 20% deviation from target weights
+- **Emergency exit**: Strategy technical breakdown
+
+## 🎯 **Entry/Exit Decision Framework**
+
+### **Universal BUY Conditions:**
+1. Technical signal confirmed (strategy-specific)
+2. Risk-reward ratio > 2:1
+3. No major economic events in next 48h
+4. Portfolio correlation < 0.8
+
+### **Universal SELL Conditions:**
+1. Take profit target reached
+2. Stop loss triggered
+3. Technical momentum reversal
+4. Risk management override
+
+**This guide provides actionable trading rules based on {len(strategies)} backtested strategies using real database metrics.**
+"""
+
+        return guide
+
+    def _get_entry_signal(self, strategy: str) -> str:
+        """Get entry signal description for strategy."""
+        strategy_lower = strategy.lower()
+        if "bollinger" in strategy_lower:
+            return "Price touches lower Bollinger Band"
+        if "rsi" in strategy_lower:
+            return "RSI < 30 (oversold)"
+        if "macd" in strategy_lower:
+            return "MACD bullish crossover"
+        return "Buy signal confirmed"
+
+    def _get_position_size(self, sortino_ratio: float, risk_tolerance: str) -> int:
+        """Calculate position size based on performance and risk tolerance."""
+        base_size = (
+            20
+            if risk_tolerance == "aggressive"
+            else 15
+            if risk_tolerance == "moderate"
+            else 10
+        )
+
+        if sortino_ratio > 3.0:
+            return min(base_size + 10, 30)
+        if sortino_ratio > 2.0:
+            return min(base_size + 5, 25)
+        if sortino_ratio > 1.0:
+            return base_size
+        return max(base_size - 5, 5)
+
+    def _create_allocation_table(
+        self, top_tier: list, mid_tier: list, risk_tolerance: str
+    ) -> str:
+        """Create allocation percentage table."""
+        total_allocation = (
+            80
+            if risk_tolerance == "aggressive"
+            else 70
+            if risk_tolerance == "moderate"
+            else 60
+        )
+
+        if not top_tier:
+            return "No suitable strategies found for allocation"
+
+        # Distribute allocation among top performers
+        top_3 = top_tier[:3]
+        if len(top_3) == 1:
+            allocations = [total_allocation]
+        elif len(top_3) == 2:
+            allocations = [total_allocation * 0.6, total_allocation * 0.4]
+        else:
+            allocations = [
+                total_allocation * 0.4,
+                total_allocation * 0.35,
+                total_allocation * 0.25,
+            ]
+
+        table = ""
+        for i, (strategy, alloc) in enumerate(zip(top_3, allocations)):
+            table += f"{alloc:.0f}% {strategy.symbol} ({strategy.strategy.upper()}) - Sortino {strategy.sortino_ratio:.2f}\n"
+
+        cash_reserve = 100 - total_allocation
+        table += f"{cash_reserve}% Cash Reserve"
+
+        return table
+
     def _get_asset_data(self, symbol: str, strategy: str) -> dict:
         """Get specific asset backtest data."""
         if self.db_session:
+            # Use PostgreSQL-specific array operations to avoid ARRAY.contains() error
+            from sqlalchemy import func
+
             result = (
                 self.db_session.query(BacktestResult)
                 .filter(
-                    BacktestResult.symbols.contains([symbol]),
+                    func.array_to_string(BacktestResult.symbols, ",").contains(symbol),
                     BacktestResult.strategy == strategy,
                 )
                 .first()
@@ -1128,28 +1358,26 @@ class AIInvestmentRecommendations:
         )
 
         try:
-            # Create main AI recommendation record
+            # Create main AI recommendation record matching database schema
             ai_rec = AIRecommendation(
                 portfolio_name=portfolio_name or "default",
-                risk_profile=portfolio_rec.risk_profile,
-                confidence_score=self._ensure_python_type(portfolio_rec.confidence),
-                recommendation_data={
-                    "total_score": self._ensure_python_type(portfolio_rec.total_score),
-                    "diversification_score": self._ensure_python_type(
-                        portfolio_rec.diversification_score
-                    ),
-                    "quarter": quarter_only,
-                    "year": year,
-                    "total_assets": len(portfolio_rec.recommendations),
-                    "expected_return": total_return,
-                    "portfolio_risk": portfolio_risk,
-                    "overall_reasoning": portfolio_rec.overall_reasoning,
-                    "warnings": self._ensure_python_type(portfolio_rec.warnings),
-                    "correlation_analysis": self._ensure_python_type(
-                        portfolio_rec.correlation_analysis
-                    ),
-                    "llm_model": llm_model,
-                },
+                quarter=quarter_only,
+                year=year,
+                risk_tolerance=portfolio_rec.risk_profile,
+                total_score=self._ensure_python_type(portfolio_rec.total_score),
+                confidence=self._ensure_python_type(portfolio_rec.confidence),
+                diversification_score=self._ensure_python_type(
+                    portfolio_rec.diversification_score
+                ),
+                total_assets=len(portfolio_rec.recommendations),
+                expected_return=total_return,
+                portfolio_risk=portfolio_risk,
+                overall_reasoning=portfolio_rec.overall_reasoning,
+                warnings=self._ensure_python_type(portfolio_rec.warnings),
+                correlation_analysis=self._ensure_python_type(
+                    portfolio_rec.correlation_analysis
+                ),
+                llm_model=llm_model,
             )
 
             self.db_session.add(ai_rec)

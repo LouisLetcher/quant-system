@@ -81,18 +81,54 @@ class DetailedPortfolioReporter:
                 .all()
             )
 
-            # Convert trades to orders format
+            # Convert trades to entry/exit pairs only
             orders = []
-            for trade in trades:
-                orders.append(
-                    {
-                        "date": trade.trade_datetime.strftime("%Y-%m-%d"),
-                        "type": trade.side,
-                        "price": float(trade.price),
-                        "size": float(trade.size),
-                        "equity": float(trade.equity_after or 0),
-                    }
-                )
+
+            # Group trades by consecutive BUY→SELL pairs
+            i = 0
+            while i < len(trades):
+                trade = trades[i]
+
+                if (
+                    trade.side == "BUY"
+                    and i + 1 < len(trades)
+                    and trades[i + 1].side == "SELL"
+                ):
+                    # Found a proper BUY→SELL pair
+                    buy_trade = trade
+                    sell_trade = trades[i + 1]
+
+                    # Calculate P&L for the pair
+                    pnl = (float(sell_trade.price) - float(buy_trade.price)) * float(
+                        sell_trade.size
+                    )
+
+                    # Add entry order
+                    orders.append(
+                        {
+                            "date": buy_trade.trade_datetime.strftime("%Y-%m-%d"),
+                            "type": "ENTRY",
+                            "price": float(buy_trade.price),
+                            "size": float(buy_trade.size),
+                            "equity": float(buy_trade.equity_after or 0),
+                        }
+                    )
+
+                    # Add exit order with P&L
+                    orders.append(
+                        {
+                            "date": sell_trade.trade_datetime.strftime("%Y-%m-%d"),
+                            "type": f"EXIT ({'+' if pnl >= 0 else ''}{pnl:.2f})",
+                            "price": float(sell_trade.price),
+                            "size": float(sell_trade.size),
+                            "equity": float(sell_trade.equity_after or 0),
+                        }
+                    )
+
+                    i += 2  # Skip both trades
+                else:
+                    # Skip unpaired trades (shouldn't happen with proper implementation)
+                    i += 1
 
             return {
                 "best_strategy": best_strategy.strategy,
@@ -132,6 +168,65 @@ class DetailedPortfolioReporter:
             equity_curve.append({"date": order["date"], "equity": order["equity"]})
 
         return equity_curve
+
+    def _generate_backtest_plot(
+        self, symbol: str, strategy: str, timeframe: str, start_date: str, end_date: str
+    ) -> str:
+        """Generate interactive plot from backtesting library."""
+        try:
+            import logging
+
+            from bokeh.embed import file_html
+            from bokeh.resources import CDN
+
+            from src.core.direct_backtest import run_direct_backtest
+
+            logging.getLogger("bokeh").setLevel(logging.WARNING)
+
+            # Run fresh backtest to get plot
+            result = run_direct_backtest(
+                symbol=symbol,
+                strategy_name=strategy,
+                start_date=start_date,
+                end_date=end_date,
+                timeframe=timeframe,
+            )
+
+            # Check for backtest object in result
+            backtest_obj = result.get("backtest_object")
+            if backtest_obj is not None:
+                try:
+                    # Generate the interactive plot with custom styling
+                    plot = backtest_obj.plot(
+                        plot_width=900,
+                        show_legend=True,
+                        open_browser=False,
+                        plot_trades=True,
+                        plot_equity=True,
+                    )
+
+                    # Convert to HTML string with proper resources
+                    html = file_html(plot, CDN, f"{symbol} - {strategy} ({timeframe})")
+
+                    # Extract just the plot content (remove outer HTML structure)
+                    if '<div class="bk-root"' in html and "</script>" in html:
+                        start_idx = html.find('<div class="bk-root"')
+                        end_idx = html.rfind("</script>") + 9
+                        if start_idx != -1 and end_idx != -1:
+                            return html[start_idx:end_idx]
+
+                    return html
+
+                except Exception as plot_error:
+                    return f'<p class="plot-error">Plot generation error: {plot_error!s}</p>'
+            else:
+                return '<p class="plot-error">Backtest object not available</p>'
+
+        except ImportError as e:
+            return f'<p class="plot-error">Missing plotting dependencies: {e}</p>'
+        except Exception as e:
+            print(f"Warning: Could not generate plot for {symbol}/{strategy}: {e}")
+            return f'<p class="plot-error">Plot generation failed: {e!s}</p>'
 
     def _create_html_report(
         self, portfolio_config: dict, assets_data: dict, start_date: str, end_date: str
@@ -173,8 +268,10 @@ class DetailedPortfolioReporter:
         .orders-table {{width: 100%; border-collapse: collapse; margin-top: 20px;}}
         .orders-table th {{background: #343a40; color: white; padding: 12px; text-align: left;}}
         .orders-table td {{padding: 10px; border-bottom: 1px solid #eee;}}
-        .buy {{color: #28a745; font-weight: bold;}}
-        .sell {{color: #dc3545; font-weight: bold;}}
+        .entry {{color: #28a745; font-weight: bold;}}
+        .exit {{color: #dc3545; font-weight: bold;}}
+        .plot-error {{color: #ffc107; background: #fff3cd; border: 1px solid #ffeaa7;
+                     padding: 15px; border-radius: 5px; margin: 10px 0;}}
     </style>
 </head>
 <body>
@@ -211,10 +308,18 @@ class DetailedPortfolioReporter:
                     <tbody>"""
 
                 for order in orders:
+                    order_type = order["type"]
+                    css_class = (
+                        "entry"
+                        if order_type.startswith("ENTRY")
+                        else "exit"
+                        if order_type.startswith("EXIT")
+                        else order_type.lower()
+                    )
                     orders_html += f'''
                         <tr>
                             <td>{order["date"]}</td>
-                            <td class="{order["type"].lower()}">{order["type"]}</td>
+                            <td class="{css_class}">{order_type}</td>
                             <td>${order["price"]:.2f}</td>
                             <td>{order["size"]:.0f}</td>
                             <td>${order["equity"]:,.2f}</td>
@@ -261,6 +366,11 @@ class DetailedPortfolioReporter:
                     <div class="metric-label">Calmar Ratio</div>
                     <div class="metric-value">{overview.get("calmar_ratio", 0):.3f}</div>
                 </div>
+            </div>
+
+            <h3>Interactive Chart</h3>
+            <div class="plot-container">
+                {self._generate_backtest_plot(symbol, data["best_strategy"], data["best_timeframe"], start_date, end_date)}
             </div>
 
             <h3>Trading Orders</h3>

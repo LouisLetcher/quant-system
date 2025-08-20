@@ -1,0 +1,10 @@
+{
+  "test_bonds": {
+    "name": "Test Bonds",
+    "symbols": ["TLT", "IEF", "SHY"],
+    "data_sources": {
+      "primary": ["yahoo_finance"],
+      "fallback": ["alpha_vantage"]
+    }
+  }
+}
