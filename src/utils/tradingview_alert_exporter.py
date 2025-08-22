@@ -151,12 +151,23 @@ Qty: {{{{strategy.order.contracts}}}}
                     html_files.append(Path(root) / file)
         return html_files
 
-    def export_alerts(self, output_file: str | None = None) -> Dict:
-        """Export all TradingView alerts"""
+    def export_alerts(
+        self, output_file: str | None = None, collection_filter: str | None = None
+    ) -> Dict:
+        """Export TradingView alerts, optionally filtered by collection"""
         html_files = self.find_html_reports()
         all_alerts = {}
 
         for html_file in html_files:
+            # Filter by collection if specified
+            if collection_filter:
+                # Check if the HTML file name contains the collection name (case-insensitive)
+                if collection_filter.lower() not in html_file.name.lower():
+                    print(
+                        f"Skipping: {html_file} (not matching collection '{collection_filter}')"
+                    )
+                    continue
+
             print(f"Processing: {html_file}")
             assets = self.process_html_file(html_file)
 
@@ -217,11 +228,15 @@ def main():
         help="Output file for alerts (auto-organized by quarter/year if just filename)",
     )
     parser.add_argument("--symbol", help="Export alerts for specific symbol only")
+    parser.add_argument(
+        "--collection",
+        help="Export alerts for specific collection/portfolio only (e.g., 'Commodities', 'Bonds')",
+    )
 
     args = parser.parse_args()
 
     exporter = TradingViewAlertExporter(args.reports_dir)
-    alerts = exporter.export_alerts(args.output)
+    alerts = exporter.export_alerts(args.output, collection_filter=args.collection)
 
     print("\n📊 Export Summary:")
     print(f"Found {len(alerts)} assets with alerts")
