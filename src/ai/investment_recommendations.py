@@ -469,10 +469,8 @@ class AIInvestmentRecommendations:
         if generate_html:
             # Generate HTML report
             report_generator = AIReportGenerator()
-            html_path = report_generator.generate_portfolio_html_report(
-                portfolio_name=portfolio_name,
-                recommendations=filtered_portfolio,
-                quarter=quarter,
+            html_path = report_generator.generate_html_report(
+                recommendation=filtered_portfolio, portfolio_name=portfolio_name
             )
 
         return filtered_portfolio, html_path

@@ -63,10 +63,7 @@ quant-system/
 ### Portfolio Management
 ```bash
 # Comprehensive collection testing (generates HTML reports + database data)
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/collections/bonds.json \
-  --metric sortino_ratio \
-  --period max
+docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all --portfolio config/collections/commodities.json --metric sortino_ratio --period max --test-timeframes
 
 # Single symbol backtest
 docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
