@@ -244,7 +244,11 @@ docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
 
 # Export TradingView alerts with proper naming convention
 docker-compose run --rm quant python -m src.utils.tradingview_alert_exporter \
-  --output bonds_collection_tradingview_alerts_Q3_2025
+  --collection bonds --output bonds_collection_tradingview_alerts_Q3_2025
+
+# Export TradingView alerts for commodities only
+docker-compose run --rm quant python -m src.utils.tradingview_alert_exporter \
+  --collection commodities --output commodities_collection_tradingview_alerts_Q3_2025
 
 # Generate AI investment recommendations (markdown format)
 docker-compose run --rm quant python -m src.cli.unified_cli ai portfolio_recommend \

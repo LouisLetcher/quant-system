@@ -84,12 +84,16 @@ docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
 - ✅ Strategy and timeframe extraction from HTML reports
 - ✅ TradingView placeholders (`{{close}}`, `{{timenow}}`, `{{strategy.order.action}}`)
 - ✅ Performance metrics integration (Sharpe, profit, win rate)
+- ✅ Collection/portfolio filtering (`--collection commodities`, `--collection bonds`)
 - ✅ Symbol-specific filtering and export options
 
 **Usage**:
 ```bash
 # Auto-organized by quarter/year
 poetry run python src/utils/tradingview_alert_exporter.py --output "alerts.md"
+
+# Export for specific collection/portfolio
+poetry run python src/utils/tradingview_alert_exporter.py --collection commodities --output "commodities_alerts.md"
 
 # Export for specific symbol
 poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
