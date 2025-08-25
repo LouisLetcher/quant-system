@@ -36,7 +36,7 @@ pre-commit = "^4.3"
 [tool.poetry.group.security.dependencies]
 # Security scanning tools
 bandit = "^1.7"
-safety = "^3.0"
+safety = "^3.2"
 
 [tool.poetry.group.jupyter.dependencies]
 # Optional for data analysis
