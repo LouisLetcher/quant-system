@@ -2228,10 +2228,15 @@ def handle_csv_export_command(args):
                 except Exception:
                     portfolio_name = portfolio_path.stem
 
+        # Use auto-generated filename based on collection name instead of default
+        output_filename = (
+            None if args.output == "portfolio_raw_data.csv" else args.output
+        )
+
         output_paths = exporter.export_from_database_primary(
             args.quarter,
             args.year,
-            args.output,
+            output_filename,
             "quarterly",
             portfolio_name,
             args.portfolio,
@@ -2272,10 +2277,15 @@ def handle_csv_export_command(args):
                     except Exception:
                         portfolio_name = portfolio_path.stem
 
+            # Use auto-generated filename based on collection name instead of default
+            output_filename = (
+                None if args.output == "portfolio_raw_data.csv" else args.output
+            )
+
             output_paths = exporter.export_from_database_primary(
                 quarter=args.quarter,
                 year=args.year,
-                output_filename=args.output,
+                output_filename=output_filename,
                 export_format="best-strategies",
                 portfolio_name=portfolio_name,
                 portfolio_path=args.portfolio,
