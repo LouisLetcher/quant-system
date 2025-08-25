@@ -571,9 +571,9 @@ class RawDataCSVExporter:
             csv_output_dir = Path("exports/csv") / year / quarter
             csv_output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Generate filename
+            # Generate filename (fallback method - uses generic name)
             if export_format == "best-strategies":
-                filename = f"database_best_strategies_{quarter}_{year}.csv"
+                filename = f"all_collections_best_strategies_{quarter}_{year}.csv"
                 # Keep only one row per symbol with highest Sortino ratio
                 df = (
                     df.sort_values("Sortino_Ratio", ascending=False)
@@ -582,9 +582,9 @@ class RawDataCSVExporter:
                     .reset_index()
                 )
             elif export_format == "quarterly":
-                filename = f"database_quarterly_summary_{quarter}_{year}.csv"
+                filename = f"all_collections_quarterly_summary_{quarter}_{year}.csv"
             else:  # full
-                filename = f"database_all_strategies_{quarter}_{year}.csv"
+                filename = f"all_collections_all_strategies_{quarter}_{year}.csv"
 
             output_file = csv_output_dir / filename
 
