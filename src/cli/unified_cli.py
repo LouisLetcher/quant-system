@@ -309,6 +309,7 @@ def run_plan(manifest: Dict[str, Any], outdir: Path, dry_run: bool = False) -> i
 
     if plan_action == "direct":
         try:
+            from src.core.data_manager import UnifiedDataManager
             from src.core.direct_backtest import (
                 finalize_persistence_for_run,
                 run_direct_backtest,
@@ -360,6 +361,24 @@ def run_plan(manifest: Dict[str, Any], outdir: Path, dry_run: bool = False) -> i
             else None
         )
 
+        # Optional: probe sources for best coverage and set ordering overrides (assume 'stocks' for bonds/ETFs)
+        try:
+            dm_probe = UnifiedDataManager()
+            asset_type_probe = "stocks"
+            sample_syms = symbols[: min(5, len(symbols))]
+            if sample_syms:
+                ordered = dm_probe.probe_and_set_order(
+                    asset_type_probe,
+                    sample_syms,
+                    interval=intervals[0] if intervals else "1d",
+                )
+                if ordered:
+                    log.info(
+                        "Source order override for %s: %s", asset_type_probe, ordered
+                    )
+        except Exception:
+            log.debug("Coverage probe failed; continuing with default ordering")
+
         for interval in intervals:
             for symbol in symbols:
                 for strat in strategies:
@@ -373,6 +392,7 @@ def run_plan(manifest: Dict[str, Any], outdir: Path, dry_run: bool = False) -> i
                             initial_capital=float(initial_capital),
                             commission=float(commission),
                             period=(period_mode if period_mode else None),
+                            use_cache=bool(plan.get("use_cache", True)),
                             persistence_context=persistence_context,
                         )
                     except Exception:
@@ -540,6 +560,14 @@ def handle_collection_run(argv: Sequence[str]) -> int:
         help="Comma-separated intervals or 'all' (default: all)",
     )
     parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Bypass cache reads for data (fetch fresh)",
+    )
+    parser.add_argument(
+        "--fresh", action="store_true", help="Alias for --no-cache (fetch fresh data)"
+    )
+    parser.add_argument(
         "--reset-db",
         action="store_true",
         help="Danger: drop and recreate DB tables before running",
@@ -635,6 +663,7 @@ def handle_collection_run(argv: Sequence[str]) -> int:
         "end": args.end,
         "exports": args.exports,
         "dry_run": bool(args.dry_run),
+        "use_cache": not (args.no_cache or args.fresh),
         "max_workers": int(args.max_workers),
         "timestamp_utc": datetime.utcnow().isoformat() + "Z",
         "git_sha_app": app_sha,
