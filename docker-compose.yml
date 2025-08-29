@@ -41,6 +41,7 @@ services:
       - CACHE_DIR=${CACHE_DIR:-/app/cache}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - DATABASE_URL=${DATABASE_URL:-postgresql://quantuser:quantpass@postgres:5432/quant_system}
+      - TAILWIND_CSS_HREF=${TAILWIND_CSS_HREF:-exports/reports/assets/tailwind.min.css}
       - PYTHONPATH=/app
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
       - TWELVE_DATA_API_KEY=${TWELVE_DATA_API_KEY}
@@ -59,7 +60,10 @@ services:
       - ./exports:/app/exports
       - ./logs:/app/logs
       - ./config:/app/config:ro
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
       - ./quant-strategies/algorithms/python:/app/external_strategies:ro
+      - ./artifacts:/app/artifacts
     depends_on:
       - postgres
     stdin_open: true

@@ -88,13 +88,38 @@ class RawDataCSVExporter:
                 except Exception as e:
                     self.logger.warning("Could not load portfolio config: %s", e)
 
-            # Query best strategies from database with optional symbol filtering
+            # Query best strategies from database with optional symbol filtering.
+            # Primary canonical table is backtests.best_strategies (models.BestStrategy).
+            # If that is empty (e.g., legacy or different persistence layer), fall back
+            # to the lightweight unified_models BestStrategy table (unified_models.BestStrategy).
             query = db_session.query(BestStrategy)
 
             if portfolio_symbols:
                 query = query.filter(BestStrategy.symbol.in_(portfolio_symbols))
 
             best_strategies = query.all()
+
+            # Fallback to unified_models if no rows found in canonical backtests schema
+            if not best_strategies:
+                try:
+                    from src.database import unified_models
+
+                    sess2 = unified_models.Session()
+                    try:
+                        unified_rows = sess2.query(unified_models.BestStrategy).all()
+                        if unified_rows:
+                            # Map unified_models rows into a structure compatible with the rest of this function.
+                            # unified_models.BestStrategy has attributes with same names used below (symbol, timeframe, strategy, sortino_ratio, calmar_ratio, sharpe_ratio, total_return, max_drawdown, updated_at)
+                            best_strategies = unified_rows
+                            self.logger.info(
+                                "Fell back to unified_models BestStrategy table (%d rows)",
+                                len(best_strategies),
+                            )
+                    finally:
+                        sess2.close()
+                except Exception:
+                    # If fallback fails, continue with empty list to trigger no-data path below
+                    pass
 
             if not best_strategies:
                 self.logger.warning(
@@ -248,8 +273,8 @@ class RawDataCSVExporter:
             "Found %d HTML reports for %s %s", len(html_files), quarter, year
         )
 
-        # Create quarterly directory structure
-        quarterly_dir = self.output_dir / year / quarter
+        # Create quarterly directory structure under exports/csv (data_exports is unused)
+        quarterly_dir = Path("exports/csv") / year / quarter
         quarterly_dir.mkdir(parents=True, exist_ok=True)
 
         exported_files = []
