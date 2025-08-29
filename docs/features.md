@@ -1,5 +1,7 @@
 # Comprehensive Features Overview
 
+Note: Command examples in this document may use legacy CLI patterns (e.g., `portfolio` subcommands). For current usage, prefer the README and `collection` subcommand examples.
+
 This document provides a complete overview of implemented and planned features in the Quant Trading System.
 
 ## ✅ Core Features (Implemented)
@@ -17,15 +19,17 @@ This document provides a complete overview of implemented and planned features i
 - ✅ Cache management for faster repeated analysis
 - ✅ Support for crypto, forex, and traditional assets
 
-**Usage**:
+**Usage (current CLI)**:
 ```bash
-# Single backtest
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
-  --symbols BTCUSDT ETHUSDT --strategy BuyAndHold --start-date 2023-01-01
+# Preferred run: Bonds collection, 1d interval, max period, all strategies
+docker compose run --rm -e STRATEGIES_PATH=/app/external_strategies \
+  quant python -m src.cli.unified_cli collection bonds \
+  --action direct --interval 1d --period max --strategies all --exports all --log-level INFO
 
-# Test all portfolios
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/portfolios/crypto.json --metric sortino_ratio
+# Dry run (plan only) + exports from DB
+docker compose run --rm -e STRATEGIES_PATH=/app/external_strategies \
+  quant python -m src.cli.unified_cli collection bonds \
+  --interval 1d --period max --strategies all --dry-run --exports all --log-level DEBUG
 ```
 
 ### 2. Portfolio Management & Configuration
@@ -87,16 +91,11 @@ docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
 - ✅ Collection/portfolio filtering (`--collection commodities`, `--collection bonds`)
 - ✅ Symbol-specific filtering and export options
 
-**Usage**:
+**Usage (current CLI)**:
 ```bash
-# Auto-organized by quarter/year
-poetry run python src/utils/tradingview_alert_exporter.py --output "alerts.md"
-
-# Export for specific collection/portfolio
-poetry run python src/utils/tradingview_alert_exporter.py --collection commodities --output "commodities_alerts.md"
-
-# Export for specific symbol
-poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
+# Generate TradingView alerts from DB (no backtests)
+docker compose run --rm \
+  quant python -m src.cli.unified_cli collection bonds --dry-run --exports tradingview
 ```
 
 ### 7. Docker Infrastructure
@@ -137,19 +136,15 @@ poetry run python src/utils/tradingview_alert_exporter.py --symbol BTCUSDT
 - ✅ HTML report parsing without re-running backtests
 - ✅ Maintains same file naming as HTML reports
 
-**Usage**:
+**Usage (current CLI)**:
 ```bash
-# Export best strategies from quarterly reports
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
-  --format best-strategies --quarter Q3 --year 2025
+# Export CSV directly from DB for bonds (no backtests)
+docker compose run --rm \
+  quant python -m src.cli.unified_cli collection bonds --dry-run --exports csv
 
-# Export full performance data from quarterly reports
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
-  --format quarterly --quarter Q3 --year 2025
-
-# Show available columns
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
-  --columns available
+# Export CSV + HTML report + TradingView alerts
+docker compose run --rm \
+  quant python -m src.cli.unified_cli collection bonds --dry-run --exports csv,report,tradingview
 ```
 
 ---
