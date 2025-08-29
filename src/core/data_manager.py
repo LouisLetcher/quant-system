@@ -217,7 +217,11 @@ class YahooFinanceSource(DataSource):
         interval: str = "1d",
         **kwargs,
     ) -> Optional[pd.DataFrame]:
-        """Fetch data from Yahoo Finance."""
+        """Fetch data from Yahoo Finance.
+
+        Supports a 'period' kwarg (e.g. 'max', '1y') which will be preferred over
+        start/end if provided. This mirrors yfinance.Ticker.history semantics.
+        """
         import yfinance as yf
 
         self._rate_limit()
@@ -226,11 +230,18 @@ class YahooFinanceSource(DataSource):
         asset_type = kwargs.get("asset_type")
         transformed_symbol = self.transform_symbol(symbol, asset_type)
 
+        # Allow callers to pass 'period' to request the provider's period-based download
+        period = kwargs.get("period") or kwargs.get("period_mode") or None
+
         try:
             ticker = yf.Ticker(transformed_symbol)
-            data = ticker.history(start=start_date, end=end_date, interval=interval)
+            if period:
+                # Use period-based download (yfinance handles interval constraints)
+                data = ticker.history(period=period, interval=interval)
+            else:
+                data = ticker.history(start=start_date, end=end_date, interval=interval)
 
-            if data.empty:
+            if data is None or data.empty:
                 return None
 
             return self.standardize_data(data)
@@ -247,32 +258,55 @@ class YahooFinanceSource(DataSource):
         interval: str = "1d",
         **kwargs,
     ) -> Dict[str, pd.DataFrame]:
-        """Fetch batch data from Yahoo Finance."""
+        """Fetch batch data from Yahoo Finance.
+
+        If a 'period' kwarg is provided it will be used instead of start/end
+        (matches yfinance.download semantics).
+        """
         import yfinance as yf
 
         self._rate_limit()
 
+        period = kwargs.get("period") or kwargs.get("period_mode") or None
+
         try:
-            data = yf.download(
-                symbols,
-                start=start_date,
-                end=end_date,
-                interval=interval,
-                group_by="ticker",
-                progress=False,
-            )
+            if period:
+                data = yf.download(
+                    symbols,
+                    period=period,
+                    interval=interval,
+                    group_by="ticker",
+                    progress=False,
+                )
+            else:
+                data = yf.download(
+                    symbols,
+                    start=start_date,
+                    end=end_date,
+                    interval=interval,
+                    group_by="ticker",
+                    progress=False,
+                )
 
             result = {}
             if len(symbols) == 1:
                 symbol = symbols[0]
-                if not data.empty:
+                if not getattr(data, "empty", False):
                     result[symbol] = self.standardize_data(data)
             else:
+                # yfinance.download returns a DataFrame with a top-level column for each ticker
                 for symbol in symbols:
-                    if symbol in data.columns.levels[0]:
-                        symbol_data = data[symbol]
-                        if not symbol_data.empty:
-                            result[symbol] = self.standardize_data(symbol_data)
+                    try:
+                        if symbol in data.columns.levels[0]:
+                            symbol_data = data[symbol]
+                            if not getattr(symbol_data, "empty", False):
+                                result[symbol] = self.standardize_data(symbol_data)
+                    except Exception as exc:
+                        # some downloads return a flat DataFrame for single-column cases; ignore failures per-symbol
+                        self.logger.debug(
+                            "Batch fetch postprocess failed for %s: %s", symbol, exc
+                        )
+                        continue
 
             return result
 
@@ -689,7 +723,7 @@ class UnifiedDataManager:
     def add_source(self, source: DataSource):
         """Add a data source."""
         self.sources[source.config.name] = source
-        self.logger.info("Added data source: %s", source.config.name)
+        self.logger.debug("Added data source: %s", source.config.name)
 
     def get_data(
         self,
@@ -768,8 +802,8 @@ class UnifiedDataManager:
         asset_type: str | None = None,
         **kwargs,
     ) -> Dict[str, pd.DataFrame]:
-        """Get data for multiple symbols with intelligent batching."""
-        result = {}
+        """Get data for multiple symbols with intelligent batching and cache-first behavior."""
+        result: Dict[str, pd.DataFrame] = {}
 
         # Group symbols by asset type for optimal source selection
         symbol_groups = self._group_symbols_by_type(symbols, asset_type)
@@ -777,44 +811,81 @@ class UnifiedDataManager:
         for group_type, group_symbols in symbol_groups.items():
             sources = self._get_sources_for_asset_type(group_type)
 
-            # Try batch sources first
+            # If caching enabled, try to satisfy from cache first to avoid external requests
+            missing_symbols: List[str] = []
+            if use_cache:
+                for symbol in list(group_symbols):
+                    try:
+                        cached = self.cache_manager.get_data(
+                            symbol, start_date, end_date, interval
+                        )
+                        if cached is not None:
+                            result[symbol] = cached
+                        else:
+                            missing_symbols.append(symbol)
+                    except Exception as e:
+                        self.logger.warning("Cache lookup failed for %s: %s", symbol, e)
+                        missing_symbols.append(symbol)
+            else:
+                missing_symbols = list(group_symbols)
+
+            # Try batch-capable sources for missing symbols
             for source in sources:
-                if source.config.supports_batch and len(group_symbols) > 1:
+                if not missing_symbols:
+                    break
+
+                if source.config.supports_batch and len(missing_symbols) > 1:
                     try:
                         batch_data = source.fetch_batch_data(
-                            group_symbols, start_date, end_date, interval, **kwargs
+                            missing_symbols, start_date, end_date, interval, **kwargs
                         )
 
+                        # Add fetched data to result and update cache
+                        fetched_symbols = []
                         for symbol, data in batch_data.items():
                             if data is not None and not data.empty:
                                 result[symbol] = data
+                                fetched_symbols.append(symbol)
                                 if use_cache:
-                                    self.cache_manager.cache_data(
-                                        symbol, data, interval, source.config.name
-                                    )
-                                group_symbols.remove(symbol)
+                                    try:
+                                        self.cache_manager.cache_data(
+                                            symbol, data, interval, source.config.name
+                                        )
+                                    except Exception as e:
+                                        self.logger.warning(
+                                            "Failed to cache data for %s from %s: %s",
+                                            symbol,
+                                            source.config.name,
+                                            e,
+                                        )
 
-                        if not group_symbols:  # All symbols fetched
-                            break
+                        # Remove fetched symbols from missing list
+                        if fetched_symbols:
+                            missing_symbols = [
+                                s for s in missing_symbols if s not in fetched_symbols
+                            ]
 
                     except Exception as e:
                         self.logger.warning(
                             "Batch fetch failed from %s: %s", source.config.name, e
                         )
 
-            # Fall back to individual requests for remaining symbols
-            for symbol in group_symbols:
-                individual_data = self.get_data(
-                    symbol,
-                    start_date,
-                    end_date,
-                    interval,
-                    use_cache,
-                    group_type,
-                    **kwargs,
-                )
-                if individual_data is not None:
-                    result[symbol] = individual_data
+            # Fall back to individual requests for any remaining missing symbols
+            for symbol in missing_symbols:
+                try:
+                    individual_data = self.get_data(
+                        symbol,
+                        start_date,
+                        end_date,
+                        interval,
+                        use_cache,
+                        group_type,
+                        **kwargs,
+                    )
+                    if individual_data is not None:
+                        result[symbol] = individual_data
+                except Exception as e:
+                    self.logger.warning("Individual fetch failed for %s: %s", symbol, e)
 
         return result
 
