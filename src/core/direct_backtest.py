@@ -570,6 +570,7 @@ def run_direct_backtest(
     initial_capital: float = 10000.0,
     commission: float = 0.001,
     period: Optional[str] = None,
+    use_cache: bool = True,
     persistence_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
@@ -586,7 +587,13 @@ def run_direct_backtest(
         data_manager = UnifiedDataManager()
         # If 'period' is provided, data sources like Yahoo will prefer it over start/end.
         data = data_manager.get_data(
-            symbol, start_date, end_date, timeframe, period=period, period_mode=period
+            symbol,
+            start_date,
+            end_date,
+            timeframe,
+            use_cache=use_cache,
+            period=period,
+            period_mode=period,
         )
 
         if data is None or data.empty:

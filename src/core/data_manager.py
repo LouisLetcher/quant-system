@@ -747,14 +747,99 @@ class UnifiedDataManager:
             asset_type: Asset type hint ('crypto', 'stocks', 'forex', etc.)
             **kwargs: Additional parameters for specific sources
         """
-        # Check cache first
-        if use_cache:
-            cached_data = self.cache_manager.get_data(
+        # If a native provider period was requested (e.g., period='max'), skip cache reads to ensure
+        # we fetch the full available history from the source. We'll still write-through to cache below.
+        period_requested = kwargs.get("period") or kwargs.get("period_mode")
+
+        # Check cache first (only when no explicit provider period was requested)
+        if use_cache and not period_requested:
+            # Legacy fast-path: return any single cached hit immediately (maintains test expectations)
+            legacy_cached = self.cache_manager.get_data(
                 symbol, start_date, end_date, interval
             )
-            if cached_data is not None:
-                self.logger.debug("Cache hit for %s", symbol)
-                return cached_data
+            if legacy_cached is not None:
+                self.logger.debug("Cache hit (legacy) for %s", symbol)
+                return legacy_cached
+
+            # Split cache: attempt to merge a full snapshot with a recent overlay
+            full_df = self.cache_manager.get_data(
+                symbol, start_date, end_date, interval, data_type="full"
+            )
+            recent_df = self.cache_manager.get_data(
+                symbol, start_date, end_date, interval, data_type="recent"
+            )
+            merged = None
+            if (
+                full_df is not None
+                and not full_df.empty
+                and recent_df is not None
+                and not recent_df.empty
+            ):
+                try:
+                    merged = (
+                        pd.concat([full_df, recent_df])
+                        .sort_index()
+                        .loc[lambda df: ~df.index.duplicated(keep="last")]
+                    )
+                except Exception:
+                    merged = full_df
+            elif full_df is not None and not full_df.empty:
+                merged = full_df
+            elif recent_df is not None and not recent_df.empty:
+                merged = recent_df
+
+            if merged is not None and not merged.empty:
+                # If requested range extends beyond merged coverage, auto-extend by fetching missing windows
+                try:
+                    req_start = pd.to_datetime(start_date)
+                    req_end = pd.to_datetime(end_date)
+                    c_start = merged.index[0]
+                    c_end = merged.index[-1]
+                    need_before = req_start < c_start
+                    need_after = req_end > c_end
+                except Exception:
+                    need_before = need_after = False
+
+                if need_before:
+                    try:
+                        df_b = self.get_data(
+                            symbol,
+                            start_date,
+                            c_start.strftime("%Y-%m-%d"),
+                            interval,
+                            use_cache=False,
+                            asset_type=asset_type,
+                            period_mode=period_requested,
+                        )
+                        if df_b is not None and not df_b.empty:
+                            merged = (
+                                pd.concat([df_b, merged])
+                                .sort_index()
+                                .loc[lambda df: ~df.index.duplicated(keep="last")]
+                            )
+                    except Exception:
+                        pass
+                if need_after:
+                    try:
+                        df_a = self.get_data(
+                            symbol,
+                            c_end.strftime("%Y-%m-%d"),
+                            end_date,
+                            interval,
+                            use_cache=False,
+                            asset_type=asset_type,
+                            period_mode=period_requested,
+                        )
+                        if df_a is not None and not df_a.empty:
+                            merged = (
+                                pd.concat([merged, df_a])
+                                .sort_index()
+                                .loc[lambda df: ~df.index.duplicated(keep="last")]
+                            )
+                    except Exception:
+                        pass
+
+                return merged
 
         # Determine asset type if not provided
         if not asset_type:
@@ -772,15 +857,48 @@ class UnifiedDataManager:
                     symbol, start_date, end_date, interval, **kwargs
                 )
                 if data is not None and not data.empty:
-                    # Cache the data
-                    if use_cache:
+                    # Always write-through to cache on a fresh fetch.
+                    # Use split-caching: store 'full' when provider period requested, else 'recent'.
+                    cache_kind = "full" if period_requested else "recent"
+                    ttl_hours = 24 if cache_kind == "recent" else 24 * 30
+                    try:
                         self.cache_manager.cache_data(
-                            symbol, data, interval, source.config.name
+                            symbol,
+                            data,
+                            interval,
+                            source.config.name,
+                            data_type=cache_kind,
+                            ttl_hours=ttl_hours,
+                        )
+                    except Exception as e:
+                        self.logger.warning(
+                            "Failed to cache data for %s from %s: %s",
+                            symbol,
+                            source.config.name,
+                            e,
                         )
 
                     self.logger.info(
                         "Successfully fetched %s from %s", symbol, source.config.name
                     )
+                    # Freshness check for daily bars
+                    if interval == "1d":
+                        try:
+                            last_bar = data.index[-1].date()
+                            from pandas.tseries.offsets import BDay
+
+                            expected = (
+                                pd.Timestamp(datetime.utcnow().date()) - BDay(1)
+                            ).date()
+                            if last_bar < expected:
+                                self.logger.warning(
+                                    "Data for %s seems stale: last=%s expected>=%s",
+                                    symbol,
+                                    last_bar,
+                                    expected,
+                                )
+                        except Exception:
+                            pass
                     return data
 
             except Exception as e:
@@ -816,13 +934,34 @@ class UnifiedDataManager:
             if use_cache:
                 for symbol in list(group_symbols):
                     try:
-                        cached = self.cache_manager.get_data(
-                            symbol, start_date, end_date, interval
+                        full_df = self.cache_manager.get_data(
+                            symbol, start_date, end_date, interval, data_type="full"
                         )
-                        if cached is not None:
-                            result[symbol] = cached
-                        else:
-                            missing_symbols.append(symbol)
+                        recent_df = self.cache_manager.get_data(
+                            symbol, start_date, end_date, interval, data_type="recent"
+                        )
+                        merged = None
+                        if (
+                            full_df is not None
+                            and not full_df.empty
+                            and recent_df is not None
+                            and not recent_df.empty
+                        ):
+                            merged = (
+                                pd.concat([full_df, recent_df])
+                                .sort_index()
+                                .loc[lambda df: ~df.index.duplicated(keep="last")]
+                            )
+                        elif full_df is not None and not full_df.empty:
+                            merged = full_df
+                        elif recent_df is not None and not recent_df.empty:
+                            merged = recent_df
+
+                        if merged is not None and not merged.empty:
+                            result[symbol] = merged
+                            # Track that we used cache for this symbol
+                            continue
+                        missing_symbols.append(symbol)
                     except Exception as e:
                         self.logger.warning("Cache lookup failed for %s: %s", symbol, e)
                         missing_symbols.append(symbol)
@@ -950,24 +1089,86 @@ class UnifiedDataManager:
         # Default to stocks
         return "stocks"
 
+    # Global override for source ordering per asset type (process-wide)
+    _global_source_order_overrides: dict[str, list[str]] = {}
+
+    @classmethod
+    def set_source_order_override(
+        cls, asset_type: str, ordered_sources: list[str]
+    ) -> None:
+        cls._global_source_order_overrides[asset_type] = list(ordered_sources)
+
     def _get_sources_for_asset_type(self, asset_type: str) -> List[DataSource]:
-        """Get appropriate sources for asset type, sorted by priority."""
+        """Get appropriate sources for asset type, sorted by priority or override."""
         suitable_sources = []
 
         for source in self.sources.values():
             if not source.config.asset_types or asset_type in source.config.asset_types:
                 suitable_sources.append(source)
 
-        # Sort by priority (lower number = higher priority)
-        if asset_type == "crypto":
-            # Prioritize Bybit for crypto
-            suitable_sources.sort(
-                key=lambda x: (0 if x.config.name == "bybit" else x.config.priority)
-            )
+        override = self._global_source_order_overrides.get(asset_type)
+        if override:
+            order_idx = {name: i for i, name in enumerate(override)}
+            suitable_sources.sort(key=lambda x: order_idx.get(x.config.name, 10_000))
         else:
-            suitable_sources.sort(key=lambda x: x.config.priority)
+            if asset_type == "crypto":
+                suitable_sources.sort(
+                    key=lambda x: (0 if x.config.name == "bybit" else x.config.priority)
+                )
+            else:
+                suitable_sources.sort(key=lambda x: x.config.priority)
 
         return suitable_sources
+
+    def probe_and_set_order(
+        self,
+        asset_type: str,
+        symbols: list[str],
+        interval: str = "1d",
+        sample_size: int = 5,
+    ) -> list[str]:
+        """Probe sources for coverage and set a global ordering by longest history.
+
+        Skips cache and uses provider period='max'. Returns ordered source names.
+        """
+        sym_sample = symbols[: max(1, min(sample_size, len(symbols)))]
+        candidates = [s for s in self._get_sources_for_asset_type(asset_type)]
+        scores: list[tuple[str, int, pd.Timestamp | None]] = []
+
+        for src in candidates:
+            total_rows = 0
+            earliest: pd.Timestamp | None = None
+            for s in sym_sample:
+                try:
+                    df = src.fetch_data(
+                        s,
+                        start_date="1900-01-01",
+                        end_date=datetime.utcnow().date().isoformat(),
+                        interval=interval,
+                        asset_type=asset_type,
+                        period="max",
+                        period_mode="max",
+                    )
+                    if df is not None and not df.empty:
+                        total_rows += len(df)
+                        f = df.index[0]
+                        earliest = f if earliest is None or f < earliest else earliest
+                except Exception as exc:
+                    self.logger.debug(
+                        "Probe error for %s via %s: %s", s, src.config.name, exc
+                    )
+                    continue
+            scores.append((src.config.name, total_rows, earliest))
+
+        def _key(t: tuple[str, int, pd.Timestamp | None]):
+            name, rows, first = t
+            first_val = first.value if hasattr(first, "value") else 2**63 - 1
+            return (-rows, first_val)
+
+        ordered = [name for name, *_ in sorted(scores, key=_key)]
+        if ordered:
+            self.set_source_order_override(asset_type, ordered)
+        return ordered
 
     def _group_symbols_by_type(
         self, symbols: List[str], default_type: Optional[str] = None
