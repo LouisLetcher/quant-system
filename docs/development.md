@@ -87,7 +87,7 @@ tests/
 └── conftest.py          # Test configuration
 
 config/
-└── portfolios/          # Portfolio configurations
+└── collections/         # Asset collections
 ```
 
 ## 🔧 Development Commands
@@ -100,11 +100,13 @@ docker build .      # Build Docker image
 
 ### Running Services
 ```bash
-# CLI commands
-python -m src.cli.unified_cli portfolio list
+# CLI discovery
+python -m src.cli.unified_cli --help
 
-# Docker development
-docker-compose up --build
+# Docker development (compose v2)
+docker compose up -d postgres pgadmin
+docker compose build quant
+docker compose run --rm quant python -m src.cli.unified_cli --help
 ```
 
 ## 📝 Contributing
