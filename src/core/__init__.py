@@ -16,7 +16,9 @@ PortfolioManager = None
 UnifiedResultAnalyzer = None
 
 try:
-    from .portfolio_manager import PortfolioManager  # type: ignore[import-not-found]
+    # Portfolio manager was moved from portfolio_manager.py to collection_manager.py.
+    # Keep public API stable by importing the same symbol from the new module.
+    from .collection_manager import PortfolioManager  # type: ignore[import-not-found]
 except Exception:
     PortfolioManager = None
 
