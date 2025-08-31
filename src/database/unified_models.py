@@ -45,6 +45,13 @@ Base = declarative_base()
 def _get_engine():
     # Try to reuse project's db_connection engine helpers if present
     # Prefer sync engine so this module stays simple.
+    # Test-mode override: force lightweight SQLite to avoid external DB dependency
+    try:
+        if os.environ.get("TESTING", "").lower() in {"1", "true", "yes"}:
+            database_url = f"sqlite:///{os.path.abspath('quant_unified_test.db')}"
+            return create_engine(database_url, echo=False, future=True)
+    except Exception:
+        pass
     try:
         from src.database.db_connection import (
             get_sync_engine,  # type: ignore[import-not-found]
