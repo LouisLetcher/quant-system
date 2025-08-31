@@ -61,9 +61,32 @@ def resolve_collection_path(collection_arg: str) -> Path:
     if p.exists():
         return p.resolve()
     # try config/collections/<collection_arg>.json
-    alt = Path("config") / "collections" / f"{collection_arg}.json"
-    if alt.exists():
-        return alt.resolve()
+    base = Path("config") / "collections"
+    # Aliases for curated defaults
+    alias_map = {
+        # Curated defaults
+        "bonds": "bonds_core",
+        "commodities": "commodities_core",
+        "crypto": "crypto_liquid",
+        "forex": "forex_majors",
+        "indices": "indices_global_core",
+        # Convenience aliases
+        "tech_growth": "stocks_us_growth_core",
+        "us_mega": "stocks_us_mega_core",
+        "value": "stocks_us_value_core",
+        "quality": "stocks_us_quality_core",
+        "minvol": "stocks_us_minvol_core",
+        "global_factors": "stocks_global_factor_core",
+    }
+    key = alias_map.get(collection_arg, collection_arg)
+    candidates = [
+        base / f"{key}.json",
+        base / "default" / f"{key}.json",
+        base / "custom" / f"{key}.json",
+    ]
+    for alt in candidates:
+        if alt.exists():
+            return alt.resolve()
     raise FileNotFoundError(f"Collection file not found: {collection_arg}")
 
 
@@ -575,7 +598,7 @@ def handle_collection_run(argv: Sequence[str]) -> int:
     parser.add_argument(
         "--exports",
         default="",
-        help="Comma-separated export types to run (csv,json,report,tradingview,all)",
+        help="Comma-separated export types to run (csv,report,tradingview,ai,all)",
     )
     parser.add_argument(
         "--dry-run",
@@ -825,77 +848,119 @@ def handle_collection_run(argv: Sequence[str]) -> int:
 
                 portfolio_config = {"name": portfolio_name, "symbols": sorted(symbols)}
 
-                # Generate HTML report from DB (DetailedPortfolioReporter)
-                try:
-                    from src.reporting.collection_report import (
-                        DetailedPortfolioReporter,
-                    )
+                # Decide which exports to run
+                do_report = ("report" in exports_list) or ("all" in exports_list)
+                do_csv = ("csv" in exports_list) or ("all" in exports_list)
+                do_tradingview = ("tradingview" in exports_list) or ("all" in exports_list)
+                do_ai = ("ai" in exports_list) or ("all" in exports_list)
 
-                    reporter = DetailedPortfolioReporter()
-                    start_date = resolved_plan.get("start") or ""
-                    end_date = resolved_plan.get("end") or ""
-                    report_path = reporter.generate_comprehensive_report(
-                        portfolio_config,
-                        start_date or datetime.utcnow().strftime("%Y-%m-%d"),
-                        end_date or datetime.utcnow().strftime("%Y-%m-%d"),
-                        resolved_plan.get("strategies", []),
-                        resolved_plan.get("intervals", ["1d"]),
-                    )
-                    log.info("Generated HTML report (DB-backed) at %s", report_path)
-                except Exception:
-                    log.exception(
-                        "DetailedPortfolioReporter not available or failed (skipping HTML report)"
-                    )
-
-                # Generate CSV exports from DB using RawDataCSVExporter (strict DB-only)
-                try:
-                    from src.utils.csv_exporter import RawDataCSVExporter
-
-                    # Choose quarter/year from plan start if available, else use current
+                # Generate HTML report from DB (DetailedPortfolioReporter) if requested
+                if do_report:
                     try:
-                        if resolved_plan.get("start"):
-                            sd = datetime.fromisoformat(resolved_plan.get("start"))
-                        else:
-                            sd = datetime.utcnow()
+                        from src.reporting.collection_report import (
+                            DetailedPortfolioReporter,
+                        )
+
+                        reporter = DetailedPortfolioReporter()
+                        start_date = resolved_plan.get("start") or ""
+                        end_date = resolved_plan.get("end") or ""
+                        report_path = reporter.generate_comprehensive_report(
+                            portfolio_config,
+                            start_date or datetime.utcnow().strftime("%Y-%m-%d"),
+                            end_date or datetime.utcnow().strftime("%Y-%m-%d"),
+                            resolved_plan.get("strategies", []),
+                            resolved_plan.get("intervals", ["1d"]),
+                        )
+                        log.info("Generated HTML report (DB-backed) at %s", report_path)
                     except Exception:
-                        sd = datetime.utcnow()
-                    quarter = f"Q{((sd.month - 1) // 3) + 1}"
-                    year = str(sd.year)
+                        log.exception(
+                            "DetailedPortfolioReporter not available or failed (skipping HTML report)"
+                        )
 
-                    csv_exporter = RawDataCSVExporter()
-                    # prefer best-strategies format for exports when requested
-                    csv_files = csv_exporter.export_from_database_primary(
-                        quarter,
-                        year,
-                        output_filename=None,
-                        export_format="best-strategies",
-                        portfolio_name=portfolio_config.get("name") or "",
-                        portfolio_path=str(collection_path),
-                    )
-                    log.info("Generated CSV exports (DB-backed): %s", csv_files)
-                except Exception as e_csv:
-                    log.exception("RawDataCSVExporter failed: %s", e_csv)
-                    log.error("CSV export failed; primary DB is required for exports.")
-                    return 11
+                # Generate CSV exports from DB using RawDataCSVExporter (strict DB-only) if requested
+                if do_csv:
+                    try:
+                        from src.utils.csv_exporter import RawDataCSVExporter
 
-                # Generate TradingView alerts by reading the generated HTML reports (if any)
-                try:
-                    from src.utils.tv_alert_exporter import TradingViewAlertExporter
+                        # Choose quarter/year from plan start if available, else use current
+                        try:
+                            if resolved_plan.get("start"):
+                                sd = datetime.fromisoformat(resolved_plan.get("start"))
+                            else:
+                                sd = datetime.utcnow()
+                        except Exception:
+                            sd = datetime.utcnow()
+                        quarter = f"Q{((sd.month - 1) // 3) + 1}"
+                        year = str(sd.year)
 
-                    # TradingView exporter expects reports under exports/reports; the reporter will
-                    # have organized the report there via ReportOrganizer. Use default location.
-                    tv_exporter = TradingViewAlertExporter(
-                        reports_dir="exports/reports"
-                    )
-                    alerts = tv_exporter.export_alerts(
-                        output_file="tradingview_alerts.md",
-                        collection_filter=portfolio_config.get("name"),
-                    )
-                    log.info("Generated TradingView alerts for %d assets", len(alerts))
-                except Exception:
-                    log.exception(
-                        "TradingViewAlertExporter not available or failed (skipping TV alerts)"
-                    )
+                        csv_exporter = RawDataCSVExporter()
+                        # Choose interval for filenames: prefer '1d' when available
+                        try:
+                            _intervals = list(resolved_plan.get("intervals") or [])
+                            interval = "1d" if "1d" in _intervals else (_intervals[0] if _intervals else "1d")
+                        except Exception:
+                            interval = "1d"
+                        # prefer best-strategies format for exports when requested
+                        csv_files = csv_exporter.export_from_database_primary(
+                            quarter,
+                            year,
+                            output_filename=None,
+                            export_format="best-strategies",
+                            portfolio_name=portfolio_config.get("name") or "",
+                            portfolio_path=str(collection_path),
+                            interval=interval,
+                        )
+                        log.info("Generated CSV exports (DB-backed): %s", csv_files)
+                    except Exception as e_csv:
+                        log.exception("RawDataCSVExporter failed: %s", e_csv)
+                        log.error("CSV export failed; primary DB is required for exports.")
+                        return 11
+
+                # Generate AI recommendations (Markdown + HTML) with unified naming if requested
+                if do_ai:
+                    try:
+                        from src.ai.investment_recommendations import (
+                            AIInvestmentRecommendations,
+                        )
+                        from src.database.db_connection import get_db_session
+
+                        ai = AIInvestmentRecommendations(db_session=get_db_session())
+                        _rec, ai_html_path = ai.generate_portfolio_recommendations(
+                            portfolio_config_path=str(collection_path),
+                            risk_tolerance="moderate",
+                            min_confidence=0.6,
+                            max_assets=10,
+                            quarter=f"{quarter}_{year}",
+                            timeframe=interval,
+                            generate_html=True,
+                        )
+                        log.info("Generated AI recommendations at %s", ai_html_path)
+                    except Exception:
+                        log.exception("AI recommendations export failed (continuing)")
+
+                # Generate TradingView alerts
+                if do_tradingview:
+                    try:
+                        from src.utils.tv_alert_exporter import TradingViewAlertExporter
+
+                        # TradingView exporter expects reports under exports/reports; the reporter will
+                        # have organized the report there via ReportOrganizer. Use default location.
+                        tv_exporter = TradingViewAlertExporter(
+                            reports_dir="exports/reports"
+                        )
+                        alerts = tv_exporter.export_alerts(
+                            output_file=None,
+                            collection_filter=portfolio_config.get("name"),
+                            interval=interval,
+                            symbols=portfolio_config.get("symbols") or [],
+                        )
+                        log.info(
+                            "Generated TradingView alerts for %d assets", len(alerts)
+                        )
+                    except Exception:
+                        log.exception(
+                            "TradingViewAlertExporter not available or failed (skipping TV alerts)"
+                        )
             except Exception:
                 log.exception("Failed to generate DB-backed exports during dry-run")
         return 0

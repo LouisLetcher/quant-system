@@ -6,6 +6,7 @@ Supports multiple data sources including Bybit for crypto futures.
 from __future__ import annotations
 
 import logging
+import os
 import time
 import warnings
 from abc import ABC, abstractmethod
@@ -762,12 +763,21 @@ class UnifiedDataManager:
                 return legacy_cached
 
             # Split cache: attempt to merge a full snapshot with a recent overlay
+            # Try Redis overlay first if available
             full_df = self.cache_manager.get_data(
                 symbol, start_date, end_date, interval, data_type="full"
             )
-            recent_df = self.cache_manager.get_data(
-                symbol, start_date, end_date, interval, data_type="recent"
-            )
+            recent_df = None
+            try:
+                recent_df = self.cache_manager.get_recent_overlay_from_redis(
+                    symbol, interval
+                )
+            except Exception:
+                recent_df = None
+            if recent_df is None:
+                recent_df = self.cache_manager.get_data(
+                    symbol, start_date, end_date, interval, data_type="recent"
+                )
             merged = None
             if (
                 full_df is not None
@@ -1554,5 +1564,4 @@ class TwelveDataSource(DataSource):
         return []
 
 
-# Import required modules
-import os
+# (end of module)

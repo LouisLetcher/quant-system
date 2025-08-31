@@ -51,7 +51,16 @@ class DetailedPortfolioReporter:
             strategies=strategies,
             timeframes=timeframes,
         )
-        return self._save_report(html, portfolio_config.get("name") or "portfolio")
+        # Choose interval for filename: prefer '1d' if included
+        interval = "1d"
+        try:
+            if timeframes:
+                interval = "1d" if "1d" in timeframes else timeframes[0]
+        except Exception:
+            interval = "1d"
+        return self._save_report(
+            html, portfolio_config.get("name") or "portfolio", interval
+        )
 
     def _get_asset_data(
         self, symbol: str, preferred_timeframes: list[str] | None = None
@@ -1110,12 +1119,18 @@ class DetailedPortfolioReporter:
             footer_html=footer_html,
         )
 
-    def _save_report(self, html_content: str, portfolio_name: str) -> str:
-        # Save via organizer (creates exports/reports/<year>/Q<q>/<name>_Q<q>_<year>.html)
+    def _save_report(
+        self, html_content: str, portfolio_name: str, interval: str
+    ) -> str:
+        # Save via organizer using unified naming (exports/reports/<year>/Q<q>/<name>_Collection_<year>_Q<q>_<interval>.html)
         tmp = Path("temp_report.html")
         tmp.write_text(html_content, encoding="utf-8")
         try:
-            return str(self.report_organizer.organize_report(str(tmp), portfolio_name))
+            return str(
+                self.report_organizer.organize_report(
+                    str(tmp), portfolio_name, None, interval=interval
+                )
+            )
         finally:
             if tmp.exists():
                 tmp.unlink()

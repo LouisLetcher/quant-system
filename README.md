@@ -32,7 +32,7 @@ The unified CLI currently exposes a single subcommand: `collection`.
 
 ### Run Bonds (1d interval, max period, all strategies)
 
-Use the collection key (`bonds`) or the JSON file path. The `direct` action runs the backtests and writes results to the DB. Add `--exports all` to generate CSV/HTML/TradingView artifacts when possible.
+Use the collection key (`bonds`) or the JSON file path. The `direct` action runs the backtests and writes results to the DB. Add `--exports all` to generate CSV/HTML/TV/AI artifacts when possible.
 
 ```bash
 # Using the collection key (recommended)
@@ -111,7 +111,31 @@ Host access tips
 
 ### Collections
 
-Sample collections live under `config/collections/`, including `bonds.json` with common bond ETFs.
+Collections live under `config/collections/` and are split into:
+
+- `default/` (curated, liquid, fast to iterate)
+- `custom/` (your own research sets)
+
+Default examples:
+
+- Bonds: `default/bonds_core.json` (liquid bond ETFs), `default/bonds.json` (broader set)
+- Commodities: `default/commodities_core.json` (gold/silver/energy/agriculture/broad)
+- Crypto: `default/crypto_liquid.json` (top market-cap, USDT pairs)
+- Forex: `default/forex_majors.json` (majors and key crosses; Yahoo Finance format `=X`)
+- Indices: `default/indices_global_core.json` (SPY/QQQ/DIA/IWM/EFA/EEM/EWJ/FXI etc.)
+- Stocks: `default/stocks_us_mega_core.json`, `default/stocks_us_growth_core.json`
+  - Factors: `default/stocks_us_value_core.json`, `default/stocks_us_quality_core.json`, `default/stocks_us_minvol_core.json`
+  - Global factors: `default/stocks_global_factor_core.json`
+
+Custom examples (research-driven):
+
+- `custom/stocks_traderfox_dax.json`
+- `custom/stocks_traderfox_european.json`
+- `custom/stocks_traderfox_us_financials.json`
+- `custom/stocks_traderfox_us_healthcare.json`
+- `custom/stocks_traderfox_us_tech.json`
+
+You can reference any collection by key without the folder prefix (resolver searches `default/` and `custom/`). For example, `bonds_core` resolves `config/collections/default/bonds_core.json`.
 
 ## 🧪 Testing
 
@@ -122,7 +146,7 @@ docker compose run --rm quant pytest
 
 ## 📊 Exports & Reporting
 
-Artifacts and exports are written under `artifacts/run_*` and `exports/`. When running with `--action direct`, pass `--exports csv,json,report,tradingview` or `--exports all`.
+Artifacts and exports are written under `artifacts/run_*` and `exports/`. When running with `--action direct` or `--dry-run`, pass `--exports csv,report,tradingview,ai` or `--exports all`.
 
 ```bash
 # Produce exports from DB for bonds without re-running backtests
@@ -130,14 +154,63 @@ docker compose run --rm quant \
   python -m src.cli.unified_cli collection bonds --dry-run --exports all
 ```
 
+Output locations and unified naming (`{Collection}_Collection_{Year}_{Quarter}_{Interval}`):
+- CSV: `exports/csv/{Year}/{Quarter}/{Collection}_Collection_{Year}_{Quarter}_{Interval}.csv`
+- HTML reports: `exports/reports/{Year}/{Quarter}/{Collection}_Collection_{Year}_{Quarter}_{Interval}.html`
+- TradingView alerts (Markdown): `exports/tv_alerts/{Year}/{Quarter}/{Collection}_Collection_{Year}_{Quarter}_{Interval}.md`
+- AI recommendations:
+  - Markdown: `exports/ai_reco/{Year}/{Quarter}/{Collection}_Collection_{Year}_{Quarter}_{Interval}.md`
+  - HTML (dark Tailwind): same path with `.html` and a Download CSV link
+
+Notes:
+- Exporters are DB-backed (read best strategies); no HTML scraping.
+- With multiple intervals in plan, filenames prefer `1d`. Pass `--interval 1d` to constrain both content and filenames.
+
+## 🗄️ Data & Cache
+
+- Split caching: the system maintains two layers for market data.
+  - Full snapshot: stored when requesting provider periods like `--period max` (long TTL).
+  - Recent overlay: normal runs cache the last ~90 days (short TTL).
+  - Reads merge both, prefer recent on overlap, and auto‑extend when a request exceeds cached range.
+- Fresh fetch: add `--no-cache` (alias: `--fresh`) to bypass cache reads and fetch from the provider. The result still writes through to cache.
+- Coverage probe: before backtests, the CLI samples a few symbols with `period=max` and prefers the source with the most rows and earliest start for this run.
+
+### Prefetching Collections (avoid rate limits)
+
+Use the prefetch script to refresh data on a schedule (e.g., nightly recent overlay and weekly full snapshot):
+
+```bash
+# Full history snapshot (bonds)
+docker compose run --rm quant \
+  python scripts/prefetch_collection.py bonds --mode full --interval 1d
+
+# Recent overlay (last 90 days)
+docker compose run --rm quant \
+  python scripts/prefetch_collection.py bonds --mode recent --interval 1d --recent-days 90
+```
+
+Example cron (runs at 01:30 local time):
+
+```
+30 1 * * * cd /path/to/quant-system && docker compose run --rm quant \
+  python scripts/prefetch_collection.py bonds --mode recent --interval 1d --recent-days 90 >/dev/null 2>&1
+```
+
+### Optional Redis Overlay (advanced)
+
+- For higher throughput, you can use Redis for the “recent” layer and keep full snapshots on disk.
+- Pros: very fast hot reads, simple TTL eviction. Cons: extra service; volatile if not persisted.
+- Suggested setup: run Redis via compose, store recent overlay (last 90 days) with TTL ~24–48h; keep full history on disk (gzip).
+- Current repo ships with file‑based caching; Redis is an optional enhancement and can be added without breaking existing flows.
+
 ## 📚 Further Docs
 
 - docs/pgadmin-and-performance.md — pgAdmin queries and performance tips
 - docs/data-sources.md — supported providers and configuration
 - docs/development.md — local dev, testing, and repo layout
-- docs/docker.md — legacy Docker notes (see README for up-to-date compose)
-- docs/features.md — feature overview; some CLI examples are legacy
-- docs/cli-guide.md — legacy CLI reference; see README examples for current usage
+- docs/docker.md — Docker specifics and mounts
+- docs/features.md — feature overview and roadmap
+- docs/cli-guide.md — CLI details and examples
 
 ## 🛠️ Troubleshooting
 

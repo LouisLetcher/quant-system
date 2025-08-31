@@ -14,11 +14,11 @@ import numpy as np
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from src.ai.ai_report_generator import AIReportGenerator
 from src.ai.llm_client import LLMClient
 from src.ai.models import AssetRecommendation, PortfolioRecommendation
 from src.database.models import AIRecommendation, BacktestResult, BestStrategy
 from src.database.models import AssetRecommendation as DbAssetRecommendation
+from src.reporting.ai_report_generator import AIReportGenerator
 
 
 class AIInvestmentRecommendations:
@@ -227,7 +227,9 @@ class AIInvestmentRecommendations:
 
         # Save to database and exports
         self._save_to_database(portfolio_rec, quarter, portfolio_name)
-        self._save_to_exports(recommendations, risk_tolerance, quarter, portfolio_name)
+        self._save_to_exports(
+            recommendations, risk_tolerance, quarter, portfolio_name, timeframe
+        )
 
         return portfolio_rec
 
@@ -454,7 +456,11 @@ class AIInvestmentRecommendations:
 
         # Save to markdown exports (skip database save due to model mismatch)
         self._save_to_exports(
-            filtered_portfolio.recommendations, risk_tolerance, quarter, portfolio_name
+            filtered_portfolio.recommendations,
+            risk_tolerance,
+            quarter,
+            portfolio_name,
+            timeframe,
         )
 
         # Try to save to database (may fail due to model mismatch)
@@ -469,8 +475,21 @@ class AIInvestmentRecommendations:
         if generate_html:
             # Generate HTML report
             report_generator = AIReportGenerator()
+            # Determine year/quarter parts from quarter token or now
+            from datetime import datetime as _dt
+
+            if quarter and "_" in (quarter or ""):
+                quarter_part, year_part = quarter.split("_")
+            else:
+                now = _dt.now()
+                quarter_part = quarter or f"Q{(now.month - 1) // 3 + 1}"
+                year_part = str(now.year)
             html_path = report_generator.generate_html_report(
-                recommendation=filtered_portfolio, portfolio_name=portfolio_name
+                recommendation=filtered_portfolio,
+                portfolio_name=portfolio_name,
+                year=year_part,
+                quarter=quarter_part,
+                interval=timeframe,
             )
 
         return filtered_portfolio, html_path
@@ -1293,8 +1312,9 @@ class AIInvestmentRecommendations:
         risk_tolerance: str,
         quarter: str,
         portfolio_name: Optional[str] = None,
+        interval: Optional[str] = None,
     ):
-        """Save recommendations to exports/recommendations folder as markdown following standard naming."""
+        """Save recommendations to exports/ai_reco using unified filename convention."""
         from datetime import datetime
         from pathlib import Path
 
@@ -1308,15 +1328,18 @@ class AIInvestmentRecommendations:
             year_part = str(current_date.year)
 
         # Create organized exports directory
-        exports_dir = Path("exports/recommendations") / year_part / quarter_part
+        exports_dir = Path("exports/ai_reco") / year_part / quarter_part
         exports_dir.mkdir(parents=True, exist_ok=True)
 
-        # Generate filename following collection_type_quarter_year pattern
-        collection_name = portfolio_name or "database"
-        # Convert to lowercase and replace spaces with underscores for filename
-        filename_collection = collection_name.lower().replace(" ", "_")
+        # Build unified filename: <Collectionname>_Collection_<Year>_<Quarter>_<Interval>.md
+        collection_name = portfolio_name or "All_Collections"
+        sanitized = (
+            collection_name.replace(" ", "_").replace("/", "_").strip("_")
+            or "All_Collections"
+        )
+        safe_interval = (interval or "multi").replace("/", "-")
         filename = (
-            f"{filename_collection}_ai_recommendations_{quarter_part}_{year_part}.md"
+            f"{sanitized}_Collection_{year_part}_{quarter_part}_{safe_interval}.md"
         )
 
         # Generate markdown content
@@ -1328,6 +1351,41 @@ class AIInvestmentRecommendations:
         output_path = exports_dir / filename
         with output_path.open("w", encoding="utf-8") as f:
             f.write(markdown_content)
+
+        # Also provide a CSV export for analysts
+        try:
+            import pandas as _pd
+
+            rows = []
+            for rec in recommendations:
+                rows.append(
+                    {
+                        "Symbol": rec.symbol,
+                        "Strategy": rec.strategy,
+                        "Timeframe": rec.timeframe,
+                        "Allocation_Pct": rec.allocation_percentage,
+                        "Risk_Level": rec.risk_level,
+                        "Confidence": rec.confidence,
+                        "Sortino": rec.sortino_ratio,
+                        "Calmar": rec.calmar_ratio,
+                        "Max_Drawdown_Pct": rec.max_drawdown,
+                        "Sharpe(approx)": rec.sharpe_ratio,
+                        "Total_Return_Pct": rec.total_return,
+                        "Trading_Style": rec.trading_style,
+                        "Risk_Per_Trade_Pct": rec.risk_per_trade,
+                        "Position_Size_Pct": rec.position_size,
+                        "Stop_Loss_Points": rec.stop_loss,
+                        "Take_Profit_Points": rec.take_profit,
+                    }
+                )
+            df = _pd.DataFrame(rows)
+            csv_filename = filename.replace(".md", ".csv")
+            df.to_csv(exports_dir / csv_filename, index=False)
+            self.logger.info(
+                "AI recommendations CSV saved to %s", exports_dir / csv_filename
+            )
+        except Exception as _e:
+            self.logger.debug("Could not write AI CSV export: %s", _e)
 
         self.logger.info("AI recommendations saved to %s", output_path)
 

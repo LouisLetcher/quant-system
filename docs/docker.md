@@ -48,6 +48,12 @@ docker compose run --rm \
   quant python -m src.cli.unified_cli collection bonds \
   --interval 1d --period max --strategies all \
   --dry-run --exports all --log-level DEBUG
+
+Exports written under `exports/`:
+- CSV → `exports/csv/<Year>/<Quarter>/...`
+- Reports → `exports/reports/<Year>/<Quarter>/...`
+- TV alerts → `exports/tv_alerts/<Year>/<Quarter>/...`
+- AI recos (md/html/csv) → `exports/ai_reco/<Year>/<Quarter>/...`
 ```
 
 ## Interactive Shell

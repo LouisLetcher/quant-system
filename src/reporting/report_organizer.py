@@ -34,7 +34,11 @@ class ReportOrganizer:
         return None
 
     def organize_report(
-        self, report_path: str, portfolio_name: str, report_date: datetime | None = None
+        self,
+        report_path: str,
+        portfolio_name: str,
+        report_date: datetime | None = None,
+        interval: str | None = None,
     ) -> Path:
         """
         Organize a report into quarterly structure.
@@ -56,9 +60,12 @@ class ReportOrganizer:
 
         # Clean portfolio name for filename
         clean_portfolio_name = portfolio_name.replace(" ", "_").replace("/", "_")
+        interval_part = (interval or "multi").replace("/", "-")
 
-        # New filename format: {portfolio_name}_Q{quarter}_{year}.html
-        new_filename = f"{clean_portfolio_name}_Q{quarter}_{year}.html"
+        # Unified filename format: <Collectionname>_Collection_<Year>_<Quarter>_<Interval>.html
+        new_filename = (
+            f"{clean_portfolio_name}_Collection_{year}_Q{quarter}_{interval_part}.html"
+        )
         target_path = quarterly_dir / new_filename
 
         # Check if report already exists for this portfolio/quarter
@@ -107,8 +114,10 @@ class ReportOrganizer:
                     # If parsing fails, use current date
                     report_date = datetime.now(timezone.utc)
 
-                # Organize the report
-                self.organize_report(str(report_file), portfolio_name, report_date)
+                # Organize the report (no interval info, use 'multi')
+                self.organize_report(
+                    str(report_file), portfolio_name, report_date, interval="multi"
+                )
 
                 # Remove original file after organizing
                 report_file.unlink()
@@ -130,10 +139,26 @@ class ReportOrganizer:
             if year_dir.is_dir():
                 for quarter_dir in year_dir.glob("Q?"):
                     if quarter_dir.is_dir():
+                        # Prefer unified naming with interval; fallback to legacy
                         report_path = (
                             quarter_dir
-                            / f"{clean_portfolio_name}_Q{quarter_dir.name[1]}_{year_dir.name}.html"
+                            / f"{clean_portfolio_name}_Collection_{year_dir.name}_{quarter_dir.name}_1d.html"
                         )
+                        if not report_path.exists():
+                            # Try any interval by globbing
+                            candidates = list(
+                                quarter_dir.glob(
+                                    f"{clean_portfolio_name}_Collection_{year_dir.name}_{quarter_dir.name}_*.html"
+                                )
+                            )
+                            if candidates:
+                                report_path = candidates[0]
+                            else:
+                                # Legacy fallback
+                                report_path = (
+                                    quarter_dir
+                                    / f"{clean_portfolio_name}_Q{quarter_dir.name[1]}_{year_dir.name}.html"
+                                )
                         if report_path.exists():
                             year = int(year_dir.name)
                             quarter = int(quarter_dir.name[1])
