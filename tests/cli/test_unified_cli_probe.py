@@ -42,7 +42,7 @@ def test_cli_probe_called(monkeypatch, tmp_path):
     monkeypatch.setitem(sys.modules, "src.core.direct_backtest", fake_direct_mod)
 
     # Patch unified_models ensure_run_for_manifest
-    mod.unified_models = SimpleNamespace(  # type: ignore
+    mod.unified_models = SimpleNamespace(  # type: ignore[attr-defined]
         ensure_run_for_manifest=lambda m: SimpleNamespace(run_id="test-run")
     )
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from src.cli.unified_cli import resolve_collection_path
 
 
@@ -36,8 +38,5 @@ def test_resolver_default_and_custom(tmp_path: Path, monkeypatch):
 def test_resolver_missing_raises(tmp_path: Path, monkeypatch):
     (tmp_path / "config" / "collections").mkdir(parents=True)
     monkeypatch.chdir(tmp_path)
-    try:
+    with pytest.raises(FileNotFoundError):
         resolve_collection_path("does_not_exist")
-        assert False, "Expected FileNotFoundError"
-    except FileNotFoundError:
-        pass

@@ -29,7 +29,8 @@ def test_split_cache_merge(monkeypatch):
     monkeypatch.setattr(dm.cache_manager, "get_data", fake_get_data)
 
     df = dm.get_data("TLT", "2023-01-01", "2023-01-20", "1d", use_cache=True)
-    assert df is not None and not df.empty
+    assert df is not None
+    assert not df.empty
     # Last day should be 2023-01-15 given our recent overlay
     assert df.index[-1].date().isoformat() == "2023-01-15"
     # Overlap region should reflect recent overlay value (2) where both provide data
