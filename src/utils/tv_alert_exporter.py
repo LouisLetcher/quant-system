@@ -18,11 +18,13 @@ from bs4 import BeautifulSoup
 
 # DB models
 try:
-    from src.database.db_connection import get_db_session  # type: ignore
-    from src.database.models import BestStrategy  # type: ignore
+    from src.database.db_connection import (
+        get_db_session,  # type: ignore[import-not-found]
+    )
+    from src.database.models import BestStrategy  # type: ignore[import-not-found]
 except Exception:  # pragma: no cover - guarded imports
-    get_db_session = None  # type: ignore
-    BestStrategy = None  # type: ignore
+    get_db_session = None  # type: ignore[assignment]
+    BestStrategy = None  # type: ignore[assignment]
 
 
 class TradingViewAlertExporter:
@@ -72,30 +74,27 @@ class TradingViewAlertExporter:
         # New Tailwind report structure (DetailedPortfolioReporter): sections with id="asset-<SYMBOL>"
         section_nodes = soup.select("section[id^='asset-']")
         for sec in section_nodes:
-            try:
-                h2 = sec.find("h2")
-                symbol = h2.get_text(strip=True) if h2 else None
-                best_strategy = None
-                timeframe = None
-                # The header line contains two spans: "Best: <name>" and "⏰ <interval>"
-                tag_spans = sec.find_all("span")
-                for sp in tag_spans:
-                    txt = sp.get_text(strip=True)
-                    if txt.startswith("Best:") and best_strategy is None:
-                        best_strategy = txt.replace("Best:", "").strip()
-                    if "⏰" in txt and timeframe is None:
-                        timeframe = txt.replace("⏰", "").strip()
-                if symbol and best_strategy and timeframe:
-                    assets.append(
-                        {
-                            "symbol": symbol,
-                            "strategy": best_strategy,
-                            "timeframe": timeframe,
-                            "metrics": {},
-                        }
-                    )
-            except Exception:
-                continue
+            h2 = sec.find("h2")
+            symbol = h2.get_text(strip=True) if h2 else None
+            best_strategy = None
+            timeframe = None
+            # The header line contains two spans: "Best: <name>" and "⏰ <interval>"
+            tag_spans = sec.find_all("span")
+            for sp in tag_spans:
+                txt = sp.get_text(strip=True)
+                if txt.startswith("Best:") and best_strategy is None:
+                    best_strategy = txt.replace("Best:", "").strip()
+                if "⏰" in txt and timeframe is None:
+                    timeframe = txt.replace("⏰", "").strip()
+            if symbol and best_strategy and timeframe:
+                assets.append(
+                    {
+                        "symbol": symbol,
+                        "strategy": best_strategy,
+                        "timeframe": timeframe,
+                        "metrics": {},
+                    }
+                )
 
         if assets:
             return assets
@@ -224,7 +223,9 @@ Qty: {{{{strategy.order.contracts}}}}
             # Fallback to unified_models if no rows found (similar to csv exporter)
             if not rows:
                 try:
-                    from src.database import unified_models as um  # type: ignore
+                    from src.database import (
+                        unified_models as um,  # type: ignore[import-not-found]
+                    )
 
                     usess = um.Session()
                     try:
