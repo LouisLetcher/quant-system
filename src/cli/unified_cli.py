@@ -851,7 +851,9 @@ def handle_collection_run(argv: Sequence[str]) -> int:
                 # Decide which exports to run
                 do_report = ("report" in exports_list) or ("all" in exports_list)
                 do_csv = ("csv" in exports_list) or ("all" in exports_list)
-                do_tradingview = ("tradingview" in exports_list) or ("all" in exports_list)
+                do_tradingview = ("tradingview" in exports_list) or (
+                    "all" in exports_list
+                )
                 do_ai = ("ai" in exports_list) or ("all" in exports_list)
 
                 # Generate HTML report from DB (DetailedPortfolioReporter) if requested
@@ -897,7 +899,11 @@ def handle_collection_run(argv: Sequence[str]) -> int:
                         # Choose interval for filenames: prefer '1d' when available
                         try:
                             _intervals = list(resolved_plan.get("intervals") or [])
-                            interval = "1d" if "1d" in _intervals else (_intervals[0] if _intervals else "1d")
+                            interval = (
+                                "1d"
+                                if "1d" in _intervals
+                                else (_intervals[0] if _intervals else "1d")
+                            )
                         except Exception:
                             interval = "1d"
                         # prefer best-strategies format for exports when requested
@@ -913,7 +919,9 @@ def handle_collection_run(argv: Sequence[str]) -> int:
                         log.info("Generated CSV exports (DB-backed): %s", csv_files)
                     except Exception as e_csv:
                         log.exception("RawDataCSVExporter failed: %s", e_csv)
-                        log.error("CSV export failed; primary DB is required for exports.")
+                        log.error(
+                            "CSV export failed; primary DB is required for exports."
+                        )
                         return 11
 
                 # Generate AI recommendations (Markdown + HTML) with unified naming if requested
