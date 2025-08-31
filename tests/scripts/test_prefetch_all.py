@@ -8,9 +8,11 @@ from unittest.mock import patch
 def _load_module():
     p = Path("scripts/prefetch_all.py")
     spec = importlib.util.spec_from_file_location("prefetch_all", p)
-    mod = importlib.util.module_from_spec(spec)  # type: ignore
-    assert spec and spec.loader
-    spec.loader.exec_module(mod)  # type: ignore
+    assert spec is not None
+    assert spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    assert mod is not None
+    spec.loader.exec_module(mod)
     return mod
 
 

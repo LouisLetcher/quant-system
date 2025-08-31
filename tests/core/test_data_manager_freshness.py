@@ -30,6 +30,7 @@ def test_freshness_warning_for_daily(monkeypatch, caplog):
     df = dm.get_data(
         "AAPL", "2000-01-01", "2100-01-01", "1d", use_cache=False, asset_type="stocks"
     )
-    assert df is not None and not df.empty
+    assert df is not None
+    assert not df.empty
     # Assert warning logged
     assert any("seems stale" in rec.message for rec in caplog.records)

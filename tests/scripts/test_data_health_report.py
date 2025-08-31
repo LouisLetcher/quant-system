@@ -11,9 +11,11 @@ import pandas as pd
 def _load_module():
     p = Path("scripts/data_health_report.py")
     spec = importlib.util.spec_from_file_location("data_health_report", p)
-    mod = importlib.util.module_from_spec(spec)  # type: ignore
-    assert spec and spec.loader
-    spec.loader.exec_module(mod)  # type: ignore
+    assert spec is not None
+    assert spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    assert mod is not None
+    spec.loader.exec_module(mod)
     return mod
 
 
@@ -34,8 +36,8 @@ def test_health_report_outputs_csv(monkeypatch, tmp_path):
     # Ensure resolver reads from tmp config
     import os as _os
 
-    cwd = _os.getcwd()
-    _os.chdir(tmp_path)
+    old_cwd = Path.cwd()
+    _os.chdir(str(tmp_path))
 
     out_csv = tmp_path / "health.csv"
     rc = mod.main(
@@ -47,4 +49,4 @@ def test_health_report_outputs_csv(monkeypatch, tmp_path):
     # two symbols
     assert len(rows) == 2
     patch.stopall()
-    _os.chdir(cwd)
+    _os.chdir(str(old_cwd))

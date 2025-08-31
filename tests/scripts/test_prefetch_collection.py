@@ -6,9 +6,11 @@ from unittest.mock import MagicMock
 
 _path = Path("scripts/prefetch_collection.py")
 _spec = importlib.util.spec_from_file_location("prefetch_collection", _path)
-prefetch_mod = importlib.util.module_from_spec(_spec)  # type: ignore
-assert _spec and _spec.loader
-_spec.loader.exec_module(prefetch_mod)  # type: ignore
+assert _spec is not None
+assert _spec.loader is not None
+prefetch_mod = importlib.util.module_from_spec(_spec)
+assert prefetch_mod is not None
+_spec.loader.exec_module(prefetch_mod)
 prefetch = prefetch_mod.prefetch
 
 
