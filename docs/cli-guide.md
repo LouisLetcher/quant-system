@@ -15,10 +15,18 @@ docker compose run --rm -e STRATEGIES_PATH=/app/external_strategies \
   quant python -m src.cli.unified_cli collection bonds \
   --action direct --interval 1d --period max --strategies all --exports all
 
-# Dry run (plan only) + exports
+# Dry run (plan only) + exports (csv, report, tradingview, ai or all)
 docker compose run --rm -e STRATEGIES_PATH=/app/external_strategies \
   quant python -m src.cli.unified_cli collection bonds \
   --interval 1d --period max --strategies all --dry-run --exports all
+
+Exports and naming:
+- CSV → `exports/csv/<Year>/<Quarter>/<Collection>_Collection_<Year>_<Quarter>_<Interval>.csv`
+- Reports → `exports/reports/<Year>/<Quarter>/<Collection>_Collection_<Year>_<Quarter>_<Interval>.html`
+- TV alerts → `exports/tv_alerts/<Year>/<Quarter>/<Collection>_Collection_<Year>_<Quarter>_<Interval>.md`
+- AI recos (md/html) → `exports/ai_reco/<Year>/<Quarter>/<Collection>_Collection_<Year>_<Quarter>_<Interval>.*`
+
+When multiple intervals are used, filenames prefer `1d`. Use `--interval 1d` to constrain content and filenames.
 ```
 
 ## Legacy CLI (Preserved)

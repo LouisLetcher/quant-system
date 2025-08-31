@@ -81,11 +81,11 @@ docker compose run --rm -e STRATEGIES_PATH=/app/external_strategies \
 
 ### 6. TradingView Alert Export
 **Status**: ✅ **IMPLEMENTED**
-**Description**: Export trading alerts from quarterly portfolio reports with TradingView placeholders.
+**Description**: Export trading alerts directly from the database (best strategies), with TradingView placeholders.
 
 **Features**:
-- ✅ Auto-organized quarterly export structure (`exports/tradingview_alerts/YYYY/QX/`)
-- ✅ Strategy and timeframe extraction from HTML reports
+- ✅ Auto-organized quarterly export structure (`exports/tv_alerts/YYYY/QX/`)
+- ✅ DB-backed (no HTML scraping)
 - ✅ TradingView placeholders (`{{close}}`, `{{timenow}}`, `{{strategy.order.action}}`)
 - ✅ Performance metrics integration (Sharpe, profit, win rate)
 - ✅ Collection/portfolio filtering (`--collection commodities`, `--collection bonds`)
@@ -124,17 +124,16 @@ docker compose run --rm \
 
 ### 9. CSV Export
 **Status**: ✅ **IMPLEMENTED**
-**Description**: Export portfolio data with best strategies and timeframes from existing quarterly reports.
+**Description**: Export portfolio data with best strategies and timeframes directly from the database.
 
 **Features**:
 - ✅ CSV export with symbol, best strategy, best timeframe, and performance metrics
-- ✅ Bulk export for all assets from quarterly reports
+- ✅ Bulk export for all assets from the database
 - ✅ **Separate CSV files for each portfolio** (Crypto, Bonds, Forex, Stocks, etc.)
 - ✅ Customizable column selection (Sharpe, Sortino, profit, drawdown)
 - ✅ Integration with existing quarterly report structure
-- ✅ Organized quarterly directory structure (`exports/data_exports/YYYY/QX/`)
-- ✅ HTML report parsing without re-running backtests
-- ✅ Maintains same file naming as HTML reports
+- ✅ Organized quarterly directory structure (`exports/csv/YYYY/QX/`)
+- ✅ Unified naming with HTML/TV/AI exports
 
 **Usage (current CLI)**:
 ```bash
@@ -144,25 +143,16 @@ docker compose run --rm \
 
 # Export CSV + HTML report + TradingView alerts
 docker compose run --rm \
-  quant python -m src.cli.unified_cli collection bonds --dry-run --exports csv,report,tradingview
+  quant python -m src.cli.unified_cli collection bonds --dry-run --exports csv,report,tradingview,ai
 ```
 
 ---
 
 ## 🎯 High Priority Features (Planned)
 
-### 1. AI Investment Recommendations
-**Status**: ✅ **IMPLEMENTED**
-**Description**: AI-powered analysis of backtest results to recommend optimal asset allocation and investment decisions.
-
-**Features**:
-- **Performance-based scoring** - Analyze Sortino ratio, Calmar ratio, and profit factors across all assets
-- **Risk-adjusted recommendations** - Consider volatility, maximum drawdown, and recovery periods
-- **Portfolio correlation analysis** - Identify diversification opportunities and avoid over-concentration
-- **Strategy-asset matching** - Recommend best strategy-timeframe combinations for each asset
-- **Investment allocation suggestions** - Propose percentage allocations based on risk tolerance
-- **Red flag detection** - Warn against assets with poor historical performance or high risk
-- **Confidence scoring** - Rate recommendation confidence based on data quality and consistency
+### 1. Walk-Forward + Out-of-Sample Validation
+- Rolling window backtests, expanding windows, and out-of-sample validation reports.
+- Parameter stability plots; highlight overfitting risk.
 
 ### 2. Enhanced Data Sources
 **Status**: 🔄 **PLANNED**

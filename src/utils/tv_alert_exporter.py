@@ -12,9 +12,17 @@ import argparse
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from bs4 import BeautifulSoup
+
+# DB models
+try:
+    from src.database.db_connection import get_db_session  # type: ignore
+    from src.database.models import BestStrategy  # type: ignore
+except Exception:  # pragma: no cover - guarded imports
+    get_db_session = None  # type: ignore
+    BestStrategy = None  # type: ignore
 
 
 class TradingViewAlertExporter:
@@ -45,35 +53,70 @@ class TradingViewAlertExporter:
 
         return output_dir
 
+    def _build_filename(
+        self, collection_name: str, year: int, quarter: int, interval: str | None
+    ) -> str:
+        """Builds <Collectionname>_Collection_<Year>_<Quarter>_<Interval>.md"""
+        sanitized = (
+            collection_name.replace(" ", "_").replace("/", "_").strip("_")
+            or "All_Collections"
+        )
+        interval_part = (interval or "multi").replace("/", "-")
+        return f"{sanitized}_Collection_{year}_Q{quarter}_{interval_part}.md"
+
     def extract_asset_data(self, html_content: str) -> List[Dict]:
         """Extract asset information from HTML report"""
         soup = BeautifulSoup(html_content, "html.parser")
-        assets = []
+        assets: List[Dict] = []
 
-        # Find all asset sections
+        # New Tailwind report structure (DetailedPortfolioReporter): sections with id="asset-<SYMBOL>"
+        section_nodes = soup.select("section[id^='asset-']")
+        for sec in section_nodes:
+            try:
+                h2 = sec.find("h2")
+                symbol = h2.get_text(strip=True) if h2 else None
+                best_strategy = None
+                timeframe = None
+                # The header line contains two spans: "Best: <name>" and "⏰ <interval>"
+                tag_spans = sec.find_all("span")
+                for sp in tag_spans:
+                    txt = sp.get_text(strip=True)
+                    if txt.startswith("Best:") and best_strategy is None:
+                        best_strategy = txt.replace("Best:", "").strip()
+                    if "⏰" in txt and timeframe is None:
+                        timeframe = txt.replace("⏰", "").strip()
+                if symbol and best_strategy and timeframe:
+                    assets.append(
+                        {
+                            "symbol": symbol,
+                            "strategy": best_strategy,
+                            "timeframe": timeframe,
+                            "metrics": {},
+                        }
+                    )
+            except Exception:
+                continue
+
+        if assets:
+            return assets
+
+        # Fallback legacy structure support (older HTML reports)
+        legacy_assets: List[Dict] = []
         asset_sections = soup.find_all("div", class_="asset-section")
-
         for section in asset_sections:
-            # Extract asset symbol from title
             asset_title = section.find("h2", class_="asset-title")
             if not asset_title:
                 continue
-
             symbol = asset_title.text.strip()
-
-            # Extract best strategy from strategy badge
             strategy_badges = section.find_all("span", class_="strategy-badge")
             best_strategy = None
             timeframe = None
-
             for badge in strategy_badges:
                 text = badge.text.strip()
                 if text.startswith("Best:"):
                     best_strategy = text.replace("Best:", "").strip()
                 elif "⏰" in text:
                     timeframe = text.replace("⏰", "").strip()
-
-            # Extract metrics for additional context
             metrics = {}
             metric_cards = section.find_all("div", class_="metric-card")
             for card in metric_cards:
@@ -83,9 +126,8 @@ class TradingViewAlertExporter:
                     label = label_elem.text.strip()
                     value = value_elem.text.strip()
                     metrics[label] = value
-
             if symbol and best_strategy and timeframe:
-                assets.append(
+                legacy_assets.append(
                     {
                         "symbol": symbol,
                         "strategy": best_strategy,
@@ -93,8 +135,7 @@ class TradingViewAlertExporter:
                         "metrics": metrics,
                     }
                 )
-
-        return assets
+        return legacy_assets
 
     def generate_tradingview_alert(self, asset_data: Dict) -> str:
         """Generate TradingView alert message for asset"""
@@ -152,59 +193,124 @@ Qty: {{{{strategy.order.contracts}}}}
         return html_files
 
     def export_alerts(
-        self, output_file: str | None = None, collection_filter: str | None = None
+        self,
+        output_file: Optional[str] = None,
+        collection_filter: Optional[str] = None,
+        interval: Optional[str] = None,
+        symbols: Optional[List[str]] = None,
     ) -> Dict:
-        """Export TradingView alerts, optionally filtered by collection"""
-        html_files = self.find_html_reports()
-        all_alerts = {}
+        """Export TradingView alerts using database BestStrategy data.
 
-        for html_file in html_files:
-            # Filter by collection if specified
-            if collection_filter:
-                # Check if the HTML file name contains the collection name (case-insensitive)
-                if collection_filter.lower() not in html_file.name.lower():
-                    print(
-                        f"Skipping: {html_file} (not matching collection '{collection_filter}')"
-                    )
-                    continue
+        - Filters by provided symbols when available (preferred).
+        - If symbols is None, uses all BestStrategy rows.
+        - Writes markdown under exports/tv_alerts/<Year>/Q<Quarter>/ with unified name.
+        """
+        all_alerts: Dict[str, List[Dict]] = {}
 
-            print(f"Processing: {html_file}")
-            assets = self.process_html_file(html_file)
+        # Query DB for best strategies
+        rows = []
+        sess = None
+        try:
+            if get_db_session is None or BestStrategy is None:
+                raise RuntimeError("Database session/models unavailable for TV export")
+            sess = get_db_session()
+            q = sess.query(BestStrategy)
+            if symbols:
+                q = q.filter(BestStrategy.symbol.in_(symbols))
+            # Optionally, prefer the provided interval if filtering is desired
+            if interval:
+                q = q.filter(BestStrategy.timeframe == interval)
+            rows = q.all()
+            # Fallback to unified_models if no rows found (similar to csv exporter)
+            if not rows:
+                try:
+                    from src.database import unified_models as um  # type: ignore
 
-            for asset in assets:
-                symbol = asset["symbol"]
-                alert = self.generate_tradingview_alert(asset)
+                    usess = um.Session()
+                    try:
+                        uq = usess.query(um.BestStrategy)
+                        if symbols:
+                            uq = uq.filter(um.BestStrategy.symbol.in_(symbols))
+                        if interval:
+                            uq = uq.filter(um.BestStrategy.timeframe == interval)
+                        rows = uq.all()
+                    finally:
+                        usess.close()
+                except Exception:
+                    rows = []
+        finally:
+            if sess is not None:
+                try:
+                    sess.close()
+                except Exception:
+                    pass
 
-                if symbol not in all_alerts:
-                    all_alerts[symbol] = []
+        # If interval specified but produced no rows, relax interval filter
+        if interval and not rows:
+            try:
+                sess = get_db_session()
+                q = sess.query(BestStrategy)
+                if symbols:
+                    q = q.filter(BestStrategy.symbol.in_(symbols))
+                rows = q.all()
+            except Exception:
+                rows = rows
+            finally:
+                if sess is not None:
+                    try:
+                        sess.close()
+                    except Exception:
+                        pass
 
-                all_alerts[symbol].append({"alert_message": alert, "asset_data": asset})
+        # Build one alert per symbol using best Sortino
+        by_symbol: Dict[str, Dict] = {}
+        for r in rows:
+            sym = getattr(r, "symbol", None)
+            if not sym:
+                continue
+            entry = by_symbol.get(sym)
+            sortino = float(getattr(r, "sortino_ratio", 0.0) or 0.0)
+            if entry is None or sortino > entry.get("sortino_ratio", -1e9):
+                by_symbol[sym] = {
+                    "symbol": sym,
+                    "strategy": getattr(r, "strategy", ""),
+                    "timeframe": getattr(r, "timeframe", interval or "1d"),
+                    "metrics": {
+                        "Sharpe Ratio": f"{float(getattr(r, 'sharpe_ratio', 0.0) or 0.0):.3f}",
+                        "Sortino Ratio": f"{sortino:.3f}",
+                        "Calmar Ratio": f"{float(getattr(r, 'calmar_ratio', 0.0) or 0.0):.3f}",
+                    },
+                }
 
-        # Write to file if specified
-        if output_file:
-            # Always organize by quarter/year following export naming convention
-            organized_dir = self.organize_output_path("exports/tradingview_alerts")
+        for sym, asset in by_symbol.items():
+            alert = self.generate_tradingview_alert(asset)
+            if sym not in all_alerts:
+                all_alerts[sym] = []
+            all_alerts[sym].append({"alert_message": alert, "asset_data": asset})
 
-            # Generate proper filename based on collection and quarter/year
-            if output_file.endswith(".md"):
-                filename = output_file
+        # Write to file if requested
+        if output_file is not None or collection_filter is not None:
+            organized_dir = self.organize_output_path("exports/tv_alerts")
+            now = datetime.now(timezone.utc)
+            year, q = self.get_quarter_from_date(now)
+            collection_name = collection_filter or "All_Collections"
+            if output_file and output_file not in ("tradingview_alerts.md",):
+                filename = (
+                    output_file if output_file.endswith(".md") else f"{output_file}.md"
+                )
             else:
-                filename = f"{output_file}.md"
-
+                filename = self._build_filename(collection_name, year, q, interval)
             output_path = organized_dir / filename
 
             with output_path.open("w", encoding="utf-8") as f:
                 f.write("# TradingView Alert Messages\n\n")
-
                 for symbol, alerts in all_alerts.items():
                     f.write(f"## {symbol}\n\n")
-
                     for i, alert_data in enumerate(alerts):
                         asset = alert_data["asset_data"]
                         f.write(
                             f"### Alert {i + 1} - {asset['strategy']} ({asset['timeframe']})\n"
                         )
-                        f.write(f"**Source:** {asset['source_file']}\n\n")
                         f.write("```\n")
                         f.write(alert_data["alert_message"])
                         f.write("\n```\n\n")

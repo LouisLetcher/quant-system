@@ -30,7 +30,8 @@ class RawDataCSVExporter:
     - Integration with existing quarterly report structure
     """
 
-    def __init__(self, output_dir: str = "exports/data_exports"):
+    def __init__(self, output_dir: str = "exports/csv"):
+        # Default output directory aligned with repo: exports/csv
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.reports_dir = Path("exports/reports")
@@ -44,6 +45,7 @@ class RawDataCSVExporter:
         export_format: str = "full",
         portfolio_name: str = "all",
         portfolio_path: str | None = None,
+        interval: str | None = None,
     ) -> list[str]:
         """
         Export data directly from database - primary data source for CSV exports.
@@ -96,6 +98,12 @@ class RawDataCSVExporter:
 
             if portfolio_symbols:
                 query = query.filter(BestStrategy.symbol.in_(portfolio_symbols))
+            # Filter by timeframe/interval if provided
+            if "interval" in locals() and interval:
+                try:
+                    query = query.filter(BestStrategy.timeframe == interval)
+                except Exception:
+                    pass
 
             best_strategies = query.all()
 
@@ -106,7 +114,21 @@ class RawDataCSVExporter:
 
                     sess2 = unified_models.Session()
                     try:
-                        unified_rows = sess2.query(unified_models.BestStrategy).all()
+                        uq = sess2.query(unified_models.BestStrategy)
+                        if portfolio_symbols:
+                            uq = uq.filter(
+                                unified_models.BestStrategy.symbol.in_(
+                                    portfolio_symbols
+                                )
+                            )
+                        if "interval" in locals() and interval:
+                            try:
+                                uq = uq.filter(
+                                    unified_models.BestStrategy.timeframe == interval
+                                )
+                            except Exception:
+                                pass
+                        unified_rows = uq.all()
                         if unified_rows:
                             # Map unified_models rows into a structure compatible with the rest of this function.
                             # unified_models.BestStrategy has attributes with same names used below (symbol, timeframe, strategy, sortino_ratio, calmar_ratio, sharpe_ratio, total_return, max_drawdown, updated_at)
@@ -157,18 +179,37 @@ class RawDataCSVExporter:
             df = pd.DataFrame(data)
 
             # Create output directory following standard naming convention
-            csv_output_dir = Path("exports/csv") / year / quarter
+            csv_output_dir = self.output_dir / year / quarter
             csv_output_dir.mkdir(parents=True, exist_ok=True)
 
             # Generate filename following naming convention
+            # Prefer human-readable collection name from config when available
+            display_name = portfolio_name or "All_Collections"
+            if portfolio_path:
+                try:
+                    import json
+
+                    with Path(portfolio_path).open() as f:
+                        portfolio_config = json.load(f)
+                        portfolio_key = list(portfolio_config.keys())[0]
+                        display_name = (
+                            portfolio_config[portfolio_key].get("name") or display_name
+                        )
+                except Exception:
+                    pass
+
+            # Sanitize and build unified base filename: <Name>_Collection_<Year>_<Quarter>_<Interval>
+            sanitized = re.sub(r"\W+", "_", str(display_name)).strip("_")
+            safe_interval = (interval or "multi").replace("/", "-")
             if output_filename:
                 base_filename = output_filename.replace(".csv", "")
             else:
-                # Use actual collection name from portfolio, not generic names
-                base_filename = f"{portfolio_name}_collection"
+                base_filename = (
+                    f"{sanitized}_Collection_{year}_{quarter}_{safe_interval}"
+                )
 
             if export_format == "best-strategies":
-                filename = f"{base_filename}_best_strategies_{quarter}_{year}.csv"
+                filename = f"{base_filename}.csv"
                 # Keep only one row per symbol with highest Sortino ratio
                 df = (
                     df.sort_values("Sortino_Ratio", ascending=False)
@@ -189,7 +230,7 @@ class RawDataCSVExporter:
                     }
                 )
             elif export_format == "quarterly":
-                filename = f"{base_filename}_quarterly_summary_{quarter}_{year}.csv"
+                filename = f"{base_filename}.csv"
                 # Create summary statistics
                 summary_data = []
                 for symbol in df["Symbol"].unique():
@@ -210,7 +251,7 @@ class RawDataCSVExporter:
                     )
                 df = pd.DataFrame(summary_data)
             else:  # full
-                filename = f"{base_filename}_detailed_results_{quarter}_{year}.csv"
+                filename = f"{base_filename}.csv"
                 # Keep all data with proper column names
                 df = df.rename(
                     columns={
@@ -243,6 +284,8 @@ class RawDataCSVExporter:
         year: str,
         output_filename: str | None = None,
         export_format: str = "full",
+        collection_name: str | None = None,
+        interval: str | None = None,
     ) -> list[str]:
         """
         Extract data from existing quarterly reports and export to CSV.
@@ -273,8 +316,8 @@ class RawDataCSVExporter:
             "Found %d HTML reports for %s %s", len(html_files), quarter, year
         )
 
-        # Create quarterly directory structure under exports/csv (data_exports is unused)
-        quarterly_dir = Path("exports/csv") / year / quarter
+        # Create quarterly directory structure under exports/csv
+        quarterly_dir = self.output_dir / year / quarter
         quarterly_dir.mkdir(parents=True, exist_ok=True)
 
         exported_files = []
@@ -291,12 +334,15 @@ class RawDataCSVExporter:
             # Convert to DataFrame
             df = pd.DataFrame(extracted_data)
 
-            # Generate CSV filename based on HTML filename
-            csv_filename = html_file.stem + ".csv"  # Remove .html and add .csv
-
-            # Override with custom filename if provided and only one file
-            if output_filename and len(html_files) == 1:
-                csv_filename = output_filename
+            # Build unified filename
+            name_for_file = collection_name or html_file.stem
+            sanitized = re.sub(r"\W+", "_", str(name_for_file)).strip("_")
+            safe_interval = (interval or "multi").replace("/", "-")
+            csv_filename = (
+                output_filename
+                if output_filename and len(html_files) == 1
+                else f"{sanitized}_Collection_{year}_{quarter}_{safe_interval}.csv"
+            )
 
             # Process based on format
             if export_format == "best-strategies":
@@ -544,7 +590,11 @@ class RawDataCSVExporter:
         return None
 
     def _export_from_database(
-        self, quarter: str, year: str, export_format: str = "full"
+        self,
+        quarter: str,
+        year: str,
+        export_format: str = "full",
+        interval: str | None = None,
     ) -> list[str]:
         """
         Export data directly from database when HTML reports have no data.
@@ -563,7 +613,13 @@ class RawDataCSVExporter:
             db_session = get_db_session()
 
             # Query all best strategies from database
-            best_strategies = db_session.query(BestStrategy).all()
+            q = db_session.query(BestStrategy)
+            if "interval" in locals() and interval:
+                try:
+                    q = q.filter(BestStrategy.timeframe == interval)
+                except Exception:
+                    pass
+            best_strategies = q.all()
 
             if not best_strategies:
                 self.logger.warning("No strategies found in database")
@@ -593,12 +649,15 @@ class RawDataCSVExporter:
             df = pd.DataFrame(data)
 
             # Create output directory
-            csv_output_dir = Path("exports/csv") / year / quarter
+            csv_output_dir = self.output_dir / year / quarter
             csv_output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Generate filename (fallback method - uses generic name)
+            # Generate filename (fallback method) using unified convention
+            safe_interval = (interval or "multi").replace("/", "-")
+            filename = (
+                f"All_Collections_Collection_{year}_{quarter}_{safe_interval}.csv"
+            )
             if export_format == "best-strategies":
-                filename = f"all_collections_best_strategies_{quarter}_{year}.csv"
                 # Keep only one row per symbol with highest Sortino ratio
                 df = (
                     df.sort_values("Sortino_Ratio", ascending=False)
@@ -607,9 +666,9 @@ class RawDataCSVExporter:
                     .reset_index()
                 )
             elif export_format == "quarterly":
-                filename = f"all_collections_quarterly_summary_{quarter}_{year}.csv"
+                pass
             else:  # full
-                filename = f"all_collections_all_strategies_{quarter}_{year}.csv"
+                pass
 
             output_file = csv_output_dir / filename
 
