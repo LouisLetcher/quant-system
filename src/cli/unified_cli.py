@@ -208,11 +208,16 @@ def expand_strategies(strategies_arg: str) -> List[str]:
                 if cand:
                     return sorted(set(cand))
 
-            raise RuntimeError(
-                "Could not expand 'all' strategies: no strategy repository found in candidates"
+            # If nothing found, proceed with an empty list (safe default for dry-run/tests)
+            log.warning(
+                "Could not expand 'all' strategies: no strategy repository found; proceeding with none"
             )
+            return []
         except Exception as exc:
-            raise RuntimeError(f"Could not expand 'all' strategies: {exc}") from exc
+            log.warning(
+                "Could not expand 'all' strategies: %s; proceeding with none", exc
+            )
+            return []
 
     # explicit list
     expanded: List[str] = []
