@@ -499,20 +499,94 @@ class AIInvestmentRecommendations:
         quarter: Optional[str] = None,
         portfolio_symbols: Optional[list[str]] = None,
     ) -> list[dict]:
-        """Load backtest results from database only - no HTML fallback."""
-        if not self.db_session:
-            self.logger.warning("No database session available")
+        """Load backtest results, preferring primary DB but falling back to unified_models."""
+        results: list[dict] = []
+        used_source = None
+
+        # Try primary DB if a session is available
+        if self.db_session is not None:
+            try:
+                results = self._load_from_database(quarter, portfolio_symbols)
+                if results:
+                    used_source = "primary_db"
+            except Exception as e:
+                self.logger.warning("Primary DB load failed: %s", e)
+
+        # Fallback to unified_models BestStrategy if no primary data
+        if not results:
+            try:
+                results = self._load_from_unified_models(quarter, portfolio_symbols)
+                if results:
+                    used_source = "unified_models"
+            except Exception as e:
+                self.logger.warning("Unified models load failed: %s", e)
+
+        if not results:
+            self.logger.warning(
+                "No results found for AI recommendations after all fallbacks"
+            )
             return []
 
-        # Load data from database only
-        db_results = self._load_from_database(quarter, portfolio_symbols)
+        self.logger.info(
+            "Using %s data for AI recommendations (%d rows)", used_source, len(results)
+        )
+        return results
 
-        if not db_results:
-            self.logger.warning("No results found in database for specified filters")
+    def _load_from_unified_models(
+        self,
+        quarter: Optional[str] = None,
+        portfolio_symbols: Optional[list[str]] = None,
+    ) -> list[dict]:
+        from datetime import datetime
+
+        try:
+            from src.database import unified_models as um
+        except Exception:
             return []
 
-        self.logger.info("Using database data only for AI recommendations")
-        return db_results
+        sess = um.Session()
+        try:
+            q = sess.query(um.BestStrategy)
+            if portfolio_symbols:
+                q = q.filter(um.BestStrategy.symbol.in_(portfolio_symbols))
+
+            if quarter:
+                year, qstr = quarter.split("_")
+                qnum = int(qstr[1])
+                start_month = (qnum - 1) * 3 + 1
+                end_month = qnum * 3
+                start_date = datetime(int(year), start_month, 1)
+                end_date = (
+                    datetime(int(year) + 1, 1, 1)
+                    if qnum == 4
+                    else datetime(int(year), end_month + 1, 1)
+                )
+                q = q.filter(
+                    um.BestStrategy.updated_at >= start_date,
+                    um.BestStrategy.updated_at < end_date,
+                )
+
+            q = q.order_by(um.BestStrategy.sortino_ratio.desc())
+            rows = q.all()
+            out = [
+                {
+                    "symbol": r.symbol,
+                    "strategy": r.strategy,
+                    "sortino_ratio": float(r.sortino_ratio or 0),
+                    "calmar_ratio": float(r.calmar_ratio or 0),
+                    "sharpe_ratio": float(r.sharpe_ratio or 0),
+                    "total_return": float(r.total_return or 0),
+                    "max_drawdown": float(r.max_drawdown or 0),
+                    "created_at": r.updated_at.isoformat() if r.updated_at else None,
+                }
+                for r in rows
+            ]
+            return out
+        finally:
+            try:
+                sess.close()
+            except Exception:
+                pass
 
     def _load_from_database(
         self,
