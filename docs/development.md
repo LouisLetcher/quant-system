@@ -38,6 +38,21 @@ pytest tests/test_data_manager.py
 pytest -n auto
 ```
 
+### Database for Tests
+- By default, unit tests and CI use a lightweight SQLite database to avoid any external Postgres dependency.
+- The unified DB models auto-detect CI/pytest and prefer SQLite when any of these env vars are present: `CI`, `PYTEST_CURRENT_TEST`, or `TESTING`.
+- You can force this behavior explicitly by setting:
+  - `UNIFIED_MODELS_SQLITE=1`
+  - Optionally, also set `DATABASE_URL=sqlite:///quant_unified_test.db` for consistency.
+
+Examples:
+```bash
+# Local: force SQLite for tests
+export UNIFIED_MODELS_SQLITE=1
+export DATABASE_URL=sqlite:///quant_unified_test.db
+pytest
+```
+
 ### Test Structure
 - `tests/test_*.py` - Unit tests
 - `tests/test_integration.py` - Integration tests
