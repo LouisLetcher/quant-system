@@ -5,7 +5,12 @@
     "symbols": [
       "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
       "ADAUSDT", "DOGEUSDT", "LTCUSDT", "DOTUSDT", "AVAXUSDT",
-      "LINKUSDT"
+      "LINKUSDT",
+      "TRXUSDT", "MATICUSDT", "TONUSDT", "BCHUSDT", "NEARUSDT",
+      "ATOMUSDT", "XLMUSDT", "ETCUSDT", "FILUSDT", "SUIUSDT",
+      "ARBUSDT", "OPUSDT", "APTUSDT", "INJUSDT", "RUNEUSDT",
+      "IMXUSDT", "HBARUSDT", "AAVEUSDT", "MKRUSDT", "UNIUSDT",
+      "SHIBUSDT", "PEPEUSDT"
     ],
     "initial_capital": 10000,
     "commission": 0.001

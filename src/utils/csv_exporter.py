@@ -272,8 +272,169 @@ class RawDataCSVExporter:
             return output_files
 
         except Exception as e:
-            self.logger.error("Failed to export from database: %s", e)
-            return output_files
+            # Attempt unified_models fallback even if primary DB session creation failed early
+            try:
+                from src.database import unified_models
+
+                # Load portfolio symbols for filtering if portfolio_path is provided
+                portfolio_symbols = None
+                if "portfolio_path" in locals() and portfolio_path:
+                    try:
+                        import json
+
+                        with Path(portfolio_path).open() as f:
+                            portfolio_config = json.load(f)
+                            portfolio_key = list(portfolio_config.keys())[0]
+                            portfolio_symbols = portfolio_config[portfolio_key].get(
+                                "symbols", []
+                            )
+                            portfolio_name = portfolio_key
+                    except Exception:
+                        pass
+
+                sess2 = unified_models.Session()
+                try:
+                    uq = sess2.query(unified_models.BestStrategy)
+                    if portfolio_symbols:
+                        uq = uq.filter(
+                            unified_models.BestStrategy.symbol.in_(portfolio_symbols)
+                        )
+                    if interval:
+                        try:
+                            uq = uq.filter(
+                                unified_models.BestStrategy.timeframe == interval
+                            )
+                        except Exception:
+                            pass
+                    best_strategies = uq.all()
+                finally:
+                    try:
+                        sess2.close()
+                    except Exception:
+                        pass
+
+                if not best_strategies:
+                    self.logger.error(
+                        "Failed to export from database and unified_models had no rows: %s",
+                        e,
+                    )
+                    return output_files
+
+                # Build DataFrame from unified_models rows (same as above)
+                data = []
+                for strategy in best_strategies:
+                    data.append(
+                        {
+                            "Symbol": strategy.symbol,
+                            "Strategy": strategy.strategy,
+                            "Timeframe": strategy.timeframe,
+                            "Sortino_Ratio": strategy.sortino_ratio or 0.0,
+                            "Sharpe_Ratio": strategy.sharpe_ratio or 0.0,
+                            "Calmar_Ratio": strategy.calmar_ratio or 0.0,
+                            "Total_Return": strategy.total_return or 0.0,
+                            "Max_Drawdown": strategy.max_drawdown or 0.0,
+                            "Updated_At": strategy.updated_at.strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                            if strategy.updated_at
+                            else "",
+                            "Quarter": quarter,
+                            "Year": year,
+                        }
+                    )
+
+                df = pd.DataFrame(data)
+                csv_output_dir = self.output_dir / year / quarter
+                csv_output_dir.mkdir(parents=True, exist_ok=True)
+
+                display_name = portfolio_name or "All_Collections"
+                if "portfolio_path" in locals() and portfolio_path:
+                    try:
+                        import json
+
+                        with Path(portfolio_path).open() as f:
+                            portfolio_config = json.load(f)
+                            portfolio_key = list(portfolio_config.keys())[0]
+                            display_name = (
+                                portfolio_config[portfolio_key].get("name")
+                                or display_name
+                            )
+                    except Exception:
+                        pass
+
+                sanitized = re.sub(r"\W+", "_", str(display_name)).strip("_")
+                safe_interval = (interval or "multi").replace("/", "-")
+                base_filename = (
+                    f"{sanitized}_Collection_{year}_{quarter}_{safe_interval}"
+                )
+
+                if export_format == "best-strategies":
+                    filename = f"{base_filename}.csv"
+                    df = (
+                        df.sort_values("Sortino_Ratio", ascending=False)
+                        .groupby("Symbol")
+                        .first()
+                        .reset_index()
+                    )
+                    df = df[
+                        [
+                            "Symbol",
+                            "Strategy",
+                            "Timeframe",
+                            "Sortino_Ratio",
+                            "Total_Return",
+                        ]
+                    ].rename(
+                        columns={
+                            "Symbol": "Asset",
+                            "Strategy": "Best_Strategy",
+                            "Timeframe": "Best_Timeframe",
+                            "Sortino_Ratio": "Sortino_Ratio",
+                            "Total_Return": "Total_Return_Pct",
+                        }
+                    )
+                elif export_format == "quarterly":
+                    filename = f"{base_filename}.csv"
+                    summary_data = []
+                    for symbol in df["Symbol"].unique():
+                        symbol_data = df[df["Symbol"] == symbol]
+                        best_strategy = symbol_data.loc[
+                            symbol_data["Sortino_Ratio"].idxmax()
+                        ]
+                        summary_data.append(
+                            {
+                                "Asset": symbol,
+                                "Best_Strategy": best_strategy["Strategy"],
+                                "Best_Timeframe": best_strategy["Timeframe"],
+                                "Best_Sortino": best_strategy["Sortino_Ratio"],
+                                "Strategies_Tested": len(symbol_data),
+                                "Avg_Return": symbol_data["Total_Return"].mean(),
+                                "Best_Return": symbol_data["Total_Return"].max(),
+                            }
+                        )
+                    df = pd.DataFrame(summary_data)
+                else:
+                    filename = f"{base_filename}.csv"
+                    df = df.rename(
+                        columns={
+                            "Symbol": "Asset",
+                            "Strategy": "Strategy_Name",
+                            "Timeframe": "Time_Resolution",
+                        }
+                    )
+
+                output_file = csv_output_dir / filename
+                df.to_csv(output_file, index=False)
+                output_files.append(str(output_file))
+                self.logger.info(
+                    "Exported %s records to %s (unified_models)", len(df), output_file
+                )
+                return output_files
+            except Exception as e2:
+                self.logger.error(
+                    "Failed CSV export fallback: %s (original: %s)", e2, e
+                )
+                return output_files
         finally:
             if "db_session" in locals():
                 db_session.close()

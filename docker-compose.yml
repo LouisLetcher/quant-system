@@ -11,7 +11,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - ./scripts/initdb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     restart: unless-stopped
 
   # pgAdmin for database management
