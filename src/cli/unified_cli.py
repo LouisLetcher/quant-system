@@ -612,9 +612,7 @@ def _run_requested_exports(
                 start_date or datetime.utcnow().strftime("%Y-%m-%d"),
                 end_date or datetime.utcnow().strftime("%Y-%m-%d"),
                 resolved_plan.get("strategies", []),
-                quarter=None,
-                year=None,
-                interval=interval,
+                timeframes=[interval] if interval else None,
             )
             log.info("Generated HTML report at %s", report_path)
         except Exception:
