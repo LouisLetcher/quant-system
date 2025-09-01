@@ -805,4 +805,76 @@ def run_strategy_comparison(
             "No persistence_context provided or failed to finalize ranks/aggregates"
         )
 
+    # Safety net: directly upsert BestStrategy from in-memory best_result when possible.
+    # This covers environments where DB state wasn't fully populated yet by finalize.
+    try:
+        if persistence_context and best_result and best_result.get("strategy"):
+            from src.database import unified_models  # type: ignore[import-not-found]
+
+            sess = unified_models.Session()
+            try:
+                bs_existing = (
+                    sess.query(unified_models.BestStrategy)
+                    .filter(
+                        unified_models.BestStrategy.symbol == symbol,
+                        unified_models.BestStrategy.timeframe == timeframe,
+                    )
+                    .one_or_none()
+                )
+
+                m = best_result.get("metrics") or {}
+
+                def _num(d, k):
+                    try:
+                        if d and isinstance(d, dict):
+                            v = d.get(k)
+                            return float(v) if v is not None else None
+                    except Exception:
+                        return None
+                    return None
+
+                sortino_val = _num(m, "sortino_ratio") or _num(m, "Sortino_Ratio")
+                calmar_val = _num(m, "calmar_ratio") or _num(m, "Calmar_Ratio")
+                sharpe_val = _num(m, "sharpe_ratio") or _num(m, "Sharpe_Ratio")
+                total_return_val = _num(m, "total_return") or _num(m, "Total_Return")
+                max_dd_val = _num(m, "max_drawdown") or _num(m, "Max_Drawdown")
+
+                from datetime import datetime as _dt
+
+                if bs_existing:
+                    bs_existing.strategy = best_result.get("strategy")
+                    bs_existing.sortino_ratio = sortino_val
+                    bs_existing.calmar_ratio = calmar_val
+                    bs_existing.sharpe_ratio = sharpe_val
+                    bs_existing.total_return = total_return_val
+                    bs_existing.max_drawdown = max_dd_val
+                    bs_existing.updated_at = _dt.utcnow()
+                    sess.add(bs_existing)
+                else:
+                    bs = unified_models.BestStrategy(
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        strategy=best_result.get("strategy"),
+                        sortino_ratio=sortino_val,
+                        calmar_ratio=calmar_val,
+                        sharpe_ratio=sharpe_val,
+                        total_return=total_return_val,
+                        max_drawdown=max_dd_val,
+                        updated_at=_dt.utcnow(),
+                    )
+                    sess.add(bs)
+                sess.commit()
+            except Exception:
+                try:
+                    sess.rollback()
+                except Exception:
+                    pass
+            finally:
+                try:
+                    sess.close()
+                except Exception:
+                    pass
+    except Exception:
+        logging.getLogger(__name__).debug("BestStrategy safety upsert skipped")
+
     return out
