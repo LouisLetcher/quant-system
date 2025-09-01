@@ -540,6 +540,166 @@ def run_plan(manifest: Dict[str, Any], outdir: Path, dry_run: bool = False) -> i
     return 0
 
 
+def _run_requested_exports(
+    resolved_plan: Dict[str, Any], collection_path: Path, symbols: List[str]
+) -> None:
+    """Run requested exports (report, csv, ai, tradingview) best-effort.
+
+    - Avoids hard DB connectivity failures; individual exporters handle fallbacks.
+    - CSV exporter falls back to unified_models or quarterly reports when needed.
+    - AI recommendations fall back to unified_models when primary DB is unavailable.
+    """
+    exports_val = resolved_plan.get("exports", "") or ""
+    try:
+        exports_list = [
+            e.strip().lower() for e in str(exports_val).split(",") if e.strip()
+        ]
+    except Exception:
+        exports_list = []
+    if not exports_list:
+        return
+
+    log = logging.getLogger("unified_cli")
+
+    # Prepare portfolio context
+    portfolio_name = collection_path.stem
+    try:
+        import json as _json
+
+        with collection_path.open() as _fh:
+            _cdata = _json.load(_fh)
+        if isinstance(_cdata, dict):
+            if isinstance(_cdata.get("name"), str):
+                portfolio_name = _cdata.get("name") or portfolio_name
+            else:
+                first = next(iter(_cdata.values())) if _cdata else None
+                if isinstance(first, dict) and isinstance(first.get("name"), str):
+                    portfolio_name = first.get("name") or portfolio_name
+    except Exception:
+        pass
+
+    portfolio_config = {"name": portfolio_name, "symbols": sorted(symbols)}
+
+    do_report = ("report" in exports_list) or ("all" in exports_list)
+    do_csv = ("csv" in exports_list) or ("all" in exports_list)
+    do_tradingview = ("tradingview" in exports_list) or ("all" in exports_list)
+    do_ai = ("ai" in exports_list) or ("all" in exports_list)
+
+    # Determine quarter/year/interval context
+    y_now = datetime.utcnow().year
+    m = datetime.utcnow().month
+    q_now = (m - 1) // 3 + 1
+    quarter = f"Q{q_now}"
+    year = str(y_now)
+    try:
+        _intervals = list(resolved_plan.get("intervals") or [])
+        interval = (
+            "1d" if "1d" in _intervals else (_intervals[0] if _intervals else "1d")
+        )
+    except Exception:
+        interval = "1d"
+
+    # Report
+    if do_report:
+        try:
+            from src.reporting.collection_report import DetailedPortfolioReporter
+
+            reporter = DetailedPortfolioReporter()
+            start_date = resolved_plan.get("start") or ""
+            end_date = resolved_plan.get("end") or ""
+            report_path = reporter.generate_comprehensive_report(
+                portfolio_config,
+                start_date or datetime.utcnow().strftime("%Y-%m-%d"),
+                end_date or datetime.utcnow().strftime("%Y-%m-%d"),
+                resolved_plan.get("strategies", []),
+                quarter=None,
+                year=None,
+                interval=interval,
+            )
+            log.info("Generated HTML report at %s", report_path)
+        except Exception:
+            log.exception("DetailedPortfolioReporter failed (continuing)")
+
+    # CSV (DB-backed with fallback to unified_models or quarterly reports)
+    if do_csv:
+        try:
+            from src.utils.csv_exporter import RawDataCSVExporter
+
+            csv_exporter = RawDataCSVExporter()
+            # Prefer calendar from plan start/end if present
+            try:
+                if resolved_plan.get("start"):
+                    sd = datetime.fromisoformat(resolved_plan.get("start"))
+                else:
+                    sd = datetime.utcnow()
+            except Exception:
+                sd = datetime.utcnow()
+            quarter = f"Q{((sd.month - 1) // 3) + 1}"
+            year = str(sd.year)
+
+            csv_files = csv_exporter.export_from_database_primary(
+                quarter,
+                year,
+                output_filename=None,
+                export_format="best-strategies",
+                portfolio_name=portfolio_config.get("name") or "",
+                portfolio_path=str(collection_path),
+                interval=interval,
+            )
+            if not csv_files:
+                csv_files = csv_exporter.export_from_quarterly_reports(
+                    quarter,
+                    year,
+                    export_format="best-strategies",
+                    collection_name=portfolio_config.get("name"),
+                    interval=interval,
+                )
+            log.info("Generated CSV exports: %s", csv_files)
+        except Exception:
+            log.exception("CSV export failed (continuing)")
+
+    # AI recommendations (DB primary with unified_models fallback inside class)
+    if do_ai:
+        try:
+            from src.ai.investment_recommendations import AIInvestmentRecommendations
+            from src.database.db_connection import get_db_session
+
+            db_sess = None
+            try:
+                db_sess = get_db_session()
+            except Exception:
+                db_sess = None
+            ai = AIInvestmentRecommendations(db_session=db_sess)
+            _rec, ai_html_path = ai.generate_portfolio_recommendations(
+                portfolio_config_path=str(collection_path),
+                risk_tolerance="moderate",
+                min_confidence=0.6,
+                max_assets=10,
+                quarter=f"{quarter}_{year}",
+                timeframe=interval,
+                generate_html=True,
+            )
+            log.info("Generated AI recommendations at %s", ai_html_path)
+        except Exception:
+            log.exception("AI recommendations export failed (continuing)")
+
+    # TradingView alerts
+    if do_tradingview:
+        try:
+            from src.utils.tv_alert_exporter import TradingViewAlertExporter
+
+            tv_exporter = TradingViewAlertExporter(reports_dir="exports/reports")
+            alerts = tv_exporter.export_alerts(
+                output_file=None,
+                collection_filter=portfolio_config.get("name"),
+                interval=interval,
+                symbols=portfolio_config.get("symbols") or [],
+            )
+            log.info("Generated TradingView alerts for %d assets", len(alerts))
+        except Exception:
+            log.exception("TradingView alerts export failed (continuing)")
+
+
 def handle_collection_run(argv: Sequence[str]) -> int:
     parser = argparse.ArgumentParser(
         prog="unified_cli collection",
@@ -792,190 +952,10 @@ def handle_collection_run(argv: Sequence[str]) -> int:
             log.exception("Failed to reset database tables")
             return 9
 
-    # Dry-run behavior: print manifest and optionally generate exports from DB, then exit
+    # Dry-run behavior: print manifest and optionally generate exports, then exit
     if args.dry_run:
         print(json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False))
-
-        # If exports were requested (e.g., --exports=all or csv,report,tradingview), try to
-        # produce artifacts using the database-backed reporters/exporters. These operations
-        # are best-effort and guarded so the CLI still works in minimal environments.
-        exports_val = resolved_plan.get("exports", "") or ""
-        try:
-            exports_list = [
-                e.strip().lower() for e in str(exports_val).split(",") if e.strip()
-            ]
-        except Exception:
-            exports_list = []
-
-        if exports_list:
-            # Enforce strict single-DB policy: verify primary DB is reachable before attempting any exports.
-            # If the DB is unreachable, fail fast with a clear error instructing the user to start docker-compose.
-            try:
-                from src.database.db_connection import (
-                    get_sync_engine,  # type: ignore[import-not-found]
-                )
-
-                engine = get_sync_engine()
-                # quick connectivity test
-                conn = engine.connect()
-                conn.close()
-            except Exception as db_exc:
-                log.exception("Primary database is unreachable: %s", db_exc)
-                log.error(
-                    "Primary DB must be running (this project expects a single DB managed by docker-compose). "
-                    "Start it with: docker-compose up -d db  (or docker-compose up -d) and retry."
-                )
-                # Return non-zero exit code to indicate failure due to missing DB
-                return 10
-
-            try:
-                # Prepare a minimal portfolio config for reporters (name + symbols)
-                # Prefer portfolio 'name' from the collection JSON when available; fallback to file stem.
-                portfolio_name = Path(collection_path).stem
-                try:
-                    import json as _json
-
-                    with collection_path.open() as _fh:
-                        _cdata = _json.load(_fh)
-                    if isinstance(_cdata, dict):
-                        # direct name
-                        if isinstance(_cdata.get("name"), str):
-                            portfolio_name = _cdata.get("name") or portfolio_name
-                        else:
-                            # named collection wrapper
-                            first = next(iter(_cdata.values())) if _cdata else None
-                            if isinstance(first, dict) and isinstance(
-                                first.get("name"), str
-                            ):
-                                portfolio_name = first.get("name") or portfolio_name
-                except Exception:
-                    pass
-
-                portfolio_config = {"name": portfolio_name, "symbols": sorted(symbols)}
-
-                # Decide which exports to run
-                do_report = ("report" in exports_list) or ("all" in exports_list)
-                do_csv = ("csv" in exports_list) or ("all" in exports_list)
-                do_tradingview = ("tradingview" in exports_list) or (
-                    "all" in exports_list
-                )
-                do_ai = ("ai" in exports_list) or ("all" in exports_list)
-
-                # Generate HTML report from DB (DetailedPortfolioReporter) if requested
-                if do_report:
-                    try:
-                        from src.reporting.collection_report import (
-                            DetailedPortfolioReporter,
-                        )
-
-                        reporter = DetailedPortfolioReporter()
-                        start_date = resolved_plan.get("start") or ""
-                        end_date = resolved_plan.get("end") or ""
-                        report_path = reporter.generate_comprehensive_report(
-                            portfolio_config,
-                            start_date or datetime.utcnow().strftime("%Y-%m-%d"),
-                            end_date or datetime.utcnow().strftime("%Y-%m-%d"),
-                            resolved_plan.get("strategies", []),
-                            resolved_plan.get("intervals", ["1d"]),
-                        )
-                        log.info("Generated HTML report (DB-backed) at %s", report_path)
-                    except Exception:
-                        log.exception(
-                            "DetailedPortfolioReporter not available or failed (skipping HTML report)"
-                        )
-
-                # Generate CSV exports from DB using RawDataCSVExporter (strict DB-only) if requested
-                if do_csv:
-                    try:
-                        from src.utils.csv_exporter import RawDataCSVExporter
-
-                        # Choose quarter/year from plan start if available, else use current
-                        try:
-                            if resolved_plan.get("start"):
-                                sd = datetime.fromisoformat(resolved_plan.get("start"))
-                            else:
-                                sd = datetime.utcnow()
-                        except Exception:
-                            sd = datetime.utcnow()
-                        quarter = f"Q{((sd.month - 1) // 3) + 1}"
-                        year = str(sd.year)
-
-                        csv_exporter = RawDataCSVExporter()
-                        # Choose interval for filenames: prefer '1d' when available
-                        try:
-                            _intervals = list(resolved_plan.get("intervals") or [])
-                            interval = (
-                                "1d"
-                                if "1d" in _intervals
-                                else (_intervals[0] if _intervals else "1d")
-                            )
-                        except Exception:
-                            interval = "1d"
-                        # prefer best-strategies format for exports when requested
-                        csv_files = csv_exporter.export_from_database_primary(
-                            quarter,
-                            year,
-                            output_filename=None,
-                            export_format="best-strategies",
-                            portfolio_name=portfolio_config.get("name") or "",
-                            portfolio_path=str(collection_path),
-                            interval=interval,
-                        )
-                        log.info("Generated CSV exports (DB-backed): %s", csv_files)
-                    except Exception as e_csv:
-                        log.exception("RawDataCSVExporter failed: %s", e_csv)
-                        log.error(
-                            "CSV export failed; primary DB is required for exports."
-                        )
-                        return 11
-
-                # Generate AI recommendations (Markdown + HTML) with unified naming if requested
-                if do_ai:
-                    try:
-                        from src.ai.investment_recommendations import (
-                            AIInvestmentRecommendations,
-                        )
-                        from src.database.db_connection import get_db_session
-
-                        ai = AIInvestmentRecommendations(db_session=get_db_session())
-                        _rec, ai_html_path = ai.generate_portfolio_recommendations(
-                            portfolio_config_path=str(collection_path),
-                            risk_tolerance="moderate",
-                            min_confidence=0.6,
-                            max_assets=10,
-                            quarter=f"{quarter}_{year}",
-                            timeframe=interval,
-                            generate_html=True,
-                        )
-                        log.info("Generated AI recommendations at %s", ai_html_path)
-                    except Exception:
-                        log.exception("AI recommendations export failed (continuing)")
-
-                # Generate TradingView alerts
-                if do_tradingview:
-                    try:
-                        from src.utils.tv_alert_exporter import TradingViewAlertExporter
-
-                        # TradingView exporter expects reports under exports/reports; the reporter will
-                        # have organized the report there via ReportOrganizer. Use default location.
-                        tv_exporter = TradingViewAlertExporter(
-                            reports_dir="exports/reports"
-                        )
-                        alerts = tv_exporter.export_alerts(
-                            output_file=None,
-                            collection_filter=portfolio_config.get("name"),
-                            interval=interval,
-                            symbols=portfolio_config.get("symbols") or [],
-                        )
-                        log.info(
-                            "Generated TradingView alerts for %d assets", len(alerts)
-                        )
-                    except Exception:
-                        log.exception(
-                            "TradingViewAlertExporter not available or failed (skipping TV alerts)"
-                        )
-            except Exception:
-                log.exception("Failed to generate DB-backed exports during dry-run")
+        _run_requested_exports(resolved_plan, collection_path, symbols)
         return 0
 
     # Idempotency: check DB for existing plan_hash if DB available
@@ -1094,6 +1074,13 @@ def handle_collection_run(argv: Sequence[str]) -> int:
         log.debug(
             "Unified models not available for run_artifact persistence (continuing)"
         )
+
+    # Post-run: also run exports when requested (best-effort)
+    try:
+        if rc == 0 and (resolved_plan.get("exports") or ""):
+            _run_requested_exports(resolved_plan, collection_path, symbols)
+    except Exception:
+        log.exception("Exports failed after run (continuing)")
 
     return rc
 
