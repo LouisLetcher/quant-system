@@ -1,0 +1,13 @@
+{
+  "crypto_liquid": {
+    "name": "Crypto Liquid (Top Market Cap)",
+    "asset_type": "crypto",
+    "symbols": [
+      "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
+      "ADAUSDT", "DOGEUSDT", "LTCUSDT", "DOTUSDT", "AVAXUSDT",
+      "LINKUSDT"
+    ],
+    "initial_capital": 10000,
+    "commission": 0.001
+  }
+}
