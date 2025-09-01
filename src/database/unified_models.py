@@ -45,9 +45,23 @@ Base = declarative_base()
 def _get_engine():
     # Try to reuse project's db_connection engine helpers if present
     # Prefer sync engine so this module stays simple.
-    # Test-mode override: force lightweight SQLite to avoid external DB dependency
+    # Test/CI override: force lightweight SQLite to avoid external DB dependency
     try:
-        if os.environ.get("TESTING", "").lower() in {"1", "true", "yes"}:
+        force_sqlite = False
+        # Common signals for test/CI environments available at import time
+        if os.environ.get("UNIFIED_MODELS_SQLITE", "").lower() in {
+            "1",
+            "true",
+            "yes",
+        } or os.environ.get("CI", "").lower() in {"1", "true", "yes"}:
+            force_sqlite = True
+        elif os.environ.get("PYTEST_CURRENT_TEST"):
+            # Usually set by pytest while collecting/running tests
+            force_sqlite = True
+        elif os.environ.get("TESTING", "").lower() in {"1", "true", "yes"}:
+            force_sqlite = True
+
+        if force_sqlite:
             database_url = f"sqlite:///{os.path.abspath('quant_unified_test.db')}"
             return create_engine(database_url, echo=False, future=True)
     except Exception:
