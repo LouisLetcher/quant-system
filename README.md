@@ -1,308 +1,229 @@
 # Quant System
 
-A comprehensive quantitative backtesting system built for institutional-grade collection analysis. Docker-based setup with production-grade features for analyzing stocks, bonds, crypto, forex, and commodities across global markets.
+A unified, Dockerized quantitative backtesting and reporting system. Run cross‑strategy comparisons for asset collections (e.g., bonds) and persist results to PostgreSQL with exportable artifacts.
 
 ## 🚀 Quick Start
 
-### Docker Setup (Only Way)
+### Docker Setup
 
 ```bash
 # Clone repository
 git clone <repository-url>
 cd quant-system
 
-# Start PostgreSQL database and services
-docker-compose up -d postgres pgadmin
+# Start PostgreSQL and pgAdmin
+docker compose up -d postgres pgadmin
 
-# Build and run main system
-docker-compose build quant
-docker-compose run --rm quant python -m src.cli.unified_cli --help
+# Build the app image (uses DOCKERFILE)
+docker compose build quant
 
-# Run comprehensive collection backtesting
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/collections/bonds.json \
-  --metric sortino_ratio \
-  --period max
+# Show CLI help
+docker compose run --rm quant python -m src.cli.unified_cli --help
 
-# Interactive shell
-docker-compose run --rm quant bash
-```
-
-## 📊 Features
-
-### Core Capabilities
-- **Multi-Asset Support**: Stocks, bonds, crypto, forex, commodities via multiple data sources
-- **AI Investment Recommendations**: Performance-based portfolio optimization with confidence scoring
-- **Backtesting Library Integration**: Direct integration with `backtesting` library for institutional-grade performance analysis
-- **Portfolio Analysis**: Risk-adjusted returns, correlation analysis, drawdown attribution
-- **Data Integration**: PostgreSQL storage with Yahoo Finance, Bybit, Alpha Vantage APIs
-- **Report Generation**: Automated quarterly HTML reports, CSV exports, TradingView alerts
-
-### Data Sources by Asset Class
-- **Stocks/Bonds**: Yahoo Finance (primary), Alpha Vantage (fallback)
-- **Crypto**: Bybit (primary), Yahoo Finance (fallback)
-- **Forex**: Alpha Vantage, Twelve Data, Polygon.io
-- **Commodities**: Yahoo Finance, Tiingo
-
-## 🏗️ Architecture
-
-```
-quant-system/
-├── src/                     # Core source code
-│   ├── core/               # Trading logic & backtesting
-│   ├── cli/                # Command-line interface
-│   └── utils/              # Utilities & data management
-├── config/collections/     # Asset collections (stocks, bonds, crypto, forex)
-├── exports/               # Organized exports (reports/alerts by quarter)
-├── cache/                 # Data cache (Docker mounted)
-└── logs/                  # System logs (Docker mounted)
+# Interactive shell inside the app container
+docker compose run --rm quant bash
 ```
 
 ## 📈 Usage
 
-### Portfolio Management
+See also: docs/pgadmin-and-performance.md for DB inspection and performance tips.
+
+The unified CLI currently exposes a single subcommand: `collection`.
+
+### Run Bonds (1d interval, max period, all strategies)
+
+Use the collection key (`bonds`) or the JSON file path. The `direct` action runs the backtests and writes results to the DB. Add `--exports all` to generate CSV/HTML/TV/AI artifacts when possible.
+
 ```bash
-# Comprehensive collection testing (generates HTML reports + database data)
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio test-all \
-  --portfolio config/collections/bonds.json \
-  --metric sortino_ratio \
-  --period max
+# Using the collection key (recommended)
+docker compose run --rm \
+  -e STRATEGIES_PATH=/app/external_strategies \
+  quant python -m src.cli.unified_cli collection bonds \
+  --action direct \
+  --interval 1d \
+  --period max \
+  --strategies all \
+  --exports all \
+  --log-level INFO
 
-# Single symbol backtest
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio backtest \
-  --symbols TLT IEF SHY \
-  --strategy BuyAndHold \
-  --start-date 2023-01-01 \
-  --end-date 2024-12-31
-
-# Compare multiple portfolios
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio compare \
-  config/collections/stocks_traderfox_us_tech.json config/collections/bonds.json
-
-# Generate investment plan based on backtest results
-docker-compose run --rm quant python -m src.cli.unified_cli portfolio plan \
-  --portfolio config/collections/bonds.json
+# Using the JSON file
+docker compose run --rm \
+  -e STRATEGIES_PATH=/app/external_strategies \
+  quant python -m src.cli.unified_cli collection config/collections/bonds.json \
+  --action direct \
+  --interval 1d \
+  --period max \
+  --strategies all \
+  --exports all \
+  --log-level INFO
 ```
 
-### AI Investment Recommendations
+Notes
+
+- Default metric is `sortino_ratio`.
+- Strategies are mounted at `/app/external_strategies` via `docker-compose.yml`; `STRATEGIES_PATH` makes discovery explicit.
+- Artifacts are written under `artifacts/run_*`. DB tables used include `runs`, `backtest_results`, `best_strategies`, and `run_artifacts`.
+- pgAdmin is available at `http://localhost:5050` (defaults configured via `.env`/`.env.example`).
+
+### Dry Run (plan only + optional exports)
+
 ```bash
-# Generate AI portfolio recommendations (creates markdown + HTML reports)
-docker-compose run --rm quant python -m src.cli.unified_cli ai portfolio_recommend \
-  --portfolio config/collections/bonds.json \
-  --risk-tolerance moderate
-
-# Get specific recommendations by quarter
-docker-compose run --rm quant python -m src.cli.unified_cli ai recommend \
-  --quarter Q3_2025 --risk-tolerance aggressive
-
-# Explain asset recommendations
-docker-compose run --rm quant python -m src.cli.unified_cli ai explain \
-  --symbol TLT --timeframe 1d
+docker compose run --rm \
+  -e STRATEGIES_PATH=/app/external_strategies \
+  quant python -m src.cli.unified_cli collection bonds \
+  --interval 1d --period max --strategies all \
+  --dry-run --exports all --log-level DEBUG
 ```
 
-### Data Management
-```bash
-# Download market data for collections
-docker-compose run --rm quant python -m src.cli.unified_cli data download \
-  --symbols TLT IEF SHY --asset-type bonds
+### Other Actions
 
-# Show available data sources
-docker-compose run --rm quant python -m src.cli.unified_cli data sources
-
-# List symbols by asset type
-docker-compose run --rm quant python -m src.cli.unified_cli data symbols --asset-type bonds
-
-# Cache management
-docker-compose run --rm quant python -m src.cli.unified_cli cache stats
-docker-compose run --rm quant python -m src.cli.unified_cli cache clear --older-than-days 30
-```
-
-### Strategy Development
-```bash
-# List available strategies
-docker-compose run --rm quant python -m src.cli.unified_cli strategy list
-
-# Get strategy details
-docker-compose run --rm quant python -m src.cli.unified_cli strategy info --strategy BuyAndHold
-
-# Test custom strategy
-docker-compose run --rm quant python -m src.cli.unified_cli strategy test \
-  --strategy-file external_strategies/my_strategy.py
-```
-
-### Optimization
-```bash
-# Optimize single strategy parameters
-docker-compose run --rm quant python -m src.cli.unified_cli optimize single \
-  --symbol TLT --strategy RSI --method genetic --iterations 100
-
-# Batch optimization across multiple symbols
-docker-compose run --rm quant python -m src.cli.unified_cli optimize batch \
-  --symbols TLT IEF SHY --strategies RSI BollingerBands --workers 4
-```
-
-### Analysis & Reporting
-```bash
-# Generate comprehensive analysis reports
-docker-compose run --rm quant python -m src.cli.unified_cli analyze report \
-  --portfolio config/collections/bonds.json
-
-# Compare strategy performance
-docker-compose run --rm quant python -m src.cli.unified_cli analyze compare \
-  --symbols TLT IEF SHY --strategies BuyAndHold RSI
-```
+The `collection` subcommand supports these `--action` values: `backtest`, `direct`, `optimization`, `export`, `report`, `tradingview`. In most workflows, use `--action direct` and optionally `--exports`.
 
 ## 🔧 Configuration
 
 ### Environment Variables (.env)
-```bash
-# PostgreSQL Database (primary storage)
-DATABASE_URL=postgresql://quantuser:quantpass@localhost:5432/quant_system
 
-# Optional API keys for enhanced data access
+```bash
+# PostgreSQL (inside the container, use the service name 'postgres')
+DATABASE_URL=postgresql://quantuser:quantpass@postgres:5432/quant_system
+
+# Optional data providers
 ALPHA_VANTAGE_API_KEY=your_key
 TWELVE_DATA_API_KEY=your_key
 POLYGON_API_KEY=your_key
 TIINGO_API_KEY=your_key
 FINNHUB_API_KEY=your_key
+BYBIT_API_KEY=your_key
+BYBIT_API_SECRET=your_secret
+BYBIT_TESTNET=false
+
+# Optional LLMs
+OPENAI_API_KEY=your_key
+OPENAI_MODEL=gpt-4o
+ANTHROPIC_API_KEY=your_key
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 ```
 
-### Collection Examples (config/collections/)
+Host access tips
 
-#### Stocks Collection
-```json
-{
-  "name": "US Large Cap Stocks",
-  "symbols": ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"],
-  "data_sources": {
-    "primary": ["yahoo_finance"],
-    "fallback": ["alpha_vantage"]
-  }
-}
-```
+- Postgres is published on `localhost:5433` (mapped to container `5432`).
+- pgAdmin runs at `http://localhost:5050` (see `.env` for credentials).
 
-#### Bonds Collection
-```json
-{
-  "name": "US Treasury Bonds",
-  "symbols": ["TLT", "IEF", "SHY", "TIPS"],
-  "data_sources": {
-    "primary": ["yahoo_finance"],
-    "fallback": ["alpha_vantage"]
-  }
-}
-```
+### Collections
 
-#### Crypto Collection
-```json
-{
-  "name": "Crypto Portfolio",
-  "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
-  "data_sources": {
-    "primary": ["bybit", "yahoo_finance"],
-    "fallback": ["alpha_vantage"]
-  }
-}
-```
+Collections live under `config/collections/` and are split into:
 
-## 📊 Performance Metrics
+- `default/` (curated, liquid, fast to iterate)
+- `custom/` (your own research sets)
 
-**Primary Metric: Sortino Ratio** (default)
+Default examples:
 
-**Why Sortino over Sharpe:**
-- **Sortino** only penalizes **downside volatility** (what investors actually care about)
-- **Sharpe** penalizes all volatility, including upside moves (which aren't really "risk")
-- **Hedge funds prefer Sortino** because upside volatility is desirable
+- Bonds: `default/bonds_core.json` (liquid bond ETFs), `default/bonds.json` (broader set)
+- Commodities: `default/commodities_core.json` (gold/silver/energy/agriculture/broad)
+- Crypto: `default/crypto_liquid.json` (top market-cap, USDT pairs)
+- Forex: `default/forex_majors.json` (majors and key crosses; Yahoo Finance format `=X`)
+- Indices: `default/indices_global_core.json` (SPY/QQQ/DIA/IWM/EFA/EEM/EWJ/FXI etc.)
+- Stocks: `default/stocks_us_mega_core.json`, `default/stocks_us_growth_core.json`
+  - Factors: `default/stocks_us_value_core.json`, `default/stocks_us_quality_core.json`, `default/stocks_us_minvol_core.json`
+  - Global factors: `default/stocks_global_factor_core.json`
 
-**Metric Hierarchy for Quantitative Analysis:**
-1. **Sortino Ratio** (primary) - Downside risk-adjusted returns
-2. **Calmar Ratio** (secondary) - Annual return / Max drawdown
-3. **Sharpe Ratio** (tertiary) - Traditional risk-adjusted returns
-4. **Profit Factor** (supplementary) - Gross profit/loss ratio
+Custom examples (research-driven):
 
-**Additional Analysis:**
-- **Drawdown Analysis**: Maximum drawdown, recovery periods
-- **Volatility**: Standard deviation, downside deviation
-- **Efficiency**: Win rate, risk-reward ratios
+- `custom/stocks_traderfox_dax.json`
+- `custom/stocks_traderfox_european.json`
+- `custom/stocks_traderfox_us_financials.json`
+- `custom/stocks_traderfox_us_healthcare.json`
+- `custom/stocks_traderfox_us_tech.json`
+
+You can reference any collection by key without the folder prefix (resolver searches `default/` and `custom/`). For example, `bonds_core` resolves `config/collections/default/bonds_core.json`.
 
 ## 🧪 Testing
 
 ```bash
 # Run tests in Docker
-docker-compose run --rm quant pytest
+docker compose run --rm quant pytest
 ```
 
-## 📊 Export & Reporting
+## 📊 Exports & Reporting
 
-### Export & Reporting
+Artifacts and exports are written under `artifacts/run_*` and `exports/`. When running with `--action direct` or `--dry-run`, pass `--exports csv,report,tradingview,ai` or `--exports all`.
+
 ```bash
-# Export collection-specific CSV data from database (quarterly summary)
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
-  --portfolio config/collections/bonds.json --format quarterly \
-  --quarter Q3 --year 2025
-
-# Export best strategies by quarter for all collections
-docker-compose run --rm quant python -m src.cli.unified_cli reports export-csv \
-  --format best-strategies --quarter Q3 --year 2025
-
-# Export TradingView alerts with proper naming convention
-docker-compose run --rm quant python -m src.utils.tradingview_alert_exporter \
-  --output bonds_collection_tradingview_alerts_Q3_2025
-
-# Generate AI investment recommendations (markdown format)
-docker-compose run --rm quant python -m src.cli.unified_cli ai portfolio_recommend \
-  --portfolio config/collections/bonds.json \
-  --risk-tolerance moderate
-
-# Organize reports by quarter/year
-docker-compose run --rm quant python -m src.cli.unified_cli reports organize
-
-# List available reports
-docker-compose run --rm quant python -m src.cli.unified_cli reports list
-
-# Get latest report for portfolio
-docker-compose run --rm quant python -m src.cli.unified_cli reports latest \
-  --portfolio config/collections/bonds.json
+# Produce exports from DB for bonds without re-running backtests
+docker compose run --rm quant \
+  python -m src.cli.unified_cli collection bonds --dry-run --exports all
 ```
 
-### Validation & Testing
+Output locations and unified naming (`{Collection}_Collection_{Year}_{Quarter}_{Interval}`):
+- CSV: `exports/csv/{Year}/{Quarter}/{Collection}_Collection_{Year}_{Quarter}_{Interval}.csv`
+- HTML reports: `exports/reports/{Year}/{Quarter}/{Collection}_Collection_{Year}_{Quarter}_{Interval}.html`
+- TradingView alerts (Markdown): `exports/tv_alerts/{Year}/{Quarter}/{Collection}_Collection_{Year}_{Quarter}_{Interval}.md`
+- AI recommendations:
+  - Markdown: `exports/ai_reco/{Year}/{Quarter}/{Collection}_Collection_{Year}_{Quarter}_{Interval}.md`
+  - HTML (dark Tailwind): same path with `.html` and a Download CSV link
+
+Notes:
+- Exporters are DB-backed (read best strategies); no HTML scraping.
+- With multiple intervals in plan, filenames prefer `1d`. Pass `--interval 1d` to constrain both content and filenames.
+
+## 🗄️ Data & Cache
+
+- Split caching: the system maintains two layers for market data.
+  - Full snapshot: stored when requesting provider periods like `--period max` (long TTL).
+  - Recent overlay: normal runs cache the last ~90 days (short TTL).
+  - Reads merge both, prefer recent on overlap, and auto‑extend when a request exceeds cached range.
+- Fresh fetch: add `--no-cache` (alias: `--fresh`) to bypass cache reads and fetch from the provider. The result still writes through to cache.
+- Coverage probe: before backtests, the CLI samples a few symbols with `period=max` and prefers the source with the most rows and earliest start for this run.
+
+### Prefetching Collections (avoid rate limits)
+
+Use the prefetch script to refresh data on a schedule (e.g., nightly recent overlay and weekly full snapshot):
+
 ```bash
-# Validate strategy metrics against backtesting library
-docker-compose run --rm quant python -m src.cli.unified_cli validate strategy \
-  --symbol TLT --strategy BuyAndHold
+# Full history snapshot (bonds)
+docker compose run --rm quant \
+  python scripts/prefetch_collection.py bonds --mode full --interval 1d
 
-# Batch validate multiple strategies
-docker-compose run --rm quant python -m src.cli.unified_cli validate batch \
-  --symbols TLT IEF SHY --strategies BuyAndHold RSI
+# Recent overlay (last 90 days)
+docker compose run --rm quant \
+  python scripts/prefetch_collection.py bonds --mode recent --interval 1d --recent-days 90
 ```
 
-**TradingView Alert Format**: Includes strategy, timeframe, Sortino ratio, profit metrics, and placeholders like `{{close}}`, `{{timenow}}`, `{{strategy.order.action}}`.
+Example cron (runs at 01:30 local time):
 
-## 📁 Output & Storage
+```
+30 1 * * * cd /path/to/quant-system && docker compose run --rm quant \
+  python scripts/prefetch_collection.py bonds --mode recent --interval 1d --recent-days 90 >/dev/null 2>&1
+```
 
-**PostgreSQL Database (Primary Storage):**
-- Market data with optimized indexes for Sortino analysis
-- Backtest results with comprehensive performance metrics
-- Portfolio configurations with Sortino-first optimization
+### Optional Redis Overlay (advanced)
 
-**Local Files (Organized by Quarter/Year):**
-- `exports/reports/YYYY/QX/` - HTML portfolio reports by collection
-- `exports/csv/YYYY/QX/` - CSV data exports by collection
-- `exports/tradingview_alerts/YYYY/QX/` - TradingView alert exports
-- `exports/recommendations/YYYY/QX/` - AI recommendation JSON exports
-- `cache/` - Temporary files and quick access data
-- `logs/` - System logs
+- For higher throughput, you can use Redis for the “recent” layer and keep full snapshots on disk.
+- Pros: very fast hot reads, simple TTL eviction. Cons: extra service; volatile if not persisted.
+- Suggested setup: run Redis via compose, store recent overlay (last 90 days) with TTL ~24–48h; keep full history on disk (gzip).
+- Current repo ships with file‑based caching; Redis is an optional enhancement and can be added without breaking existing flows.
 
-## 🔒 Security
+## 📚 Further Docs
 
-- Environment variable-based API key management
-- Docker containerization for isolation
-- No external database dependencies for basic usage
+- docs/pgadmin-and-performance.md — pgAdmin queries and performance tips
+- docs/data-sources.md — supported providers and configuration
+- docs/development.md — local dev, testing, and repo layout
+- docs/docker.md — Docker specifics and mounts
+- docs/features.md — feature overview and roadmap
+- docs/cli-guide.md — CLI details and examples
 
-## 📄 License
+## 🛠️ Troubleshooting
 
-MIT License - See [LICENSE](LICENSE) file for details.
+- Command name: use `docker compose` (or legacy `docker-compose`) consistently.
+- Subcommand: it is `collection` (singular), not `collections`.
+- Strategy discovery: ensure strategies are mounted at `/app/external_strategies` and set `STRATEGIES_PATH=/app/external_strategies` when running.
+- Database URL: inside containers use `postgres:5432` (`DATABASE_URL=postgresql://quantuser:quantpass@postgres:5432/quant_system`). On the host, Postgres is published at `localhost:5433`.
+- Initialize tables: if tables are missing, run:
+  `docker compose run --rm quant python -c "from src.database.unified_models import create_tables; create_tables()"`
+- Long runs/timeouts: backtests can take minutes to hours depending on strategies and symbols. Prefer `--log-level INFO` or `DEBUG` to monitor progress. Use `--dry-run` to validate plans quickly. Extra tips in docs/pgadmin-and-performance.md.
+- Permissions/cache: ensure `cache/`, `exports/`, `logs/`, and `artifacts/` exist and are writable on the host (compose mounts them into the container).
+- API limits: some data sources rate-limit; providing API keys in `.env` can reduce throttling.
 
----
+## ⚠️ Disclaimer
 
-**⚠️ Disclaimer**: Educational purposes only. Not financial advice. Trade responsibly.
+This project is for educational and research purposes only. It does not constitute financial advice. Use at your own risk and always perform your own due diligence before making investment decisions.
