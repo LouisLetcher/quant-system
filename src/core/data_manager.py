@@ -201,12 +201,16 @@ class YahooFinanceSource(DataSource):
         if symbol in forex_pairs:
             return f"{symbol}=X"
 
-        # Crypto format - Yahoo uses dash format
+        # Crypto format - Yahoo uses dash format and typically USD quote
         if asset_type == "crypto" or any(
             crypto in symbol.upper() for crypto in ["BTC", "ETH", "ADA", "SOL"]
         ):
-            if "USD" in symbol and "-" not in symbol:
-                return symbol.replace("USD", "-USD")
+            up = symbol.upper()
+            if "USDT" in up and "-" not in up:
+                # Map USDT quote to Yahoo's USD convention, e.g., IMXUSDT -> IMX-USD
+                return up.replace("USDT", "-USD")
+            if "USD" in up and "-" not in up:
+                return up.replace("USD", "-USD")
 
         return symbol
 
@@ -386,9 +390,25 @@ class BybitSource(DataSource):
                 self.logger.error("Unsupported interval: %s", interval)
                 return None
 
-            # Convert dates to timestamps
-            start_ts = int(pd.to_datetime(start_date).timestamp() * 1000)
-            end_ts = int(pd.to_datetime(end_date).timestamp() * 1000)
+            # Convert dates to timestamps (robust to strings and tokens)
+            start_dt = pd.to_datetime(start_date, errors="coerce")
+            end_dt = pd.to_datetime(end_date, errors="coerce")
+            if pd.isna(end_dt):
+                end_dt = pd.Timestamp.utcnow()
+            if pd.isna(start_dt):
+                # Default window based on interval
+                try:
+                    if interval in {"1m", "3m", "5m", "15m", "30m"}:
+                        start_dt = end_dt - pd.Timedelta(days=7)
+                    elif interval in {"1h", "2h", "4h", "6h", "12h"}:
+                        start_dt = end_dt - pd.Timedelta(days=90)
+                    else:
+                        start_dt = end_dt - pd.Timedelta(days=365)
+                except Exception:
+                    start_dt = end_dt - pd.Timedelta(days=90)
+
+            start_ts = int(start_dt.timestamp() * 1000)
+            end_ts = int(end_dt.timestamp() * 1000)
 
             # Fetch kline data
             url = f"{self.base_url}/v5/market/kline"
@@ -1116,6 +1136,32 @@ class UnifiedDataManager:
             if not source.config.asset_types or asset_type in source.config.asset_types:
                 suitable_sources.append(source)
 
+        # Optional filtering for crypto: allow disabling Yahoo/AlphaVantage via env,
+        # and prefer Bybit/Twelve when available to reduce noisy fallbacks.
+        if asset_type == "crypto":
+            import os as _os
+
+            disable_yahoo = _os.getenv("DISABLE_YAHOO_CRYPTO", "false").lower() in {
+                "1",
+                "true",
+                "yes",
+            }
+            disable_av = _os.getenv("DISABLE_AV_CRYPTO", "false").lower() in {
+                "1",
+                "true",
+                "yes",
+            }
+            names = {s.config.name for s in suitable_sources}
+            has_primary = any(n in names for n in {"bybit", "twelve_data"})
+            if disable_yahoo or has_primary:
+                suitable_sources = [
+                    s for s in suitable_sources if s.config.name != "yahoo_finance"
+                ]
+            if disable_av or has_primary:
+                suitable_sources = [
+                    s for s in suitable_sources if s.config.name != "alpha_vantage"
+                ]
+
         override = self._global_source_order_overrides.get(asset_type)
         if override:
             order_idx = {name: i for i, name in enumerate(override)}
@@ -1434,10 +1480,28 @@ class TwelveDataSource(DataSource):
                 return f"{base_symbol[:3]}/{base_symbol[3:]}"
 
         # Twelve Data crypto format (no dash)
-        if "-USD" in symbol:
-            return symbol.replace("-USD", "USD")
+        up = symbol.upper()
+        if "-USD" in up:
+            return up.replace("-USD", "USD")
+        if "-USDT" in up:
+            up = up.replace("-USDT", "/USDT")
+            # fallthrough to exchange append below
+            # return here was removed to allow exchange tagging
+        # IMXUSDT -> IMX/USDT
+        if up.endswith("USDT") and "/" not in up and "-" not in up:
+            up = f"{up[:-4]}/USDT"
 
-        return symbol
+        # Optional exchange routing for crypto, e.g., IMX/USDT:BINANCE
+        try:
+            import os as _os
+
+            exch = _os.getenv("TWELVE_DATA_CRYPTO_EXCHANGE", "").strip()
+            if exch and ":" not in up and (asset_type == "crypto" or "/" in up):
+                up = f"{up}:{exch.upper()}"
+        except Exception:
+            pass
+
+        return up
 
     def fetch_data(
         self,
@@ -1455,11 +1519,23 @@ class TwelveDataSource(DataSource):
             asset_type = kwargs.get("asset_type")
             transformed_symbol = self.transform_symbol(symbol, asset_type)
 
+            # Coerce dates (supports strings or datetime-like)
+            start_dt = pd.to_datetime(start_date, errors="coerce")
+            end_dt = pd.to_datetime(end_date, errors="coerce")
+            if pd.isna(end_dt):
+                end_dt = pd.Timestamp.utcnow()
+            if pd.isna(start_dt):
+                # default to one year window for daily; smaller for intraday
+                if interval in {"1m", "5m", "15m", "30m", "1h", "4h"}:
+                    start_dt = end_dt - pd.Timedelta(days=30)
+                else:
+                    start_dt = end_dt - pd.Timedelta(days=365)
+
             params = {
                 "symbol": transformed_symbol,
                 "interval": self._map_interval(interval),
-                "start_date": start_date.strftime("%Y-%m-%d"),
-                "end_date": end_date.strftime("%Y-%m-%d"),
+                "start_date": start_dt.strftime("%Y-%m-%d"),
+                "end_date": end_dt.strftime("%Y-%m-%d"),
                 "apikey": self.api_key,
                 "format": "JSON",
                 "outputsize": 5000,

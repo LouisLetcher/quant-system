@@ -389,10 +389,16 @@ def run_plan(manifest: Dict[str, Any], outdir: Path, dry_run: bool = False) -> i
             else None
         )
 
-        # Optional: probe sources for best coverage and set ordering overrides (assume 'stocks' for bonds/ETFs)
+        # Optional: probe sources for best coverage and set ordering overrides
         try:
             dm_probe = UnifiedDataManager()
+            # Detect asset type from the first symbol; fall back to 'stocks'
             asset_type_probe = "stocks"
+            try:
+                if symbols:
+                    asset_type_probe = dm_probe._detect_asset_type(symbols[0])
+            except Exception:
+                pass
             sample_syms = symbols[: min(5, len(symbols))]
             if sample_syms:
                 ordered = dm_probe.probe_and_set_order(
