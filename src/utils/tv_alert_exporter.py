@@ -263,25 +263,63 @@ Qty: {{{{strategy.order.contracts}}}}
                     except Exception:
                         pass
 
-        # Build one alert per symbol using best Sortino
+        # Build alerts either from DB rows or (fallback) parse existing HTML reports
         by_symbol: Dict[str, Dict] = {}
-        for r in rows:
-            sym = getattr(r, "symbol", None)
-            if not sym:
-                continue
-            entry = by_symbol.get(sym)
-            sortino = float(getattr(r, "sortino_ratio", 0.0) or 0.0)
-            if entry is None or sortino > entry.get("sortino_ratio", -1e9):
-                by_symbol[sym] = {
-                    "symbol": sym,
-                    "strategy": getattr(r, "strategy", ""),
-                    "timeframe": getattr(r, "timeframe", interval or "1d"),
-                    "metrics": {
-                        "Sharpe Ratio": f"{float(getattr(r, 'sharpe_ratio', 0.0) or 0.0):.3f}",
-                        "Sortino Ratio": f"{sortino:.3f}",
-                        "Calmar Ratio": f"{float(getattr(r, 'calmar_ratio', 0.0) or 0.0):.3f}",
-                    },
-                }
+
+        if rows:
+            # Primary: DB-backed BestStrategy rows
+            for r in rows:
+                sym = getattr(r, "symbol", None)
+                if not sym:
+                    continue
+                entry = by_symbol.get(sym)
+                sortino = float(getattr(r, "sortino_ratio", 0.0) or 0.0)
+                if entry is None or sortino > entry.get("sortino_ratio", -1e9):
+                    by_symbol[sym] = {
+                        "symbol": sym,
+                        "strategy": getattr(r, "strategy", ""),
+                        "timeframe": getattr(r, "timeframe", interval or "1d"),
+                        "metrics": {
+                            "Sharpe Ratio": f"{float(getattr(r, 'sharpe_ratio', 0.0) or 0.0):.3f}",
+                            "Sortino Ratio": f"{sortino:.3f}",
+                            "Calmar Ratio": f"{float(getattr(r, 'calmar_ratio', 0.0) or 0.0):.3f}",
+                        },
+                    }
+        else:
+            # Fallback: parse HTML reports for assets and their best strategy/timeframe
+            try:
+                html_files = self.find_html_reports()
+                for fp in html_files:
+                    # Optionally filter by collection name in filename if provided
+                    if collection_filter:
+                        # normalize name part (spaces/parentheses -> underscores)
+                        cname = collection_filter.replace(" ", "_").replace("/", "_")
+                        if cname not in fp.name:
+                            continue
+                    assets = self.process_html_file(fp)
+                    for asset in assets:
+                        if symbols and asset.get("symbol") not in set(symbols):
+                            continue
+                        if interval and asset.get("timeframe") != interval:
+                            continue
+                        sym = asset.get("symbol")
+                        strat = asset.get("strategy")
+                        tf = asset.get("timeframe") or (interval or "1d")
+                        if not sym or not strat:
+                            continue
+                        # Keep first (or allow override if needed by future metrics)
+                        by_symbol.setdefault(
+                            sym,
+                            {
+                                "symbol": sym,
+                                "strategy": strat,
+                                "timeframe": tf,
+                                "metrics": {},
+                            },
+                        )
+            except Exception:
+                # Silent fallback; will result in header-only file as before
+                pass
 
         for sym, asset in by_symbol.items():
             alert = self.generate_tradingview_alert(asset)

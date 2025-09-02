@@ -630,6 +630,31 @@ class RawDataCSVExporter:
                 if card_data:
                     extracted_data.append(card_data)
 
+            # Tailwind report structure fallback: section[id^='asset-'] with h2 and spans
+            try:
+                sections = soup.select("section[id^='asset-']")
+                for sec in sections:
+                    h2 = sec.find("h2")
+                    symbol = h2.get_text(strip=True) if h2 else None
+                    best_strategy = None
+                    timeframe = None
+                    for sp in sec.find_all("span"):
+                        txt = sp.get_text(strip=True)
+                        if txt.startswith("Best:") and best_strategy is None:
+                            best_strategy = txt.replace("Best:", "").strip()
+                        if "⏰" in txt and timeframe is None:
+                            timeframe = txt.replace("⏰", "").strip()
+                    if symbol and best_strategy:
+                        extracted_data.append(
+                            {
+                                "Symbol": symbol,
+                                "Strategy": best_strategy,
+                                "Timeframe": timeframe or "1d",
+                            }
+                        )
+            except Exception:
+                pass
+
             self.logger.info(
                 "Extracted %d data points from %s", len(extracted_data), html_file.name
             )

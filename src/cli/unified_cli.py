@@ -593,11 +593,17 @@ def _run_requested_exports(
     year = str(y_now)
     try:
         _intervals = list(resolved_plan.get("intervals") or [])
-        interval = (
+        # Single-file export policy:
+        # - Use '1d' for filenames when present, else first interval
+        # - If multiple intervals were requested, do not filter by interval in exporters (pass None)
+        interval_for_filename = (
             "1d" if "1d" in _intervals else (_intervals[0] if _intervals else "1d")
         )
+        multiple_intervals = len(_intervals) > 1
+        interval_filter = None if multiple_intervals else interval_for_filename
     except Exception:
-        interval = "1d"
+        interval_for_filename = "1d"
+        interval_filter = interval_for_filename
 
     # Report
     if do_report:
@@ -607,13 +613,32 @@ def _run_requested_exports(
             reporter = DetailedPortfolioReporter()
             start_date = resolved_plan.get("start") or ""
             end_date = resolved_plan.get("end") or ""
-            report_path = reporter.generate_comprehensive_report(
-                portfolio_config,
-                start_date or datetime.utcnow().strftime("%Y-%m-%d"),
-                end_date or datetime.utcnow().strftime("%Y-%m-%d"),
-                resolved_plan.get("strategies", []),
-                timeframes=[interval] if interval else None,
-            )
+            try:
+                report_path = reporter.generate_comprehensive_report(
+                    portfolio_config,
+                    start_date or datetime.utcnow().strftime("%Y-%m-%d"),
+                    end_date or datetime.utcnow().strftime("%Y-%m-%d"),
+                    resolved_plan.get("strategies", []),
+                    timeframes=[interval_for_filename]
+                    if interval_for_filename
+                    else None,
+                    filename_interval=(
+                        "multi"
+                        if (len(resolved_plan.get("intervals") or []) > 1)
+                        else interval_for_filename
+                    ),
+                )
+            except TypeError:
+                # Backward-compat: reporter without filename_interval arg
+                report_path = reporter.generate_comprehensive_report(
+                    portfolio_config,
+                    start_date or datetime.utcnow().strftime("%Y-%m-%d"),
+                    end_date or datetime.utcnow().strftime("%Y-%m-%d"),
+                    resolved_plan.get("strategies", []),
+                    timeframes=[interval_for_filename]
+                    if interval_for_filename
+                    else None,
+                )
             log.info("Generated HTML report at %s", report_path)
         except Exception:
             log.exception("DetailedPortfolioReporter failed (continuing)")
@@ -642,7 +667,7 @@ def _run_requested_exports(
                 export_format="best-strategies",
                 portfolio_name=portfolio_config.get("name") or "",
                 portfolio_path=str(collection_path),
-                interval=interval,
+                interval=interval_filter,
             )
             if not csv_files:
                 csv_files = csv_exporter.export_from_quarterly_reports(
@@ -650,7 +675,7 @@ def _run_requested_exports(
                     year,
                     export_format="best-strategies",
                     collection_name=portfolio_config.get("name"),
-                    interval=interval,
+                    interval=interval_filter,
                 )
             log.info("Generated CSV exports: %s", csv_files)
         except Exception:
@@ -674,7 +699,12 @@ def _run_requested_exports(
                 min_confidence=0.6,
                 max_assets=10,
                 quarter=f"{quarter}_{year}",
-                timeframe=interval,
+                timeframe=interval_for_filename,  # concrete for trading params
+                filename_interval=(
+                    "multi"
+                    if (len(resolved_plan.get("intervals") or []) > 1)
+                    else interval_for_filename
+                ),
                 generate_html=True,
             )
             log.info("Generated AI recommendations at %s", ai_html_path)
@@ -690,7 +720,7 @@ def _run_requested_exports(
             alerts = tv_exporter.export_alerts(
                 output_file=None,
                 collection_filter=portfolio_config.get("name"),
-                interval=interval,
+                interval=interval_filter,
                 symbols=portfolio_config.get("symbols") or [],
             )
             log.info("Generated TradingView alerts for %d assets", len(alerts))

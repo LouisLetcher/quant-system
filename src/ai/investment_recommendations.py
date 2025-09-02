@@ -398,6 +398,7 @@ class AIInvestmentRecommendations:
         max_assets: int = 10,
         quarter: Optional[str] = None,
         timeframe: str = "1h",
+        filename_interval: Optional[str] = None,
         generate_html: bool = True,
     ) -> tuple[PortfolioRecommendation, str]:
         """Generate AI recommendations for a specific portfolio with HTML report."""
@@ -460,7 +461,7 @@ class AIInvestmentRecommendations:
             risk_tolerance,
             quarter,
             portfolio_name,
-            timeframe,
+            filename_interval or timeframe,
         )
 
         # Try to save to database (may fail due to model mismatch)
@@ -489,7 +490,7 @@ class AIInvestmentRecommendations:
                 portfolio_name=portfolio_name,
                 year=year_part,
                 quarter=quarter_part,
-                interval=timeframe,
+                interval=filename_interval or timeframe,
             )
 
         return filtered_portfolio, html_path
@@ -525,6 +526,17 @@ class AIInvestmentRecommendations:
             self.logger.warning(
                 "No results found for AI recommendations after all fallbacks"
             )
+            # Last-resort fallback: parse CSV exports produced in the quarterly folder
+            try:
+                csv_results = self._load_from_csv_exports(quarter, portfolio_symbols)
+                if csv_results:
+                    self.logger.info(
+                        "Using CSV exports for AI recommendations (%d rows)",
+                        len(csv_results),
+                    )
+                    return csv_results
+            except Exception as e:
+                self.logger.debug("CSV fallback failed: %s", e)
             return []
 
         self.logger.info(
@@ -587,6 +599,104 @@ class AIInvestmentRecommendations:
                 sess.close()
             except Exception:
                 pass
+
+    def _load_from_csv_exports(
+        self,
+        quarter: Optional[str] = None,
+        portfolio_symbols: Optional[list[str]] = None,
+    ) -> list[dict]:
+        """Load best-per-asset rows from CSV exports under exports/csv/<year>/<quarter>."""
+        from pathlib import Path
+
+        # Determine year and quarter folder
+        year_part = None
+        quarter_part = None
+        if quarter and "_" in quarter:
+            q, y = quarter.split("_")
+            quarter_part = q
+            year_part = y
+        else:
+            from datetime import datetime as _dt
+
+            now = _dt.utcnow()
+            year_part = str(now.year)
+            quarter_part = f"Q{((now.month - 1) // 3) + 1}"
+
+        base = Path("exports/csv") / str(year_part) / str(quarter_part)
+        if not base.exists():
+            return []
+
+        rows: list[dict] = []
+        # Load all CSVs for the quarter; we'll filter to portfolio symbols
+        for csv_path in base.glob("*.csv"):
+            try:
+                df = pd.read_csv(str(csv_path))
+            except Exception as e:
+                self.logger.debug("Failed reading CSV %s: %s", csv_path, e)
+                continue
+            # Normalize expected columns
+            cols = {c.lower(): c for c in df.columns}
+            # Prefer 'Asset' else 'Symbol'
+            asset_col = cols.get("asset") or cols.get("symbol")
+            strat_col = cols.get("best_strategy") or cols.get("strategy")
+            tf_col = cols.get("best_timeframe") or cols.get("timeframe")
+            if not asset_col or not strat_col:
+                continue
+            # Filter symbols if provided
+            if portfolio_symbols:
+                df = df[df[asset_col].isin(portfolio_symbols)]
+            if df.empty:
+                continue
+
+            # Build numeric metrics with safe defaults
+            def _num(colname: str, _cols=cols, _df=df) -> pd.Series:
+                c = _cols.get(colname.lower())
+                if not c or c not in _df.columns:
+                    return pd.Series([np.nan] * len(_df))
+                try:
+                    return pd.to_numeric(_df[c], errors="coerce")
+                except Exception:
+                    return pd.Series([np.nan] * len(_df))
+
+            srt = _num("Sortino_Ratio")
+            cal = _num("Calmar_Ratio")
+            shp = _num("Sharpe_Ratio")
+            trn = _num("Total_Return_Pct")
+            if trn.isna().all():
+                trn = _num("Total_Return")
+            mdd = _num("Max_Drawdown_Pct")
+            if mdd.isna().all():
+                mdd = _num("Max_Drawdown")
+
+            tmp = pd.DataFrame(
+                {
+                    "symbol": df[asset_col].astype(str),
+                    "strategy": df[strat_col].astype(str),
+                    "timeframe": df[tf_col].astype(str) if tf_col else "1d",
+                    "sortino_ratio": srt.fillna(0.0),
+                    "calmar_ratio": cal.fillna(0.0),
+                    "sharpe_ratio": shp.fillna(0.0),
+                    "total_return": trn.fillna(0.0),
+                    "max_drawdown": mdd.fillna(0.0),
+                }
+            )
+            rows.extend(tmp.to_dict("records"))
+
+        if not rows:
+            return []
+
+        # Reduce to best per symbol by Sortino
+        by_symbol = {}
+        for r in rows:
+            sym = r.get("symbol")
+            if not sym:
+                continue
+            if sym not in by_symbol or float(r.get("sortino_ratio") or 0) > float(
+                by_symbol[sym].get("sortino_ratio") or 0
+            ):
+                by_symbol[sym] = r
+
+        return list(by_symbol.values())
 
     def _load_from_database(
         self,

@@ -32,6 +32,7 @@ class DetailedPortfolioReporter:
         end_date: str,
         strategies: list[str],
         timeframes: list[str] | None = None,
+        filename_interval: str | None = None,
     ) -> str:
         if timeframes is None:
             timeframes = ["1d"]
@@ -51,10 +52,14 @@ class DetailedPortfolioReporter:
             strategies=strategies,
             timeframes=timeframes,
         )
-        # Choose interval for filename: prefer '1d' if included
+        # Choose interval token for filename:
+        # - If explicit filename_interval is provided, use it (e.g., "multi" for --interval all)
+        # - Else prefer '1d' if included, otherwise first of timeframes
         interval = "1d"
         try:
-            if timeframes:
+            if filename_interval:
+                interval = filename_interval
+            elif timeframes:
                 interval = "1d" if "1d" in timeframes else timeframes[0]
         except Exception:
             interval = "1d"

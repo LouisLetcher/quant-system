@@ -65,7 +65,8 @@ services:
       - ./src:/app/src:ro
       - ./scripts:/app/scripts:ro
       - ./tests:/app/tests:ro
-      - ./quant-strategies/algorithms/python:/app/external_strategies:ro
+      # Mount external strategies from host; set STRATEGIES_HOST_PATH to an absolute host path
+      - ${STRATEGIES_HOST_PATH}:/app/external_strategies:ro
       - ./artifacts:/app/artifacts
     depends_on:
       - postgres
