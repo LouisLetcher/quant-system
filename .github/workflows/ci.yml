@@ -26,6 +26,10 @@ jobs:
       - name: Pre-commit
         run: |
           poetry run pre-commit run --all-files --show-diff-on-failure
+      - name: Markdownlint
+        run: |
+          docker run --rm -v "$PWD":/workdir -w /workdir ghcr.io/igorshubovych/markdownlint-cli:latest \
+            markdownlint -c .markdownlint.json '**/*.md'
   tests:
     runs-on: ubuntu-latest
     steps:

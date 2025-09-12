@@ -67,7 +67,33 @@ def run(
     start_ts = datetime.utcnow()
     run_id = os.environ.get("RUN_ID", ts)
     runner = BacktestRunner(cfg, strategies_root=strategies_root, run_id=run_id)
+    if not getattr(runner, "external_index", {}):
+        typer.secho(
+            (
+                f"No strategies discovered under {strategies_root}.\n"
+                "- Ensure STRATEGIES_PATH points to the container path (e.g., /ext/strategies).\n"
+                "- Or pass --strategies-path /ext/strategies.\n"
+                "- Verify your strategy classes subclass BaseStrategy and import without errors.\n"
+            ),
+            err=True,
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(code=1)
     results = runner.run_all(only_cached=only_cached)
+    if not results:
+        tips = [
+            "No backtest results produced.",
+            f"- Strategies discovered: {len(getattr(runner, 'external_index', {}))}",
+            f"- Collections: {len(cfg.collections)}, Timeframes: {len(cfg.timeframes)}",
+            "Possible causes:",
+            "  • Using --only-cached but no Parquet data is cached (warm the cache or disable).",
+            "  • Unsupported timeframe for the selected data source (adjust config).",
+            "  • Strategy generated invalid/no signals for all parameter sets (check logic/params).",
+            "  • Data providers returned no data (rate limits/network/API keys).",
+        ]
+        typer.secho("\n".join(tips), err=True, fg=typer.colors.RED)
+        raise typer.Exit(code=2)
+
     end_ts = datetime.utcnow()
 
     # Exports

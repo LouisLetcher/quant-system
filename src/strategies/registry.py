@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import inspect
 from pathlib import Path
 
@@ -9,10 +10,11 @@ from .base import BaseStrategy
 
 
 def discover_external_strategies(strategies_root: Path) -> dict[str, type[BaseStrategy]]:
-    """Discover all BaseStrategy subclasses under the given path by importing packages.
+    """Discover all BaseStrategy subclasses under the given path.
 
-    This expects the external repo to be importable; if not, we temporarily
-    add the root to sys.path. Classes must define a `name` attribute.
+    Tries two approaches per .py file:
+    1) Regular import assuming package structure (root added to sys.path)
+    2) Fallback: load module from file via importlib.util.spec_from_file_location
     """
     import sys
 
@@ -26,9 +28,20 @@ def discover_external_strategies(strategies_root: Path) -> dict[str, type[BaseSt
             continue
         rel = py.relative_to(strategies_root)
         mod_name = ".".join(rel.with_suffix("").parts)
+        mod = None
+        # Try package import
         try:
             mod = importlib.import_module(mod_name)
         except Exception:
+            # Fallback: load directly from file path
+            try:
+                spec = importlib.util.spec_from_file_location(mod_name, str(py))
+                if spec and spec.loader:  # type: ignore[attr-defined]
+                    mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)  # type: ignore[attr-defined]
+            except Exception:
+                mod = None
+        if mod is None:
             continue
         for _, obj in inspect.getmembers(mod, inspect.isclass):
             if issubclass(obj, BaseStrategy) and obj is not BaseStrategy:

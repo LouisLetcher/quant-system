@@ -91,7 +91,8 @@ docker-compose run --rm app bash -lc "poetry run python -m src.main run --config
 - Daily scheduled backtest via `.github/workflows/daily-backtest.yml` (05:00 UTC). To use your strategies repo in CI:
   - Add secrets `STRATEGIES_REPO` (e.g., org/repo) and `GH_TOKEN` with read access.
   - The workflow checks out both repos and runs `poetry run python -m src.main run --config config/example.yaml --strategies-path strategies`.
-  - Security: CodeQL and Gitleaks run on PRs and `main`.
+  - Security: Gitleaks runs on PRs and `main`.
+  - CodeQL: Uses GitHub’s Default setup (enable under Security → Code scanning). No custom workflow is required.
 
 ## Governance
 

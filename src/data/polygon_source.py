@@ -37,11 +37,13 @@ class PolygonSource(DataSource):
             return int(tf[:-1]), "day"
         raise ValueError(f"Unsupported timeframe for Polygon: {tf}")
 
-    def fetch(self, symbol: str, timeframe: str) -> pd.DataFrame:
+    def fetch(self, symbol: str, timeframe: str, only_cached: bool = False) -> pd.DataFrame:
         tf = timeframe
         cached = self.cache.load("polygon", symbol, tf)
         if cached is not None and len(cached) > 0:
             return cached
+        if only_cached:
+            raise RuntimeError(f"Cache miss for {symbol} {tf} (polygon) with only_cached=True")
 
         mult, span = self._map_tf(tf)
         # Fetch in yearly chunks to respect response size limits

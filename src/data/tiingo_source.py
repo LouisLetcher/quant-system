@@ -27,11 +27,13 @@ class TiingoSource(DataSource):
         self.cache = ParquetCache(cache_dir)
         self._limiter = RateLimiter(min_interval=0.25)
 
-    def fetch(self, symbol: str, timeframe: str) -> pd.DataFrame:
+    def fetch(self, symbol: str, timeframe: str, only_cached: bool = False) -> pd.DataFrame:
         tf = timeframe.lower()
         cached = self.cache.load("tiingo", symbol, tf)
         if cached is not None and len(cached) > 0:
             return cached
+        if only_cached:
+            raise RuntimeError(f"Cache miss for {symbol} {tf} (tiingo) with only_cached=True")
 
         session = create_retry_session()
         headers = {"Content-Type": "application/json"}
