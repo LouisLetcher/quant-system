@@ -1,0 +1,31 @@
+metric: sortino
+engine: vectorbt
+asset_workers: 4
+param_workers: 1
+max_fetch_concurrency: 2
+cache_dir: .cache/data
+
+collections:
+  - name: forex_majors
+    source: yfinance
+    # Approximate IBKR-like costs for FX; adjust if needed
+    fees: 0.0002
+    slippage: 0.0002
+    symbols:
+      # Major USD pairs
+      - EURUSD=X
+      - GBPUSD=X
+      - USDJPY=X
+      - USDCHF=X
+      - USDCAD=X
+      - AUDUSD=X
+      - NZDUSD=X
+      # Crosses (popular/liquid)
+      - EURGBP=X
+      - EURJPY=X
+      - GBPJPY=X
+
+# Choose timeframes compatible across sources
+timeframes: ["1d", "4h"]
+
+strategies: []

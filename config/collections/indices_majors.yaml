@@ -1,0 +1,32 @@
+metric: sortino
+engine: vectorbt
+asset_workers: 4
+param_workers: 1
+max_fetch_concurrency: 2
+cache_dir: .cache/data
+
+collections:
+  - name: indices_majors
+    source: yfinance
+    fees: 0.0005
+    slippage: 0.0005
+    symbols:
+      - SPY
+      - QQQ
+      - DIA
+      - IWM
+      - EFA
+      - EEM
+      - ^GSPC
+      - ^NDX
+      - ^DJI
+      - ^RUT
+      - ^GDAXI
+      - ^FCHI
+      - ^FTSE
+      - ^N225
+      - ^HSI
+
+timeframes: ["1d", "1w"]
+
+strategies: []
